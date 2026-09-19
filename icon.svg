@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09203F" />
+      <stop offset="60%" stop-color="#113F67" />
+      <stop offset="100%" stop-color="#1D5D9B" />
+    </linearGradient>
+  </defs>
+  <!-- خلفية مربعة ذات حواف ناعمة -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+  
+  <!-- هلال إسلامي ذهبي -->
+  <path d="M290 120 C 230 120, 180 170, 180 232 C 180 300, 235 354, 305 354 C 330 354, 355 346, 375 332 C 345 342, 300 330, 280 295 C 255 250, 275 190, 315 160 C 335 145, 360 140, 380 144 C 355 128, 323 120, 290 120 Z" fill="#FFE17D"/>
+  
+  <!-- نجمة مضيئة -->
+  <polygon points="340,190 345,205 360,205 348,215 352,230 340,220 328,230 332,215 320,205 335,205" fill="#FFFFFF"/>
+</svg>

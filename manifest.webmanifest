@@ -1,0 +1,20 @@
+{
+  "name": "الحياة الطيبة - أذكار ومواقيت",
+  "short_name": "الحياة الطيبة",
+  "description": "تطبيق إسلامي لمواقيت الصلاة، الأذكار اليومية، والعبادات",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09203F",
+  "theme_color": "#09203F",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

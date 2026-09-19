@@ -1,0 +1,496 @@
+/* متغيرات التصميم - التدرج الأزرق الملكي الراقي */
+:root {
+  --primary-deep: #0B2545;
+  --primary-navy: #134074;
+  --primary-blue: #1D5D9B;
+  --primary-light-blue: #3E89CC;
+  
+  --hero-gradient: linear-gradient(180deg, #09203F 0%, #113F67 60%, #1D5D9B 100%);
+  
+  --active-row-bg: #EEF6FC;
+  --active-row-border: #B7D9F5;
+  
+  --bg-app: #F5F8FA;
+  --bg-surface: #FFFFFF;
+  --text-main: #1E293B;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  
+  --shadow-soft: 0 4px 18px rgba(11, 37, 69, 0.05);
+  --shadow-card: 0 2px 8px rgba(11, 37, 69, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Cairo', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: #E2E8F0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* محاكاة شاشة الجوال الدقيقة على الكمبيوتر والجوال */
+.app-container {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  position: relative;
+  overflow-x: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding-bottom: 90px;
+}
+
+/* الهيدر العلوي */
+.app-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.location-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.header-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.header-action-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* كرت الصلاة العلوي الكبير */
+.hero-card {
+  background: var(--hero-gradient);
+  color: #FFFFFF;
+  padding: 85px 24px 35px 24px;
+  border-bottom-left-radius: 32px;
+  border-bottom-right-radius: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(11, 37, 69, 0.2);
+}
+
+.mosque-watermark {
+  position: absolute;
+  top: 15px;
+  left: -20px;
+  width: 250px;
+  height: 200px;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: left;
+}
+
+.current-prayer-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.current-prayer-time {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.current-prayer-time .time-period {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.countdown-bar {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.countdown-digits {
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* شريط التاريخ الهجري */
+.date-strip {
+  background: var(--bg-surface);
+  margin: 16px 20px 10px 20px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-card);
+}
+
+.date-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.date-indicator-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary-blue);
+  border-radius: 50%;
+}
+
+.date-nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* جدول الصلوات وقائمة المتابعة */
+.prayers-list {
+  background: var(--bg-surface);
+  margin: 10px 20px;
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.prayer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 8px;
+  border-bottom: 1px solid #F1F5F9;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.prayer-row:last-child {
+  border-bottom: none;
+}
+
+.prayer-row.active-prayer {
+  background-color: var(--active-row-bg);
+  border: 1px solid var(--active-row-border);
+  box-shadow: 0 2px 8px rgba(29, 93, 155, 0.08);
+}
+
+/* تخصيص مربع الاختيار (Checkbox) */
+.custom-checkbox {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.custom-checkbox input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #CBD5E1;
+  border-radius: 6px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 7px;
+  top: 3px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.prayer-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  direction: ltr;
+}
+
+.prayer-bell-btn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.prayer-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex-grow: 0.8;
+  text-align: right;
+  margin-right: 10px;
+}
+
+.prayer-sky-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* شبكة الأدوات الإسلامية */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 18px 20px;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.tool-card:active {
+  transform: scale(0.94);
+}
+
+.tool-icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.bg-soft-blue   { background-color: #EBF3FA; }
+.bg-soft-teal   { background-color: #E6F7F8; }
+.bg-soft-sky    { background-color: #E0F2FE; }
+.bg-soft-mint   { background-color: #ECFDF5; }
+.bg-soft-amber  { background-color: #FEF3C7; }
+.bg-soft-emerald{ background-color: #DCFCE7; }
+.bg-soft-indigo { background-color: #EEF2FF; }
+
+.tool-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* شريط التنقل السفلي */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: 68px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-muted);
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.nav-item.active {
+  color: var(--primary-blue);
+}
+
+/* النافذة السفلية المنبثقة (Bottom Sheet) */
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 37, 69, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.bottom-sheet-backdrop.show {
+  display: flex;
+  opacity: 1;
+}
+
+.bottom-sheet {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 430px;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding: 12px 24px 34px 24px;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet-drag-handle {
+  width: 44px;
+  height: 5px;
+  background: #CBD5E1;
+  border-radius: 9999px;
+  margin: 0 auto 16px auto;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.sheet-title.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--primary-blue);
+  border-radius: 4px;
+}
+
+.sheet-title-dimmed {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.sheet-preview-card {
+  background: #F8FAFC;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 20px;
+  border: 1px solid #E2E8F0;
+}
+
+.preview-prayer-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.sheet-action-btn {
+  width: 100%;
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 9999px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(29, 93, 155, 0.3);
+  transition: opacity 0.2s;
+}
+
+.sheet-action-btn:active {
+  opacity: 0.9;
+}
