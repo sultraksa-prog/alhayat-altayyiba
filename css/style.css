@@ -992,3 +992,105 @@ html, body {
   max-height: 300px;
   overflow-y: auto;
 }
+
+/* زر النجمة الذهبية في شاشة مجموعات الأذكار */
+.header-star-btn {
+  background: #FEF3C7;
+  border: 1.5px solid #FCD34D;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+  transition: transform 0.15s;
+}
+
+.header-star-btn:active {
+  transform: scale(0.9);
+}
+
+/* شريط زر البحث أسفل شاشة المفضلة */
+.fav-actions-bottom-bar {
+  padding: 16px;
+  margin-bottom: 70px;
+}
+
+.add-to-fav-btn {
+  width: 100%;
+  background: #FFFFFF;
+  color: var(--primary-blue);
+  border: 1.5px dashed var(--primary-blue);
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-to-fav-btn:active {
+  background-color: #EEF6FC;
+}
+
+/* نافذة وقائمة البحث عن المفضلة */
+.search-input-box {
+  margin-bottom: 12px;
+}
+
+.search-input-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.search-input-box input:focus {
+  border-color: var(--primary-blue);
+}
+
+.fav-search-results-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fav-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #F8FAFC;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+}
+
+.fav-search-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.fav-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #CBD5E1;
+}
+
+.fav-toggle-btn.active {
+  color: #F59E0B;
+}
