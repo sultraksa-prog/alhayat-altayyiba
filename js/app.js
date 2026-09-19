@@ -1,13 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-  // 1. فحص الترقية وتثبيت بيانات المستخدم الكاملة
+  // ==================== 1. نظام عزل المعرفات وحفظ البيانات ====================
   const SAVED_VERSION_KEY = 'hayat_azkar_version';
   const currentVersion = localStorage.getItem(SAVED_VERSION_KEY);
 
   let azkarState = [];
   if (currentVersion !== AZKAR_DATA_VERSION) {
     const oldData = JSON.parse(localStorage.getItem('hayat_azkar_data') || '[]');
-    const customUserGroups = oldData.filter(g => g.isCustom);
+    // استخراج أذكار ومجموعات المستخدم الخاصة فقط (المعزولة ببادئة user_)
+    const customUserGroups = oldData.filter(g => g.id.startsWith('user_cat_'));
+    
+    // دمج أذكار النظام الأصلية مع الحفاظ على أذكار المستخدم
     azkarState = [...DEFAULT_AZKAR_DATA, ...customUserGroups];
     localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
     localStorage.setItem(SAVED_VERSION_KEY, AZKAR_DATA_VERSION);
@@ -19,16 +22,48 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
   }
 
-  // 2. التنقل بين الشاشات
+  // ==================== 2. نظام المفضلة (مع الخمسة الافتراضية) ====================
+  const DEFAULT_FAV_NAMES = [
+    'أذكار الصباح',
+    'أذكار المساء',
+    'تسابيح وأجور عظيمة',
+    'أذكار وأدعية الصلاة',
+    'أذكار النوم'
+  ];
+
+  // جلب معرفات المفضلة الافتراضية
+  function getInitialFavIds() {
+    const initialIds = [];
+    DEFAULT_FAV_NAMES.forEach(name => {
+      const found = azkarState.find(c => c.name.includes(name));
+      if (found) initialIds.push(found.id);
+    });
+    return initialIds;
+  }
+
+  let favoritesIds = JSON.parse(localStorage.getItem('hayat_fav_categories'));
+  if (!favoritesIds || favoritesIds.length === 0) {
+    favoritesIds = getInitialFavIds();
+    localStorage.setItem('hayat_fav_categories', JSON.stringify(favoritesIds));
+  }
+
+  function saveFavorites() {
+    localStorage.setItem('hayat_fav_categories', JSON.stringify(favoritesIds));
+  }
+
+  // ==================== 3. نظام التنقل بين الشاشات ====================
   const screenHome = document.getElementById('screen-home');
   const screenAzkarCategories = document.getElementById('screen-azkar-categories');
+  const screenAzkarFavorites = document.getElementById('screen-azkar-favorites');
   const screenAzkarReader = document.getElementById('screen-azkar-reader');
 
   const tabHome = document.getElementById('tabHome');
   const tabAzkar = document.getElementById('tabAzkar');
   const openAzkarTileBtn = document.getElementById('openAzkarTileBtn');
+  const openFavoritesBtn = document.getElementById('openFavoritesBtn');
   const backToHomeBtn = document.getElementById('backToHomeBtn');
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
+  const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
   function showScreen(screen) {
     document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
@@ -47,39 +82,171 @@ document.addEventListener('DOMContentLoaded', () => {
   tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
   tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
   backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
   backToCategoriesBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  backToCategoriesFromFavBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
 
-  // 3. عرض مجموعات الأذكار (الـ 60+ قسم المنفصلة)
+  // ==================== 4. بناء شبكة مجموعات الأذكار ====================
   const azkarGroupsContainer = document.getElementById('azkarGroupsContainer');
   let currentActiveCategoryId = null;
 
   function renderAzkarCategories() {
     azkarGroupsContainer.innerHTML = '';
-
     azkarState.forEach(group => {
-      const totalItems = group.items ? group.items.length : 0;
-      let completedItems = 0;
-      if (totalItems > 0) {
-        completedItems = group.items.filter(it => it.currentCount === 0).length;
-      }
-      const progressPercent = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
-      const isCompleted = totalItems > 0 && progressPercent === 100;
-
-      const card = document.createElement('div');
-      card.className = `azkar-group-card ${isCompleted ? 'completed' : ''}`;
-      card.innerHTML = `
-        <div class="azkar-group-progress-fill" style="width: ${progressPercent}%;"></div>
-        ${isCompleted ? '<div class="group-completed-badge">✓</div>' : ''}
-        <span class="azkar-group-title">${group.name}</span>
-      `;
-
-      card.addEventListener('click', () => openCategoryReader(group.id));
+      const card = createCategoryCard(group);
       azkarGroupsContainer.appendChild(card);
     });
   }
 
-  // 4. قراءة الأذكار وعرض البطاقات
+  // بطاقة المجموعة المشتركة
+  function createCategoryCard(group) {
+    const totalItems = group.items ? group.items.length : 0;
+    let completedItems = 0;
+    if (totalItems > 0) {
+      completedItems = group.items.filter(it => it.currentCount === 0).length;
+    }
+    const progressPercent = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
+    const isCompleted = totalItems > 0 && progressPercent === 100;
+
+    const card = document.createElement('div');
+    card.className = `azkar-group-card ${isCompleted ? 'completed' : ''}`;
+    card.innerHTML = `
+      <div class="azkar-group-progress-fill" style="width: ${progressPercent}%;"></div>
+      ${isCompleted ? '<div class="group-completed-badge">✓</div>' : ''}
+      <span class="azkar-group-title">${group.name}</span>
+    `;
+
+    card.addEventListener('click', () => openCategoryReader(group.id));
+    return card;
+  }
+
+  // ==================== 5. بناء شاشة المفضلة والترتيب ====================
+  const favoritesGroupsContainer = document.getElementById('favoritesGroupsContainer');
+  const favMenuBtn = document.getElementById('favMenuBtn');
+  const favDropdownMenu = document.getElementById('favDropdownMenu');
+  const toggleFavReorderBtn = document.getElementById('toggleFavReorderBtn');
+  let isFavReorderMode = false;
+
+  favMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    favDropdownMenu.classList.toggle('show');
+  });
+  document.addEventListener('click', () => favDropdownMenu.classList.remove('show'));
+
+  toggleFavReorderBtn.addEventListener('click', () => {
+    isFavReorderMode = !isFavReorderMode;
+    renderFavorites();
+  });
+
+  function renderFavorites() {
+    favoritesGroupsContainer.innerHTML = '';
+    const favGroups = favoritesIds.map(id => azkarState.find(g => g.id === id)).filter(Boolean);
+
+    if (favGroups.length === 0) {
+      favoritesGroupsContainer.innerHTML = `
+        <div style="grid-column: span 2; text-align: center; padding: 40px 20px; color: var(--text-muted);">
+          <p>لا توجد أذكار مضافة للمفضلة حالياً.</p>
+        </div>
+      `;
+      return;
+    }
+
+    favGroups.forEach((group, index) => {
+      const cardWrap = document.createElement('div');
+      cardWrap.style.position = 'relative';
+
+      const card = createCategoryCard(group);
+      cardWrap.appendChild(card);
+
+      // أزرار الترتيب إذا كان وضع الترتيب مفعلاً
+      if (isFavReorderMode) {
+        const reorderBar = document.createElement('div');
+        reorderBar.style.cssText = 'position: absolute; top: -6px; left: 4px; display: flex; gap: 4px; z-index: 10;';
+        if (index > 0) {
+          const upBtn = document.createElement('button');
+          upBtn.className = 'reorder-btn';
+          upBtn.textContent = '▲';
+          upBtn.onclick = (e) => { e.stopPropagation(); moveFavorite(index, -1); };
+          reorderBar.appendChild(upBtn);
+        }
+        if (index < favGroups.length - 1) {
+          const downBtn = document.createElement('button');
+          downBtn.className = 'reorder-btn';
+          downBtn.textContent = '▼';
+          downBtn.onclick = (e) => { e.stopPropagation(); moveFavorite(index, 1); };
+          reorderBar.appendChild(downBtn);
+        }
+        cardWrap.appendChild(reorderBar);
+      }
+
+      favoritesGroupsContainer.appendChild(cardWrap);
+    });
+  }
+
+  function moveFavorite(index, dir) {
+    const target = index + dir;
+    const temp = favoritesIds[index];
+    favoritesIds[index] = favoritesIds[target];
+    favoritesIds[target] = temp;
+    saveFavorites();
+    renderFavorites();
+  }
+
+  // نافذة البحث واختيار الأذكار للمفضلة
+  const searchFavModal = document.getElementById('searchFavModal');
+  const openSearchFavModalBtn = document.getElementById('openSearchFavModalBtn');
+  const closeSearchFavBtn = document.getElementById('closeSearchFavBtn');
+  const favSearchInput = document.getElementById('favSearchInput');
+  const favSearchResultsList = document.getElementById('favSearchResultsList');
+
+  openSearchFavModalBtn.addEventListener('click', () => {
+    favSearchInput.value = '';
+    renderSearchResults('');
+    searchFavModal.classList.add('show');
+  });
+
+  closeSearchFavBtn.addEventListener('click', () => {
+    searchFavModal.classList.remove('show');
+    renderFavorites();
+  });
+
+  favSearchInput.addEventListener('input', (e) => {
+    renderSearchResults(e.target.value.trim());
+  });
+
+  function renderSearchResults(query) {
+    favSearchResultsList.innerHTML = '';
+    const filtered = azkarState.filter(g => g.name.includes(query));
+
+    filtered.forEach(g => {
+      const isFav = favoritesIds.includes(g.id);
+      const row = document.createElement('div');
+      row.className = 'fav-search-item';
+      row.innerHTML = `
+        <span class="fav-search-item-title">${g.name}</span>
+        <button class="fav-toggle-btn ${isFav ? 'active' : ''}">${isFav ? '★' : '☆'}</button>
+      `;
+
+      const btn = row.querySelector('.fav-toggle-btn');
+      btn.addEventListener('click', () => {
+        if (favoritesIds.includes(g.id)) {
+          favoritesIds = favoritesIds.filter(id => id !== g.id);
+          btn.classList.remove('active');
+          btn.textContent = '☆';
+        } else {
+          favoritesIds.push(g.id);
+          btn.classList.add('active');
+          btn.textContent = '★';
+        }
+        saveFavorites();
+      });
+
+      favSearchResultsList.appendChild(row);
+    });
+  }
+
+  // ==================== 6. قراءة وبطاقات الأذكار ====================
   const readerCategoryTitle = document.getElementById('readerCategoryTitle');
   const dhikrCardsContainer = document.getElementById('dhikrCardsContainer');
   let isEditMode = false;
@@ -114,7 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'dhikr-card';
       const isDone = item.currentCount === 0;
 
-      // فحص طول نص الفضل
       const hasLongNote = item.fullNote && item.fullNote.length > 70;
       const notePreview = hasLongNote ? item.fullNote.substring(0, 68) + '...' : (item.fullNote || '');
 
@@ -146,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ${item.fullNote ? `
                 <div class="dhikr-note-header">
                   <p class="dhikr-note-preview">${notePreview}</p>
-                  ${hasLongNote ? `<button class="virtue-info-btn" onclick="openVirtueModal('${item.id}')" title="عرض الفضل والأحاديث كاملة">!</button>` : ''}
+                  ${hasLongNote ? `<button class="virtue-info-btn" onclick="openVirtueModal('${item.id}')" title="عرض الفضل كاملاً">!</button>` : ''}
                 </div>
               ` : ''}
 
@@ -187,51 +353,145 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // فتح نافذة الفضل والحديث الكامل عند الضغط على (!)
+  // ==================== 7. عزل معرفات الإضافة اليدوية للمستخدم ====================
+  // 1. إضافة مجموعة خاصة بمعرف user_cat_
+  const addCategoryModal = document.getElementById('addCategoryModal');
+  const openAddCategoryModalBtn = document.getElementById('openAddCategoryModalBtn');
+  const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
+  const saveCategoryBtn = document.getElementById('saveCategoryBtn');
+  const newCategoryNameInput = document.getElementById('newCategoryNameInput');
+
+  openAddCategoryModalBtn.addEventListener('click', () => {
+    newCategoryNameInput.value = '';
+    addCategoryModal.classList.add('show');
+  });
+  cancelCategoryBtn.addEventListener('click', () => addCategoryModal.classList.remove('show'));
+
+  saveCategoryBtn.addEventListener('click', () => {
+    const name = newCategoryNameInput.value.trim();
+    if (!name) return alert('يرجى كتابة اسم المجموعة');
+
+    // بادئة معزولة تمنع أي تضارب مع تحديثات النظام
+    const newGroup = {
+      id: 'user_cat_' + Date.now(),
+      name: name,
+      isCustom: true,
+      items: []
+    };
+
+    azkarState.push(newGroup);
+    saveAzkarState();
+    addCategoryModal.classList.remove('show');
+    renderAzkarCategories();
+  });
+
+  // 2. إضافة ذكر خاص بمعرف user_item_
+  const dhikrEditModal = document.getElementById('dhikrEditModal');
+  const openAddDhikrModalBtn = document.getElementById('openAddDhikrModalBtn');
+  const cancelDhikrBtn = document.getElementById('cancelDhikrBtn');
+  const saveDhikrBtn = document.getElementById('saveDhikrBtn');
+  const dhikrModalTitle = document.getElementById('dhikrModalTitle');
+  const inputPreText = document.getElementById('inputPreText');
+  const inputText = document.getElementById('inputText');
+  const inputNote = document.getElementById('inputNote');
+  const inputCount = document.getElementById('inputCount');
+  let editingDhikrId = null;
+
+  openAddDhikrModalBtn.addEventListener('click', () => {
+    editingDhikrId = null;
+    dhikrModalTitle.textContent = 'إضافة ذكر جديد';
+    inputPreText.value = '';
+    inputText.value = '';
+    inputNote.value = '';
+    inputCount.value = '1';
+    dhikrEditModal.classList.add('show');
+  });
+
+  window.editSpecificDhikr = (itemId) => {
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
+    const item = category.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    editingDhikrId = itemId;
+    dhikrModalTitle.textContent = 'تعديل الذكر';
+    inputPreText.value = item.pre || '';
+    inputText.value = item.text || '';
+    inputNote.value = item.fullNote || '';
+    inputCount.value = item.count || 1;
+    dhikrEditModal.classList.add('show');
+  };
+
+  cancelDhikrBtn.addEventListener('click', () => dhikrEditModal.classList.remove('show'));
+
+  saveDhikrBtn.addEventListener('click', () => {
+    const text = inputText.value.trim();
+    const count = parseInt(inputCount.value);
+    if (!text) return alert('حقل نص الذكر إجباري!');
+    if (isNaN(count) || count < 1) return alert('العدد يجب أن يكون 1 على الأقل!');
+
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
+    if (!category) return;
+
+    if (editingDhikrId) {
+      const item = category.items.find(i => i.id === editingDhikrId);
+      if (item) {
+        item.pre = inputPreText.value.trim();
+        item.text = text;
+        item.fullNote = inputNote.value.trim();
+        item.count = count;
+        item.currentCount = count;
+      }
+    } else {
+      // بادئة معزولة لذكر المستخدم
+      category.items.push({
+        id: 'user_item_' + Date.now(),
+        pre: inputPreText.value.trim(),
+        text: text,
+        fullNote: inputNote.value.trim(),
+        count: count,
+        currentCount: count,
+        alert: ''
+      });
+    }
+
+    saveAzkarState();
+    dhikrEditModal.classList.remove('show');
+    renderDhikrCards();
+  });
+
+  // ==================== 8. بقية الوظائف والمودالات ====================
   const virtueModal = document.getElementById('virtueModal');
   const virtueModalContent = document.getElementById('virtueModalContent');
-  const closeVirtueModalBtn = document.getElementById('closeVirtueModalBtn');
+  document.getElementById('closeVirtueModalBtn').addEventListener('click', () => virtueModal.classList.remove('show'));
 
   window.openVirtueModal = (itemId) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     const item = category.items.find(i => i.id === itemId);
     if (!item) return;
-
     virtueModalContent.innerText = item.fullNote;
     virtueModal.classList.add('show');
   };
 
-  closeVirtueModalBtn.addEventListener('click', () => virtueModal.classList.remove('show'));
-
-  // فتح نافذة التنبيه عند الضغط على زر التنبيه
   const alertModal = document.getElementById('alertModal');
   const alertModalContent = document.getElementById('alertModalContent');
-  const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
+  document.getElementById('closeAlertModalBtn').addEventListener('click', () => alertModal.classList.remove('show'));
 
   window.openAlertModal = (itemId) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     const item = category.items.find(i => i.id === itemId);
     if (!item) return;
-
     alertModalContent.innerText = item.alert;
     alertModal.classList.add('show');
   };
 
-  closeAlertModalBtn.addEventListener('click', () => alertModal.classList.remove('show'));
-
-  // إغلاق النوافذ عند النقر على الخلفية المعتمة
-  [virtueModal, alertModal].forEach(m => {
-    m.addEventListener('click', (e) => {
-      if (e.target === m) m.classList.remove('show');
-    });
+  [virtueModal, alertModal, searchFavModal].forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('show'); });
   });
 
-  // مشاركة الذكر
   window.shareSpecificDhikr = (itemId) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     const item = category.items.find(i => i.id === itemId);
     if (!item) return;
-
     const shareContent = `${item.pre ? item.pre + '\n' : ''}${item.text}\n${item.fullNote ? '\n(الفضل): ' + item.fullNote : ''}\n(تطبيق الحياة الطيبة)`;
     if (navigator.share) {
       navigator.share({ title: category.name, text: shareContent });
@@ -241,13 +501,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // ترتيب الأذكار
   window.moveDhikr = (index, dir) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
     const targetIdx = index + dir;
     if (targetIdx < 0 || targetIdx >= category.items.length) return;
-
     const temp = category.items[index];
     category.items[index] = category.items[targetIdx];
     category.items[targetIdx] = temp;
@@ -255,7 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDhikrCards();
   };
 
-  // خيارات القائمة
   const readerMenuBtn = document.getElementById('readerMenuBtn');
   const readerDropdownMenu = document.getElementById('readerDropdownMenu');
   readerMenuBtn.addEventListener('click', (e) => {
@@ -269,14 +526,12 @@ document.addEventListener('DOMContentLoaded', () => {
     isReorderMode = false;
     renderDhikrCards();
   });
-
   document.getElementById('toggleReorderModeBtn').addEventListener('click', () => {
     isReorderMode = !isReorderMode;
     isEditMode = false;
     renderDhikrCards();
   });
 
-  // تصفير العدادات
   document.getElementById('resetCountersBtn').addEventListener('click', () => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (category) {
@@ -290,22 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('completionModal').classList.remove('show');
   });
 
-  // مشاركة مواقيت الصلاة والعداد التنازلي
-  const openShareBtn = document.getElementById('openShareBtn');
-  const shareModalBackdrop = document.getElementById('shareModalBackdrop');
-  if (openShareBtn) {
-    openShareBtn.addEventListener('click', () => shareModalBackdrop.classList.add('show'));
-    shareModalBackdrop.addEventListener('click', (e) => {
-      if (e.target === shareModalBackdrop) shareModalBackdrop.classList.remove('show');
-    });
-    document.getElementById('confirmShareBtn').addEventListener('click', () => {
-      if (navigator.share) {
-        navigator.share({ title: 'الحياة الطيبة', text: 'صلاة العصر بتوقيت الرياض: 3:15 م', url: window.location.href });
-      }
-      shareModalBackdrop.classList.remove('show');
-    });
-  }
-
+  // العداد التنازلي والمشاركة
   let remainingSeconds = (12 * 60) + 28;
   const countdownEl = document.getElementById('countdownTimer');
   if (countdownEl) {
