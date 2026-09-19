@@ -1,77 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ==================== 1. بنك البيانات الأساسي للأذكار ====================
-  const DEFAULT_AZKAR_DATA = [
-    {
-      id: 'morning',
-      name: 'أذكار الصباح',
-      isCustom: false,
-      items: [
-        {
-          id: 'm1',
-          pre: 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ',
-          text: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ [آية الكرسي - البقرة 255]',
-          note: 'من قالها حين يصبح أُجير من الجن حتى يمسي، ومن قالها حين يمسي أُجير منهم حتى يصبح.',
-          count: 1,
-          currentCount: 1
-        },
-        {
-          id: 'm2',
-          pre: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-          text: 'قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ',
-          note: 'تكفيه من كل شيء (3 مرات)',
-          count: 3,
-          currentCount: 3
-        },
-        {
-          id: 'm3',
-          pre: '',
-          text: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَٰهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ.',
-          note: 'من أذكار الصباح العظيمة',
-          count: 1,
-          currentCount: 1
-        }
-      ]
-    },
-    {
-      id: 'evening',
-      name: 'أذكار المساء',
-      isCustom: false,
-      items: [
-        {
-          id: 'e1',
-          pre: 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ',
-          text: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ [آية الكرسي]',
-          note: 'أجير من الجن حتى يصبح',
-          count: 1,
-          currentCount: 1
-        },
-        {
-          id: 'e2',
-          pre: '',
-          text: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَٰهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ.',
-          note: 'تقال في المساء مرة واحدة',
-          count: 1,
-          currentCount: 1
-        }
-      ]
-    },
-    { id: 'after_prayer', name: 'أذكار بعد الصلاة', isCustom: false, items: [] },
-    { id: 'prayer', name: 'أذكار الصلاة', isCustom: false, items: [] },
-    { id: 'sleep', name: 'أذكار النوم', isCustom: false, items: [] },
-    { id: 'adhan', name: 'أذكار الآذان', isCustom: false, items: [] },
-    { id: 'wake', name: 'أذكار الإستيقاظ', isCustom: false, items: [] },
-    { id: 'mosque', name: 'أذكار المسجد', isCustom: false, items: [] },
-    { id: 'wudu', name: 'أذكار الوضوء', isCustom: false, items: [] },
-    { id: 'home', name: 'أذكار المنزل', isCustom: false, items: [] },
-    { id: 'food', name: 'أذكار الطعام', isCustom: false, items: [] },
-    { id: 'toilet', name: 'أذكار الخلاء', isCustom: false, items: [] },
-    { id: 'travel', name: 'أذكار السفر', isCustom: false, items: [] },
-    { id: 'others', name: 'أذكار أخرى', isCustom: false, items: [] }
-  ];
+  // ==================== 1. إدارة واسترجاع بنك الأذكار مع فحص الترقية ====================
+  const SAVED_VERSION_KEY = 'hayat_azkar_version';
+  const currentVersion = localStorage.getItem(SAVED_VERSION_KEY);
 
-  // استرجاع البيانات من LocalStorage أو استخدام الافتراضية
-  let azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
+  let azkarState = [];
+
+  // إذا كانت النسخة جديدة نقوم بتحديث البيانات فوراً لحفظ الأذكار الكاملة الجديدة
+  if (currentVersion !== AZKAR_DATA_VERSION) {
+    const oldData = JSON.parse(localStorage.getItem('hayat_azkar_data') || '[]');
+    // الاحتفاظ بأي مجموعات أذكار خاصة كان المستخدم قد أنشأها بنفسه
+    const customUserGroups = oldData.filter(g => g.isCustom);
+    azkarState = [...DEFAULT_AZKAR_DATA, ...customUserGroups];
+    
+    localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
+    localStorage.setItem(SAVED_VERSION_KEY, AZKAR_DATA_VERSION);
+  } else {
+    azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
+  }
 
   function saveAzkarState() {
     localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
@@ -116,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     azkarGroupsContainer.innerHTML = '';
 
     azkarState.forEach(group => {
-      // حساب نسبة الإنجاز
       const totalItems = group.items ? group.items.length : 0;
       let completedItems = 0;
       if (totalItems > 0) {
@@ -167,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dhikrCardsContainer.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
           <p style="font-size: 16px;">لا توجد أذكار في هذه المجموعة بعد.</p>
-          <p style="font-size: 13px; margin-top: 6px;">اضغط على زر (+) لإضافة أول ذكر لك!</p>
+          <p style="font-size: 13px; margin-top: 6px;">اضغط على زر (+) لإضافة ذكرك الأول!</p>
         </div>
       `;
       return;
@@ -176,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
     category.items.forEach((item, index) => {
       const card = document.createElement('div');
       card.className = 'dhikr-card';
-
       const isDone = item.currentCount === 0;
 
       card.innerHTML = `
@@ -213,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // تقليص عداد الذكر بالضغط
+  // تقليص عداد الذكر بنقرة واحدة
   window.decrementDhikr = (itemId) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
@@ -221,12 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!item || item.currentCount <= 0) return;
 
     item.currentCount--;
-    if (navigator.vibrate) navigator.vibrate(35); // اهتزاز خفيف باللمس
+    if (navigator.vibrate) navigator.vibrate(35);
 
     saveAzkarState();
     renderDhikrCards();
 
-    // التحقق هل أتم جميع أذكار المجموعة
     const allDone = category.items.every(it => it.currentCount === 0);
     if (allDone) {
       setTimeout(() => {
@@ -261,11 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
       navigator.share({ title: category.name, text: shareContent });
     } else {
       navigator.clipboard.writeText(shareContent);
-      alert('تم نسخ الذكر بنجاح!');
+      alert('تم نسخ الذكر بنجاح لمشاركته!');
     }
   };
 
-  // قائمة الثلاث نقاط (وضع التعديل وترتيب الأذكار)
+  // قائمة الثلاث نقاط
   const readerMenuBtn = document.getElementById('readerMenuBtn');
   const readerDropdownMenu = document.getElementById('readerDropdownMenu');
   const toggleEditModeBtn = document.getElementById('toggleEditModeBtn');
@@ -292,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDhikrCards();
   });
 
-  // ==================== 5. مودال إضافة مجموعة خاصة ====================
+  // إضافة مجموعة خاصة
   const addCategoryModal = document.getElementById('addCategoryModal');
   const openAddCategoryModalBtn = document.getElementById('openAddCategoryModalBtn');
   const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
@@ -326,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAzkarCategories();
   });
 
-  // ==================== 6. مودال إضافة أو تعديل ذكر ====================
+  // إضافة أو تعديل ذكر
   const dhikrEditModal = document.getElementById('dhikrEditModal');
   const openAddDhikrModalBtn = document.getElementById('openAddDhikrModalBtn');
   const cancelDhikrBtn = document.getElementById('cancelDhikrBtn');
@@ -337,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputText = document.getElementById('inputText');
   const inputNote = document.getElementById('inputNote');
   const inputCount = document.getElementById('inputCount');
-
   let editingDhikrId = null;
 
   openAddDhikrModalBtn.addEventListener('click', () => {
@@ -383,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!category) return;
 
     if (editingDhikrId) {
-      // تعديل ذكر حالي
       const item = category.items.find(i => i.id === editingDhikrId);
       if (item) {
         item.pre = inputPreText.value.trim();
@@ -393,7 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
         item.currentCount = count;
       }
     } else {
-      // إضافة ذكر جديد
       category.items.push({
         id: 'item_' + Date.now(),
         pre: inputPreText.value.trim(),
@@ -409,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDhikrCards();
   });
 
-  // ==================== 7. مودال الاحتفالية (اللهم بارك) ====================
+  // مودال الاحتفالية (اللهم بارك)
   const completionModal = document.getElementById('completionModal');
   const resetCountersBtn = document.getElementById('resetCountersBtn');
   const reviewDhikrBtn = document.getElementById('reviewDhikrBtn');
@@ -430,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     completionModal.classList.remove('show');
   });
 
-  // ==================== 8. بقية وظائف الرئيسية (العداد التنازلي والمشاركة) ====================
+  // بقية وظائف الرئيسية
   const openShareBtn = document.getElementById('openShareBtn');
   const shareModalBackdrop = document.getElementById('shareModalBackdrop');
   const confirmShareBtn = document.getElementById('confirmShareBtn');
@@ -461,7 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   }
 
-  // تسجيل Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
   }
