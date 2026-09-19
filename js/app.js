@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabAzkar = document.getElementById('tabAzkar');
   const openAzkarTileBtn = document.getElementById('openAzkarTileBtn');
   const openFavoritesBtn = document.getElementById('openFavoritesBtn');
+  const openFavTileBtn = document.getElementById('openFavTileBtn');
   const backToHomeBtn = document.getElementById('backToHomeBtn');
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
@@ -83,6 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
   tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
+  if (openFavTileBtn) {
+  openFavTileBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
+}
   backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
   backToCategoriesBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
   backToCategoriesFromFavBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
@@ -91,13 +95,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const azkarGroupsContainer = document.getElementById('azkarGroupsContainer');
   let currentActiveCategoryId = null;
 
-  function renderAzkarCategories() {
-    azkarGroupsContainer.innerHTML = '';
-    azkarState.forEach(group => {
-      const card = createCategoryCard(group);
-      azkarGroupsContainer.appendChild(card);
-    });
+  function renderAzkarCategories(filterQuery = '') {
+  azkarGroupsContainer.innerHTML = '';
+  const query = filterQuery.trim().toLowerCase();
+
+  const filteredGroups = azkarState.filter(group => {
+    if (!query) return true;
+    return group.name.toLowerCase().includes(query);
+  });
+
+  if (filteredGroups.length === 0) {
+    azkarGroupsContainer.innerHTML = `
+      <div style="grid-column: span 2; text-align: center; padding: 40px 20px; color: var(--text-muted);">
+        <p style="font-size: 15px;">لا توجد أذكار تطابق: "${filterQuery}"</p>
+      </div>
+    `;
+    return;
   }
+
+  filteredGroups.forEach(group => {
+    const card = createCategoryCard(group);
+    azkarGroupsContainer.appendChild(card);
+  });
+}
+
+// أحداث فتح وإغلاق والبحث المباشر
+const toggleCategorySearchBtn = document.getElementById('toggleCategorySearchBtn');
+const categorySearchBar = document.getElementById('categorySearchBar');
+const categorySearchInput = document.getElementById('categorySearchInput');
+const clearCategorySearchBtn = document.getElementById('clearCategorySearchBtn');
+
+if (toggleCategorySearchBtn) {
+  toggleCategorySearchBtn.addEventListener('click', () => {
+    categorySearchBar.classList.toggle('active');
+    if (categorySearchBar.classList.contains('active')) {
+      categorySearchInput.focus();
+    } else {
+      categorySearchInput.value = '';
+      renderAzkarCategories('');
+    }
+  });
+}
+
+if (categorySearchInput) {
+  categorySearchInput.addEventListener('input', (e) => {
+    renderAzkarCategories(e.target.value);
+  });
+}
+
+if (clearCategorySearchBtn) {
+  clearCategorySearchBtn.addEventListener('click', () => {
+    categorySearchInput.value = '';
+    renderAzkarCategories('');
+    categorySearchInput.focus();
+  });
+}
 
   // بطاقة المجموعة المشتركة
   function createCategoryCard(group) {
