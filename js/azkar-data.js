@@ -856,7 +856,7 @@ function parseRawUserAzkar(raw) {
         }
 
         currentItem = {
-          id: `item_${secIdx}_${items.length}_${Date.now()}`,
+          id: `cat_${secIdx}_item_${items.length + 1}`,
           pre: preText,
           text: cleanText,
           count: count,
