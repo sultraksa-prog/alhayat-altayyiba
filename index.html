@@ -117,7 +117,12 @@
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
         <h2 class="section-page-title">أذكار المسلم</h2>
-        <div style="width: 24px;"></div>
+        <!-- زر النجمة الذهبية في أعلى يسار الشاشة -->
+        <button class="header-star-btn" id="openFavoritesBtn" title="الأذكار المفضلة">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#F59E0B" stroke="#D97706" stroke-width="1.5">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
       </header>
 
       <div class="azkar-groups-grid" id="azkarGroupsContainer"></div>
@@ -127,7 +132,43 @@
       </button>
     </div>
 
-    <!-- ==================== الشاشة 3: قراءة الأذكار ==================== -->
+    <!-- ==================== الشاشة 3 (الجديدة): الأذكار المفضلة ⭐ ==================== -->
+    <div id="screen-azkar-favorites" class="screen-view">
+      <header class="section-nav-header">
+        <button class="nav-back-btn" id="backToCategoriesFromFavBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <h2 class="section-page-title" style="display: flex; align-items: center; gap: 6px;">
+          <span>الأذكار المفضلة</span>
+          <span style="color: #F59E0B; font-size: 18px;">★</span>
+        </h2>
+        <div class="reader-header-actions">
+          <!-- زر الثلاث نقاط لترتيب المفضلة -->
+          <div class="header-icon-btn" id="favMenuBtn" title="خيارات">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </div>
+          <div class="dropdown-menu" id="favDropdownMenu">
+            <div class="dropdown-item" id="toggleFavReorderBtn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 5 17 10"/><polyline points="17 14 12 19 7 14"/></svg>
+              <span>ترتيب المفضلة</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- شبكة بطاقات الأذكار المفضلة -->
+      <div class="azkar-groups-grid" id="favoritesGroupsContainer"></div>
+
+      <!-- زر إضافة / بحث واختيار أذكار للمفضلة -->
+      <div class="fav-actions-bottom-bar">
+        <button class="add-to-fav-btn" id="openSearchFavModalBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>إضافة أو بحث عن أذكار للمفضلة</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== الشاشة 4: قراءة الأذكار ==================== -->
     <div id="screen-azkar-reader" class="screen-view">
       <header class="section-nav-header">
         <button class="nav-back-btn" id="backToCategoriesBtn">
@@ -163,14 +204,8 @@
 
     <!-- شريط التبويبات السفلي -->
     <nav class="bottom-nav">
-      <a href="#" class="nav-item active" id="tabHome">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <span>الرئيسية</span>
-      </a>
-      <a href="#" class="nav-item" id="tabAzkar">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>
-        <span>أذكار المسلم</span>
-      </a>
+      <a href="#" class="nav-item active" id="tabHome"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>الرئيسية</span></a>
+      <a href="#" class="nav-item" id="tabAzkar"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg><span>أذكار المسلم</span></a>
       <a href="#" class="nav-item"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><polygon points="12 8 15 15 12 13 9 15" fill="currentColor"/></svg><span>القبلة</span></a>
       <a href="#" class="nav-item"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>الإعدادات</span></a>
     </nav>
@@ -189,24 +224,45 @@
       </div>
     </div>
 
-    <!-- مودال إضافة مجموعة -->
+    <!-- مودال إضافة مجموعة خاصة -->
     <div class="custom-modal-backdrop" id="addCategoryModal">
       <div class="custom-modal-card">
-        <h3 class="modal-card-title">اضافة مجموعة أذكار</h3>
-        <div class="modal-input-field"><label>اسم المجموعة</label><input type="text" id="newCategoryNameInput"></div>
-        <div class="modal-actions-row"><button class="modal-btn-link" id="cancelCategoryBtn">إلغاء</button><button class="modal-btn-primary" id="saveCategoryBtn">اضافة</button></div>
+        <h3 class="modal-card-title">اضافة مجموعة أذكار خاصة</h3>
+        <div class="modal-input-field">
+          <label>اسم المجموعة</label>
+          <input type="text" id="newCategoryNameInput" placeholder="اكتب اسم المجموعة الخاصة...">
+        </div>
+        <div class="modal-actions-row">
+          <button class="modal-btn-link" id="cancelCategoryBtn">إلغاء</button>
+          <button class="modal-btn-primary" id="saveCategoryBtn">اضافة</button>
+        </div>
       </div>
     </div>
 
-    <!-- مودال إضافة/تعديل ذكر -->
+    <!-- مودال إضافة/تعديل ذكر خاص بالمستخدم -->
     <div class="custom-modal-backdrop" id="dhikrEditModal">
       <div class="custom-modal-card">
         <h3 class="modal-card-title" id="dhikrModalTitle">إضافة ذكر جديد</h3>
-        <div class="modal-input-field"><label>ما قبل الذكر (اختياري)</label><input type="text" id="inputPreText"></div>
-        <div class="modal-input-field"><label>نص الذكر *</label><textarea id="inputText" rows="3"></textarea></div>
-        <div class="modal-input-field"><label>ملاحظة / الفضل (اختياري)</label><textarea id="inputNote" rows="2"></textarea></div>
-        <div class="modal-input-field"><label>العدد المطلوب *</label><input type="number" id="inputCount" min="1" value="1"></div>
-        <div class="modal-actions-row"><button class="modal-btn-link" id="cancelDhikrBtn">إلغاء</button><button class="modal-btn-primary" id="saveDhikrBtn">حفظ</button></div>
+        <div class="modal-input-field">
+          <label>ما قبل الذكر (اختياري)</label>
+          <input type="text" id="inputPreText" placeholder="مثال: بِسْمِ اللَّهِ...">
+        </div>
+        <div class="modal-input-field">
+          <label>نص الذكر *</label>
+          <textarea id="inputText" rows="3" placeholder="اكتب نص الذكر هنا..."></textarea>
+        </div>
+        <div class="modal-input-field">
+          <label>ملاحظة / الفضل (اختياري)</label>
+          <textarea id="inputNote" rows="2" placeholder="اكتب فضل الذكر أو مصدره..."></textarea>
+        </div>
+        <div class="modal-input-field">
+          <label>العدد المطلوب *</label>
+          <input type="number" id="inputCount" min="1" value="1">
+        </div>
+        <div class="modal-actions-row">
+          <button class="modal-btn-link" id="cancelDhikrBtn">إلغاء</button>
+          <button class="modal-btn-primary" id="saveDhikrBtn">حفظ</button>
+        </div>
       </div>
     </div>
 
@@ -222,12 +278,10 @@
       </div>
     </div>
 
-    <!-- مودال الفضل والحديث الكامل (يفتح عند الضغط على أيقونة التعجب) -->
+    <!-- مودال فضل الذكر الكامل (!) -->
     <div class="custom-modal-backdrop" id="virtueModal">
       <div class="custom-modal-card">
-        <h3 class="modal-card-title" style="color: var(--primary-blue); display: flex; align-items: center; gap: 6px;">
-          <span>فضل وأجر هذا الذكر</span>
-        </h3>
+        <h3 class="modal-card-title" style="color: var(--primary-blue);">فضل وأجر هذا الذكر</h3>
         <div id="virtueModalContent" class="modal-detail-text"></div>
         <div class="modal-actions-row">
           <button class="modal-btn-primary" id="closeVirtueModalBtn">إغلاق</button>
@@ -235,15 +289,29 @@
       </div>
     </div>
 
-    <!-- مودال التنبيه الخاص (يفتح عند الضغط على زر التنبيه) -->
+    <!-- مودال التنبيه الخاص (⚠️) -->
     <div class="custom-modal-backdrop" id="alertModal">
       <div class="custom-modal-card">
-        <h3 class="modal-card-title" style="color: #B45309; display: flex; align-items: center; gap: 6px;">
-          <span>⚠️ تنبيه وتوضيح</span>
-        </h3>
+        <h3 class="modal-card-title" style="color: #B45309;">⚠️ تنبيه وتوضيح</h3>
         <div id="alertModalContent" class="modal-alert-text"></div>
         <div class="modal-actions-row">
           <button class="modal-btn-primary" style="background: #D97706;" id="closeAlertModalBtn">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال البحث واختيار الأذكار لإضافتها للمفضلة ⭐ -->
+    <div class="custom-modal-backdrop" id="searchFavModal">
+      <div class="custom-modal-card" style="max-height: 85vh; display: flex; flex-direction: column;">
+        <h3 class="modal-card-title">إضافة أذكار للمفضلة</h3>
+        <div class="search-input-box">
+          <input type="text" id="favSearchInput" placeholder="ابحث عن اسم القسم أو الذكر...">
+        </div>
+        <div class="fav-search-results-list" id="favSearchResultsList">
+          <!-- تظهر نتائج البحث هنا مع زر إضافة/إزالة -->
+        </div>
+        <div class="modal-actions-row">
+          <button class="modal-btn-primary" id="closeSearchFavBtn">تم</button>
         </div>
       </div>
     </div>
