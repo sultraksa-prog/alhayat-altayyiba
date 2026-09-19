@@ -896,3 +896,99 @@ html, body {
   font-weight: 700;
   cursor: pointer;
 }
+/* أزرار الفضائل والتنبيهات داخل بطاقة الذكر */
+.dhikr-note-wrapper {
+  margin-top: 10px;
+  background-color: #F8FAFC;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-right: 3px solid var(--primary-blue);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dhikr-note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dhikr-note-preview {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* زر أيقونة التعجب لعرض الفضل كاملاً */
+.virtue-info-btn {
+  background: #EBF3FA;
+  border: 1px solid #BCD8F0;
+  color: var(--primary-blue);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s, background-color 0.2s;
+}
+
+.virtue-info-btn:active {
+  transform: scale(0.9);
+  background: var(--primary-blue);
+  color: #FFFFFF;
+}
+
+/* زر التنبيه الذهبي المتناسق مع التصميم */
+.alert-badge-btn {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.2s;
+}
+
+.alert-badge-btn:active {
+  background: #FDE68A;
+  transform: scale(0.96);
+}
+
+/* نصوص النوافذ المنبثقة للفضائل والتنبيهات */
+.modal-detail-text {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: var(--text-main);
+  background: #F8FAFC;
+  padding: 14px;
+  border-radius: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #E2E8F0;
+}
+
+.modal-alert-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #92400E;
+  background: #FFFBEB;
+  padding: 14px;
+  border-radius: 12px;
+  border-right: 4px solid #F59E0B;
+  max-height: 300px;
+  overflow-y: auto;
+}
