@@ -1094,3 +1094,65 @@ html, body {
 .fav-toggle-btn.active {
   color: #F59E0B;
 }
+
+/* زر أيقونة البحث بجوار النجمة */
+.header-action-btn-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #EEF6FC;
+  border: 1px solid #BCD8F0;
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.header-action-btn-circle:active {
+  background: var(--primary-blue);
+  color: #FFFFFF;
+}
+
+/* شريط البحث المنسدل داخل شاشة الأذكار */
+.category-search-bar {
+  display: none; /* مخفي افتراضياً ويظهر عند الضغط على أيقونة البحث */
+  padding: 10px 16px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  position: relative;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.category-search-bar.active {
+  display: block;
+}
+
+.category-search-bar input {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: #F8FAFC;
+}
+
+.category-search-bar input:focus {
+  border-color: var(--primary-blue);
+  background: #FFFFFF;
+}
+
+.clear-search-btn {
+  position: absolute;
+  top: 50%;
+  left: 28px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
