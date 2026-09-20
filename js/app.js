@@ -1153,26 +1153,51 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }, 1000);
   }
 
-  // أحداث التاريخ والأسهم (معرفة مرة واحدة فقط دون أي تكرار)
+  // أحداث التاريخ والأسهم (محمية من التداخل)
   const prevDayBtn = document.getElementById('prevDayBtn');
   const nextDayBtn = document.getElementById('nextDayBtn');
   const returnTodayBtn = document.getElementById('returnTodayBtn');
   const dateStripContainer = document.getElementById('dateStripContainer');
   const dateFlipBtn = document.getElementById('dateFlipBtn');
+  const dateTextClickArea = document.getElementById('dateTextClickArea');
 
-  if (prevDayBtn) prevDayBtn.addEventListener('click', (e) => { e.stopPropagation(); currentDayOffset--; fetchPrayerTimes(); });
-  if (nextDayBtn) nextDayBtn.addEventListener('click', (e) => { e.stopPropagation(); currentDayOffset++; fetchPrayerTimes(); });
-  if (returnTodayBtn) returnTodayBtn.addEventListener('click', (e) => { e.stopPropagation(); currentDayOffset = 0; fetchPrayerTimes(); });
+  // السهم الأيمن: اليوم السابق
+  if (prevDayBtn) {
+    prevDayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentDayOffset--;
+      fetchPrayerTimes();
+    });
+  }
+
+  // السهم الأيسر: اليوم التالي
+  if (nextDayBtn) {
+    nextDayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentDayOffset++;
+      fetchPrayerTimes();
+    });
+  }
+
+  // زر "اليوم" العائم للعودة لليوم الحالي
+  if (returnTodayBtn) {
+    returnTodayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentDayOffset = 0;
+      fetchPrayerTimes();
+    });
+  }
+
+  // قلب التاريخ محصور فقط بالنقر على النص أو مؤشر ⇅ (وليس كامل الحاوية)
   if (dateFlipBtn) dateFlipBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
+  if (dateTextClickArea) dateTextClickArea.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
 
+  // السحب العمودي فقط على كرت التاريخ
   if (dateStripContainer) {
     let touchY = 0;
     dateStripContainer.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
     dateStripContainer.addEventListener('touchend', (e) => {
-      if (Math.abs(e.changedTouches[0].clientY - touchY) > 25) toggleDateMode();
-    });
-    dateStripContainer.addEventListener('click', (e) => {
-      if (e.target !== prevDayBtn && e.target !== nextDayBtn && e.target !== returnTodayBtn) {
+      if (Math.abs(e.changedTouches[0].clientY - touchY) > 25) {
         toggleDateMode();
       }
     });
