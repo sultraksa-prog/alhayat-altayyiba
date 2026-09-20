@@ -493,23 +493,44 @@
 
   </div>
 
-  <!-- ==================== نافذة التحديد اليدوي للمدينة ==================== -->
+  <!-- ==================== نافذة تحديد واختيار المدينة ==================== -->
     <div class="custom-modal-backdrop" id="manualLocationModal">
-      <div class="custom-modal-card" style="max-height: 85vh; display: flex; flex-direction: column;">
-        <h3 class="modal-card-title" style="color: var(--primary-blue); margin-bottom: 6px;">اختر مدينتك</h3>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">اختر من المدن الشائعة أو اكتب اسم مدينتك:</p>
-        
-        <!-- مربع البحث عن أي مدينة -->
-        <div class="search-input-box" style="margin-bottom: 12px;">
-          <input type="text" id="manualCityInput" placeholder="اكتب اسم مدينتك هنا (مثال: بريدة، تبوك...)">
+      <div class="custom-modal-card" style="max-height: 88vh; display: flex; flex-direction: column; padding: 20px 16px;">
+        <h3 class="modal-card-title" style="color: var(--primary-blue); margin-bottom: 4px;">تحديد الموقع والمدينة</h3>
+        <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 12px;">اختر طريقة تحديد مواقيت الصلاة:</p>
+
+        <!-- خيار 1: زر التحديد التلقائي عبر GPS -->
+        <button type="button" class="auto-location-btn" id="autoDetectLocationBtn">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+          <span>تحديد موقعي الحالي تلقائياً (GPS)</span>
+        </button>
+
+        <div class="location-modal-divider">
+          <span>أو اختر المحافظة يدوياً</span>
         </div>
 
-        <!-- أزرار المدن الشائعة بنقرة واحدة -->
-        <div class="quick-cities-grid" id="quickCitiesGrid">
-          <!-- يتم توليد أزرار المدن تلقائياً -->
+        <!-- شريط تصفية الدول السريعة -->
+        <div class="country-filter-bar" id="countryFilterBar">
+          <button type="button" class="country-chip active" data-country="all">الكل</button>
+          <button type="button" class="country-chip" data-country="السعودية">السعودية</button>
+          <button type="button" class="country-chip" data-country="مصر">مصر</button>
+          <button type="button" class="country-chip" data-country="اليمن">اليمن</button>
+          <button type="button" class="country-chip" data-country="الإمارات">الإمارات</button>
+          <button type="button" class="country-chip" data-country="الكويت">الكويت</button>
+          <button type="button" class="country-chip" data-country="عمان">عُمان</button>
+          <button type="button" class="country-chip" data-country="قطر">قطر</button>
+          <button type="button" class="country-chip" data-country="البحرين">البحرين</button>
         </div>
 
-        <div class="modal-actions-row" style="margin-top: 14px;">
+        <!-- مربع البحث المباشر -->
+        <div class="search-input-box" style="margin-bottom: 10px;">
+          <input type="text" id="manualCityInput" placeholder="ابحث باسم المحافظة أو المدينة...">
+        </div>
+
+        <!-- قائمة المحافظات والمدن -->
+        <div class="quick-cities-grid" id="quickCitiesGrid"></div>
+
+        <div class="modal-actions-row" style="margin-top: 10px;">
           <button type="button" class="modal-btn-link" id="closeManualLocationBtn">إلغاء</button>
         </div>
       </div>
