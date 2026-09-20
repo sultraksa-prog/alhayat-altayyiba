@@ -456,9 +456,17 @@
         <h3 class="modal-card-title" id="longPressModalTitle" style="color: var(--primary-blue); margin-bottom: 8px;"></h3>
         <p class="celebration-text" id="longPressModalDesc" style="margin-bottom: 22px; font-size: 14.5px;"></p>
         
-        <!-- الأزرار تتغير ديناميكياً حسب حالة القراءة -->
-        <div id="longPressModalActions" style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- يتم توليد الأزرار بالجافاسكريبت -->
+        <!-- أزرار الحالة 1: لم يقرأ منها شيئاً -->
+        <div id="lpNotStartedActions" style="display: none; flex-direction: column; gap: 10px;">
+          <button class="modal-btn-primary" id="lpStartBtn" style="padding: 12px; font-size: 15px;">ابدأ القراءة</button>
+          <button class="modal-btn-link" id="lpCancelBtn1" style="padding: 6px; color: var(--text-muted);">إلغاء</button>
+        </div>
+
+        <!-- أزرار الحالة 2: قرأ جزءاً منها أو أكملها -->
+        <div id="lpStartedActions" style="display: none; flex-direction: column; gap: 10px;">
+          <button class="modal-btn-primary" id="lpResumeBtn" style="padding: 12px; font-size: 15px;">إكمال الأذكار</button>
+          <button class="modal-btn-link text-primary" id="lpResetBtn" style="padding: 8px; font-weight: 700;">تصفير العدادات والبدء من جديد</button>
+          <button class="modal-btn-link" id="lpCancelBtn2" style="padding: 4px; color: var(--text-muted);">إلغاء</button>
         </div>
       </div>
     </div>
