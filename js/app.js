@@ -909,19 +909,194 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 });
 
   // العداد التنازلي والمشاركة
-  let remainingSeconds = (12 * 60) + 28;
-  const countdownEl = document.getElementById('countdownTimer');
-  if (countdownEl) {
-    setInterval(() => {
-      if (remainingSeconds > 0) {
-        remainingSeconds--;
-        const m = Math.floor(remainingSeconds / 60);
-        const s = remainingSeconds % 60;
-        countdownEl.textContent = `${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
+  // ==================== محرك مواقيت الصلاة والموقع الحي (أم القرى) ====================
+  // الموقع الافتراضي: مكة المكرمة
+  const DEFAULT_LOCATION = {
+    city: 'مكة المكرمة',
+    lat: 21.4225,
+    lng: 39.8262
+  };
+
+  // أسماء الصلوات بالعربية ومطابقتها مع مفاتيح API
+  const PRAYER_KEYS = [
+    { key: 'Fajr', name: 'الفجر' },
+    { key: 'Sunrise', name: 'الشروق' },
+    { key: 'Dhuhr', name: 'الظهر' },
+    { key: 'Asr', name: 'العصر' },
+    { key: 'Maghrib', name: 'المغرب' },
+    { key: 'Isha', name: 'العشاء' }
+  ];
+
+  let currentTimings = null;
+  let userLocation = JSON.parse(localStorage.getItem('hayat_saved_location')) || DEFAULT_LOCATION;
+
+  // تحويل الوقت من نظام 24 إلى نظام 12 ساعة بالعربية (ص/م)
+  function formatTo12Hour(timeStr) {
+    if (!timeStr) return '';
+    const cleanTime = timeStr.split(' ')[0]; // إزالة أي رموز إضافية
+    let [hours, minutes] = cleanTime.split(':').map(Number);
+    const period = hours >= 12 ? 'م' : 'ص';
+    hours = hours % 12 || 12;
+    return `${hours}:${String(minutes).padStart(2, '0')} ${period}`;
+  }
+
+  // 1. جلب مواقيت الصلاة من AlAdhan API مع الحفظ المؤقت
+  async function fetchPrayerTimes() {
+    const cityNameEl = document.getElementById('cityNameText');
+    if (cityNameEl) cityNameEl.textContent = userLocation.city;
+
+    const url = `https://api.aladhan.com/v1/timings?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=4`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data && data.data) {
+        currentTimings = data.data.timings;
+        // حفظ نسخة احتياطية للعمل بدون إنترنت
+        localStorage.setItem('hayat_cached_timings', JSON.stringify({
+          timings: currentTimings,
+          hijri: data.data.date.hijri
+        }));
+
+        updatePrayerUI(data.data);
       }
+    } catch (err) {
+      console.log('جاري استخدام البيانات المحفوظة محلياً...');
+      // في حال انقطاع الإنترنت نعتمد على النسخة المخزنة
+      const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
+      if (cached) {
+        currentTimings = cached.timings;
+        updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
+      }
+    }
+  }
+
+  // 2. تحديث نصوص المواعيد والتاريخ الهجري في الواجهة
+  function updatePrayerUI(apiData) {
+    const timings = apiData.timings;
+
+    // تحديث أوقات الصلوات في الجدول
+    PRAYER_KEYS.forEach(p => {
+      const row = document.querySelector(`.prayer-row[data-prayer="${p.key.toLowerCase()}"]`);
+      if (row) {
+        const timeEl = row.querySelector('.prayer-time');
+        if (timeEl && timings[p.key]) {
+          timeEl.textContent = formatTo12Hour(timings[p.key]);
+        }
+      }
+    });
+
+    // تحديث التاريخ الهجري (تقويم أم القرى)
+    if (apiData.date && apiData.date.hijri) {
+      const h = apiData.date.hijri;
+      const hijriText = `${h.day} ${h.month.ar}، ${h.year} هـ`;
+      const dateDisplay = document.getElementById('hijriDateDisplay');
+      if (dateDisplay) dateDisplay.textContent = hijriText;
+    }
+  }
+
+  // 3. حساب الصلاة القادمة والعداد التنازلي التفاعلي المباشر (كل ثانية)
+  function startLiveCountdown() {
+    setInterval(() => {
+      if (!currentTimings) return;
+
+      const now = new Date();
+      let nextPrayer = null;
+      let nextPrayerDate = null;
+
+      // البحث عن الصلاة القادمة لليوم
+      for (const p of PRAYER_KEYS) {
+        const timeStr = currentTimings[p.key].split(' ')[0];
+        const [h, m] = timeStr.split(':').map(Number);
+        const pDate = new Date();
+        pDate.setHours(h, m, 0, 0);
+
+        if (pDate > now) {
+          nextPrayer = p;
+          nextPrayerDate = pDate;
+          break;
+        }
+      }
+
+      // إذا انتهت صلوات اليوم (بعد العشاء) -> الصلاة القادمة هي فجر الغد
+      if (!nextPrayer) {
+        nextPrayer = PRAYER_KEYS[0]; // الفجر
+        const timeStr = currentTimings['Fajr'].split(' ')[0];
+        const [h, m] = timeStr.split(':').map(Number);
+        nextPrayerDate = new Date();
+        nextPrayerDate.setDate(nextPrayerDate.getDate() + 1);
+        nextPrayerDate.setHours(h, m, 0, 0);
+      }
+
+      // حساب الفارق الزمني بالثواني
+      const diffSec = Math.max(0, Math.floor((nextPrayerDate - now) / 1000));
+      const hours = Math.floor(diffSec / 3600);
+      const minutes = Math.floor((diffSec % 3600) / 60);
+      const seconds = diffSec % 60;
+
+      // تحديث شاشة الـ Hero العلوية
+      const currentPrayerNameEl = document.getElementById('currentPrayerName');
+      const currentPrayerTimeEl = document.getElementById('currentPrayerTime');
+      const countdownTimerEl = document.getElementById('countdownTimer');
+
+      if (currentPrayerNameEl) currentPrayerNameEl.textContent = nextPrayer.name;
+      if (currentPrayerTimeEl) currentPrayerTimeEl.textContent = formatTo12Hour(currentTimings[nextPrayer.key]).replace(/[صم]/g, '').trim();
+      if (countdownTimerEl) {
+        countdownTimerEl.textContent = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
+      }
+
+      // تمييز صف الصلاة القادمة في القائمة بلون مختلف
+      document.querySelectorAll('.prayer-row').forEach(row => row.classList.remove('active-prayer'));
+      const activeRow = document.querySelector(`.prayer-row[data-prayer="${nextPrayer.key.toLowerCase()}"]`);
+      if (activeRow) activeRow.classList.add('active-prayer');
+
     }, 1000);
   }
 
+  // 4. طلب الموقع الجغرافي للمستخدم عند النقر على زر المدينة
+  const locationBadge = document.getElementById('locationBadge');
+  if (locationBadge) {
+    locationBadge.style.cursor = 'pointer';
+    locationBadge.addEventListener('click', () => {
+      if ('geolocation' in navigator) {
+        locationBadge.style.opacity = '0.6';
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            let detectedCity = 'موقعي الحالي';
+
+            // جلب اسم المدينة بالعربية عبر خدمة جغرافية مجانية
+            try {
+              const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`);
+              const geoData = await geoRes.json();
+              if (geoData.city || geoData.locality || geoData.principalSubdivision) {
+                detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
+              }
+            } catch (e) {}
+
+            userLocation = { city: detectedCity, lat: lat, lng: lng };
+            localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+            locationBadge.style.opacity = '1';
+            await fetchPrayerTimes();
+          },
+          (err) => {
+            locationBadge.style.opacity = '1';
+            alert('تعذر الوصول للموقع، تم اعتماد توقيت مكة المكرمة افتراضياً.');
+          },
+          { timeout: 10000, enableHighAccuracy: true }
+        );
+      } else {
+        alert('المتصفح لا يدعم تحديد الموقع الجغرافي.');
+      }
+    });
+  }
+
+  // بدء تشغيل المحرك
+  fetchPrayerTimes();
+  startLiveCountdown();
+  
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
   }
