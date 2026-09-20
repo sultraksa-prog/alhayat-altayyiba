@@ -922,55 +922,68 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   const groupLongPressModal = document.getElementById('groupLongPressModal');
   const longPressModalTitle = document.getElementById('longPressModalTitle');
   const longPressModalDesc = document.getElementById('longPressModalDesc');
-  const longPressModalActions = document.getElementById('longPressModalActions');
+  const lpNotStartedActions = document.getElementById('lpNotStartedActions');
+  const lpStartedActions = document.getElementById('lpStartedActions');
+
+  // متغير عالمي لحفظ معرّف المجموعة المحددة بالنقر المطول بدقة
+  let activeLongPressedGroupId = null;
 
   function openGroupLongPressModal(group, isStarted) {
+    activeLongPressedGroupId = group.id; // حفظ هوية المجموعة
     longPressModalTitle.textContent = group.name;
-    longPressModalActions.innerHTML = '';
 
     if (!isStarted) {
-      // الحالة 1: لم يبدأ بقراءتها بعد
+      // الحالة 1: لم يبدأ بعد
       longPressModalDesc.textContent = `هل ترغب في قراءة ${group.name} الآن؟`;
-      
-      longPressModalActions.innerHTML = `
-        <button class="modal-btn-primary" id="lpStartBtn" style="padding: 12px; font-size: 15px;">ابدأ القراءة</button>
-        <button class="modal-btn-link" id="lpCancelBtn" style="padding: 6px;">إلغاء</button>
-      `;
-
-      document.getElementById('lpStartBtn').onclick = () => {
-        groupLongPressModal.classList.remove('show');
-        openCategoryReader(group.id);
-      };
+      lpNotStartedActions.style.display = 'flex';
+      lpStartedActions.style.display = 'none';
     } else {
-      // الحالة 2: قرأ جزءاً منها (أو أكملها)
-      longPressModalDesc.textContent = 'لقد قرأت جزءاً من هذه الأذكار، هل ترغب في إكمالها أم البدء من جديد؟';
-
-      longPressModalActions.innerHTML = `
-        <button class="modal-btn-primary" id="lpResumeBtn" style="padding: 12px; font-size: 15px;">إكمال الأذكار</button>
-        <button class="modal-btn-link text-primary" id="lpResetBtn" style="padding: 8px; font-weight: 700;">تصفير العدادات والبدء من جديد</button>
-        <button class="modal-btn-link" id="lpCancelBtn" style="padding: 4px; color: var(--text-muted);">إلغاء</button>
-      `;
-
-      document.getElementById('lpResumeBtn').onclick = () => {
-        groupLongPressModal.classList.remove('show');
-        openCategoryReader(group.id);
-      };
-
-      document.getElementById('lpResetBtn').onclick = () => {
-        group.items.forEach(it => it.currentCount = it.count);
-        saveAzkarState();
-        renderAzkarCategories();
-        groupLongPressModal.classList.remove('show');
-        openCategoryReader(group.id);
-      };
+      // الحالة 2: قرأ جزءاً منها أو أكملها
+      longPressModalDesc.textContent = 'لقد قرأت جزءاً من هذه الأذكار، هل ترغب في إكمالها أم تصفير العدادات والبدء من جديد؟';
+      lpNotStartedActions.style.display = 'none';
+      lpStartedActions.style.display = 'flex';
     }
-
-    document.getElementById('lpCancelBtn').onclick = () => {
-      groupLongPressModal.classList.remove('show');
-    };
 
     groupLongPressModal.classList.add('show');
   }
+
+  // 1. زر "ابدأ القراءة" (يفتح نفس المجموعة المحددة فوراً)
+  document.getElementById('lpStartBtn').addEventListener('click', () => {
+    groupLongPressModal.classList.remove('show');
+    if (activeLongPressedGroupId) {
+      openCategoryReader(activeLongPressedGroupId);
+    }
+  });
+
+  // 2. زر "إكمال الأذكار" (يفتح نفس المجموعة ليواصل القراءة من حيث توقف)
+  document.getElementById('lpResumeBtn').addEventListener('click', () => {
+    groupLongPressModal.classList.remove('show');
+    if (activeLongPressedGroupId) {
+      openCategoryReader(activeLongPressedGroupId);
+    }
+  });
+
+  // 3. زر "تصفير العدادات والبدء من جديد" (يصفر عدادات المجموعة ويفتحها فوراً)
+  document.getElementById('lpResetBtn').addEventListener('click', () => {
+    if (activeLongPressedGroupId) {
+      const group = azkarState.find(g => g.id === activeLongPressedGroupId);
+      if (group && group.items) {
+        group.items.forEach(it => it.currentCount = it.count);
+        saveAzkarState();
+        renderAzkarCategories();
+        if (document.querySelector('.screen-view.active') === screenAzkarFavorites) {
+          renderFavorites();
+        }
+      }
+      groupLongPressModal.classList.remove('show');
+      openCategoryReader(activeLongPressedGroupId);
+    }
+  });
+
+  // أزرار الإلغاء
+  const closeLPModal = () => groupLongPressModal.classList.remove('show');
+  document.getElementById('lpCancelBtn1').addEventListener('click', closeLPModal);
+  document.getElementById('lpCancelBtn2').addEventListener('click', closeLPModal);
 
   groupLongPressModal.addEventListener('click', (e) => {
     if (e.target === groupLongPressModal) groupLongPressModal.classList.remove('show');
