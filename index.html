@@ -282,14 +282,39 @@
       </div>
     </div>
 
-    <!-- مودال الاحتفالية (اللهم بارك) -->
-    <div class="custom-modal-backdrop" id="completionModal">
+<!-- 1. نافذة إتمام الأذكار لأول مرة -->
+    <div class="custom-modal-backdrop" id="finishModal">
       <div class="custom-modal-card text-center">
         <h3 class="modal-card-title celebration-title">اللهم بارك</h3>
-        <p class="celebration-text">لقد انهيت الأذكار لهذا اليوم، سيتم تصفيره غدا باذن الله!<br>يمكنك تصفح الاذكار او تصفير العدادات.</p>
+        <p class="celebration-text" style="margin-bottom: 20px;">لقد انهيت الأذكار</p>
+        <div class="modal-actions-row" style="justify-content: center;">
+          <button class="modal-btn-primary" id="finishDoneBtn" style="padding: 10px 40px;">تم</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. نافذة النقر على مجموعة مكتملة مسبقاً -->
+    <div class="custom-modal-backdrop" id="alreadyCompletedModal">
+      <div class="custom-modal-card text-center">
+        <h3 class="modal-card-title celebration-title">اللهم بارك</h3>
+        <p class="celebration-text">
+          لقد انهيت الأذكار لهذا اليوم، سيتم تصفيره غدا باذن الله!<br>
+          يمكنك تصفح الاذكار او تصفير العدادات.
+        </p>
         <div class="modal-actions-row justify-between">
-          <button class="modal-btn-link text-primary" id="resetCountersBtn">تصفير العدادات</button>
-          <button class="modal-btn-link" id="reviewDhikrBtn">تصفح الاذكار</button>
+          <button class="modal-btn-link text-primary" id="resetCompletedCountersBtn">تصفير العدادات</button>
+          <button class="modal-btn-link" id="browseCompletedDhikrBtn">تصفح الاذكار</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. نافذة تأكيد الخروج قبل إكمال الأذكار -->
+    <div class="custom-modal-backdrop" id="exitConfirmModal">
+      <div class="custom-modal-card text-center">
+        <p style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 22px;">لم تنتهي بعد، هل تريد الخروج؟</p>
+        <div class="modal-actions-row" style="justify-content: center; gap: 20px;">
+          <button class="modal-btn-link" id="confirmExitBtn" style="color: #EF4444; font-weight: 700;">غادر</button>
+          <button class="modal-btn-primary" id="continueReadingBtn" style="background: var(--primary-blue); padding: 10px 26px;">تابع القراءة</button>
         </div>
       </div>
     </div>
