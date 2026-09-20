@@ -88,7 +88,20 @@ document.addEventListener('DOMContentLoaded', () => {
   openFavTileBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
 }
   backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
-  backToCategoriesBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  backToCategoriesBtn.addEventListener('click', () => {
+  const category = azkarState.find(c => c.id === currentActiveCategoryId);
+  if (category && category.items && category.items.length > 0) {
+    const isAllDone = category.items.every(it => it.currentCount === 0);
+    // إذا لم يكمل الأذكار بعد، نظهر له نافذة تأكيد الخروج
+    if (!isAllDone) {
+      document.getElementById('exitConfirmModal').classList.add('show');
+      return;
+    }
+  }
+  // إذا كانت مكتملة بالفعل، يرجع مباشرة دون إزعاج
+  showScreen(screenAzkarCategories);
+  renderAzkarCategories();
+});
   backToCategoriesFromFavBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
 
   // ==================== 4. بناء شبكة مجموعات الأذكار ====================
@@ -169,7 +182,15 @@ if (clearCategorySearchBtn) {
       <span class="azkar-group-title">${group.name}</span>
     `;
 
-    card.addEventListener('click', () => openCategoryReader(group.id));
+    card.addEventListener('click', () => {
+  // إذا كانت المجموعة مكتملة مسبقاً في نفس اليوم
+  if (isCompleted) {
+    targetCompletedCategoryId = group.id;
+    document.getElementById('alreadyCompletedModal').classList.add('show');
+  } else {
+    openCategoryReader(group.id);
+  }
+});
     return card;
   }
 
@@ -400,9 +421,12 @@ if (clearCategorySearchBtn) {
     renderDhikrCards();
 
     const allDone = category.items.every(it => it.currentCount === 0);
-    if (allDone) {
-      setTimeout(() => document.getElementById('completionModal').classList.add('show'), 400);
-    }
+  if (allDone) {
+    // إظهار نافذة التهنئة الأولى "لقد انهيت الأذكار" مع زر "تم"
+    setTimeout(() => {
+      document.getElementById('finishModal').classList.add('show');
+    }, 350);
+  }
   };
 
   // ==================== 7. عزل معرفات الإضافة اليدوية للمستخدم ====================
@@ -584,18 +608,42 @@ if (clearCategorySearchBtn) {
     renderDhikrCards();
   });
 
-  document.getElementById('resetCountersBtn').addEventListener('click', () => {
-    const category = azkarState.find(c => c.id === currentActiveCategoryId);
-    if (category) {
-      category.items.forEach(it => it.currentCount = it.count);
-      saveAzkarState();
-      renderDhikrCards();
-    }
-    document.getElementById('completionModal').classList.remove('show');
-  });
-  document.getElementById('reviewDhikrBtn').addEventListener('click', () => {
-    document.getElementById('completionModal').classList.remove('show');
-  });
+  let targetCompletedCategoryId = null;
+
+// 1. زر "تم" عند إنهاء الأذكار لأول مرة (يرجعه لشاشة المجموعات)
+document.getElementById('finishDoneBtn').addEventListener('click', () => {
+  document.getElementById('finishModal').classList.remove('show');
+  showScreen(screenAzkarCategories);
+  renderAzkarCategories();
+});
+
+// 2. أزرار المجموعة المكتملة مسبقاً
+document.getElementById('resetCompletedCountersBtn').addEventListener('click', () => {
+  const category = azkarState.find(c => c.id === targetCompletedCategoryId);
+  if (category) {
+    category.items.forEach(it => it.currentCount = it.count);
+    saveAzkarState();
+    renderAzkarCategories();
+    openCategoryReader(targetCompletedCategoryId);
+  }
+  document.getElementById('alreadyCompletedModal').classList.remove('show');
+});
+
+document.getElementById('browseCompletedDhikrBtn').addEventListener('click', () => {
+  document.getElementById('alreadyCompletedModal').classList.remove('show');
+  openCategoryReader(targetCompletedCategoryId);
+});
+
+// 3. أزرار تأكيد الخروج قبل الإكمال
+document.getElementById('continueReadingBtn').addEventListener('click', () => {
+  document.getElementById('exitConfirmModal').classList.remove('show');
+});
+
+document.getElementById('confirmExitBtn').addEventListener('click', () => {
+  document.getElementById('exitConfirmModal').classList.remove('show');
+  showScreen(screenAzkarCategories);
+  renderAzkarCategories();
+});
 
   // العداد التنازلي والمشاركة
   let remainingSeconds = (12 * 60) + 28;
