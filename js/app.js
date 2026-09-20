@@ -979,7 +979,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // 2. تحديث نصوص المواعيد والتاريخ الهجري في الواجهة
+  // متغيرات حفظ التاريخين الهجري والميلادي والوضع الحالي
+  let currentHijriText = '';
+  let currentGregorianText = '';
+  let activeDateMode = 'hijri'; // 'hijri' أو 'gregorian'
+
+  // 2. تحديث نصوص المواعيد وتجهيز التاريخين
   function updatePrayerUI(apiData) {
     const timings = apiData.timings;
 
@@ -993,12 +998,49 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       }
     });
 
+    // تجهيز التاريخ الهجري
     if (apiData.date && apiData.date.hijri) {
       const h = apiData.date.hijri;
-      const hijriText = `${h.day} ${h.month.ar}، ${h.year} هـ`;
-      const dateDisplay = document.getElementById('hijriDateDisplay');
-      if (dateDisplay) dateDisplay.textContent = hijriText;
+      currentHijriText = `${h.day} ${h.month.ar}، ${h.year} هـ`;
     }
+
+    // تجهيز التاريخ الميلادي باللغة العربية
+    let now = new Date();
+    if (userLocation.timezone) {
+      try {
+        now = new Date(new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
+      } catch (e) {}
+    }
+    const gregFormatter = new Intl.DateTimeFormat('ar-EG', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    currentGregorianText = gregFormatter.format(now) + ' م';
+
+    renderDateDisplay();
+  }
+
+  // دالة عرض التاريخ مع تأثير انتقال ناعم
+  function renderDateDisplay() {
+    const dateDisplay = document.getElementById('hijriDateDisplay');
+    if (!dateDisplay) return;
+
+    dateDisplay.style.opacity = '0';
+    setTimeout(() => {
+      if (activeDateMode === 'hijri') {
+        dateDisplay.textContent = currentHijriText || '9 ربيع الثاني، 1448 هـ';
+      } else {
+        dateDisplay.textContent = currentGregorianText;
+      }
+      dateDisplay.style.opacity = '1';
+    }, 150);
+  }
+
+  // التبديل بين التاريخين
+  function toggleDateMode() {
+    activeDateMode = (activeDateMode === 'hijri') ? 'gregorian' : 'hijri';
+    renderDateDisplay();
   }
 
   // 3. حساب الصلاة القادمة والعداد التنازلي المباشر وفق توقيت المدينة الحقيقي
@@ -1066,6 +1108,14 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // 4. نظام الموقع الشامل (تلقائي اختياري + قاعدة بيانات الخليج ومصر واليمن)
+  // التبديل بين التاريخ الهجري والميلادي عبر الأسهم أو لمس الكرت
+  const nextDayBtn = document.getElementById('nextDayBtn');
+  const prevDayBtn = document.getElementById('prevDayBtn');
+  const dateStrip = document.querySelector('.date-strip');
+
+  if (nextDayBtn) nextDayBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
+  if (prevDayBtn) prevDayBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
+  if (dateStrip) dateStrip.addEventListener('click', toggleDateMode);
   const locationBadge = document.getElementById('locationBadge');
   const cityNameText = document.getElementById('cityNameText');
   const manualLocationModal = document.getElementById('manualLocationModal');
