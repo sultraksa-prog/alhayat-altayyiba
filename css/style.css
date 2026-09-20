@@ -1434,3 +1434,96 @@ html, body {
   color: #FFFFFF;
   border-color: var(--primary-blue);
 }
+
+/* زر التحديد التلقائي */
+.auto-location-btn {
+  width: 100%;
+  background: #EEF6FC;
+  border: 1.5px solid #BCD8F0;
+  color: var(--primary-blue);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auto-location-btn:active {
+  background: var(--primary-blue);
+  color: white;
+}
+
+/* الفاصل بين التلقائي واليدوي */
+.location-modal-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 14px 0 10px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.location-modal-divider::before, .location-modal-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.location-modal-divider span {
+  padding: 0 10px;
+}
+
+/* شريط تصنيفات الدول */
+.country-filter-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.country-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.country-chip {
+  white-space: nowrap;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.country-chip.active {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+/* تفاصيل كرت المدينة */
+.quick-city-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+}
+
+.city-sub-country {
+  font-size: 10px;
+  opacity: 0.75;
+  font-weight: normal;
+}
