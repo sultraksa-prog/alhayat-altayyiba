@@ -622,10 +622,12 @@ html, body {
 
 /* ما قبل الذكر */
 .dhikr-pre-text {
-  font-size: 13.5px;
-  font-weight: 600;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
   color: #0369A1;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  width: 100%;
 }
 
 /* نص الذكر الأساسي */
