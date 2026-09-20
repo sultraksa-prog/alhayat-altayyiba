@@ -319,7 +319,7 @@ html, body {
   border-radius: 6px;
 }
 
-/* التاريخ الهجري */
+/* شريط التاريخ الهجري والميلادي التفاعلي */
 .date-strip {
   background: var(--bg-surface);
   margin: 14px 16px 8px 16px;
@@ -329,6 +329,12 @@ html, body {
   align-items: center;
   justify-content: space-between;
   box-shadow: var(--shadow-card);
+  cursor: pointer;
+  user-select: none;
+}
+
+#hijriDateDisplay {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .date-info {
