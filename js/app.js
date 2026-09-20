@@ -937,15 +937,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 });
 
   // العداد التنازلي والمشاركة
-  // ==================== محرك مواقيت الصلاة والموقع الحي (أم القرى) ====================
-  // الموقع الافتراضي: مكة المكرمة
+  // ==================== محرك مواقيت الصلاة والتواريخ الموحد ====================
   const DEFAULT_LOCATION = {
     city: 'مكة المكرمة',
     lat: 21.4225,
     lng: 39.8262
   };
 
-  // أسماء الصلوات بالعربية ومطابقتها مع مفاتيح API
   const PRAYER_KEYS = [
     { key: 'Fajr', name: 'الفجر' },
     { key: 'Sunrise', name: 'الشروق' },
@@ -958,63 +956,21 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   let currentTimings = null;
   let userLocation = JSON.parse(localStorage.getItem('hayat_saved_location')) || DEFAULT_LOCATION;
 
-  // تحويل الوقت من نظام 24 إلى نظام 12 ساعة بالعربية (ص/م)
+  let currentDayOffset = 0;
+  let currentHijriText = '';
+  let currentGregorianText = '';
+  let currentDayName = 'الأحد';
+  let activeDateMode = 'hijri';
+
   function formatTo12Hour(timeStr) {
     if (!timeStr) return '';
-    const cleanTime = timeStr.split(' ')[0]; // إزالة أي رموز إضافية
+    const cleanTime = timeStr.split(' ')[0];
     let [hours, minutes] = cleanTime.split(':').map(Number);
     const period = hours >= 12 ? 'م' : 'ص';
     hours = hours % 12 || 12;
     return `${hours}:${String(minutes).padStart(2, '0')} ${period}`;
   }
 
-  // 1. جلب مواقيت الصلاة من AlAdhan API مع حفظ المنطقة الزمنية
-  async function fetchPrayerTimes() {
-    const cityNameEl = document.getElementById('cityNameText');
-    if (cityNameEl) cityNameEl.textContent = userLocation.city;
-
-    const methodNum = userLocation.method || 4;
-    const url = `https://api.aladhan.com/v1/timings?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
-
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data && data.data) {
-        currentTimings = data.data.timings;
-
-        // حفظ المنطقة الزمنية للمدينة (مثل: America/New_York أو Africa/Casablanca)
-        if (data.data.meta && data.data.meta.timezone) {
-          userLocation.timezone = data.data.meta.timezone;
-        }
-
-        localStorage.setItem('hayat_cached_timings', JSON.stringify({
-          timings: currentTimings,
-          hijri: data.data.date.hijri,
-          timezone: userLocation.timezone
-        }));
-
-        updatePrayerUI(data.data);
-      }
-    } catch (err) {
-      console.log('استخدام البيانات المحفوظة محلياً...');
-      const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
-      if (cached) {
-        currentTimings = cached.timings;
-        if (cached.timezone) userLocation.timezone = cached.timezone;
-        updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
-      }
-    }
-  }
-
-  // ==================== محرك الأيام والتاريخ الديناميكي ====================
-  let currentDayOffset = 0; // 0 تعني اليوم، -1 الأمس، +1 غداً
-  let currentHijriText = '';
-  let currentGregorianText = '';
-  let currentDayName = 'الأحد';
-  let activeDateMode = 'hijri'; // 'hijri' أو 'gregorian'
-
-  // جلب تاريخ محدد بناءً على الإزاحة (Offset)
   function getTargetDateObject() {
     let base = new Date();
     if (userLocation.timezone) {
@@ -1026,7 +982,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return base;
   }
 
-  // 1. تحديث دالة جلب المواقيت لتدعم اليوم المحدد بالأسهم
+  // 1. جلب مواقيت الصلاة لليوم المحدد
   async function fetchPrayerTimes() {
     const cityNameEl = document.getElementById('cityNameText');
     if (cityNameEl) cityNameEl.textContent = userLocation.city;
@@ -1034,7 +990,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     const targetDate = getTargetDateObject();
     const dStr = `${String(targetDate.getDate()).padStart(2, '0')}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${targetDate.getFullYear()}`;
     const methodNum = userLocation.method || 4;
-    const url = `https://api.aladhan.com/v1/timings/${dStr}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
+    
+    let url = `https://api.aladhan.com/v1/timings?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
+    if (currentDayOffset !== 0) {
+      const timestamp = Math.floor(targetDate.getTime() / 1000);
+      url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
+    }
 
     try {
       const response = await fetch(url);
@@ -1047,6 +1008,14 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           userLocation.timezone = data.data.meta.timezone;
         }
 
+        if (currentDayOffset === 0) {
+          localStorage.setItem('hayat_cached_timings', JSON.stringify({
+            timings: currentTimings,
+            hijri: data.data.date.hijri,
+            timezone: userLocation.timezone
+          }));
+        }
+
         updatePrayerUI(data.data);
       }
     } catch (err) {
@@ -1054,12 +1023,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
       if (cached) {
         currentTimings = cached.timings;
+        if (cached.timezone) userLocation.timezone = cached.timezone;
         updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
       }
     }
   }
 
-  // 2. تحديث الواجهة وتجهيز اسم اليوم والتاريخين
+  // 2. تحديث الواجهة والصلوات واسم اليوم
   function updatePrayerUI(apiData) {
     const timings = apiData.timings;
 
@@ -1075,7 +1045,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
     const targetDate = getTargetDateObject();
 
-    // اسم اليوم بالعربية
+    // اسم اليوم
     const dayFormatter = new Intl.DateTimeFormat('ar-SA', { weekday: 'long' });
     currentDayName = dayFormatter.format(targetDate);
 
@@ -1091,14 +1061,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
     renderDateDisplay();
 
-    // إظهار أو إخفاء زر العودة لليوم
     const returnTodayBtn = document.getElementById('returnTodayBtn');
     if (returnTodayBtn) {
       returnTodayBtn.style.display = (currentDayOffset !== 0) ? 'inline-block' : 'none';
     }
   }
 
-  // عرض التاريخ واسم اليوم في الكرت
   function renderDateDisplay() {
     const dateTextDisplay = document.getElementById('dateTextDisplay');
     const dayNameDisplay = document.getElementById('dayNameDisplay');
@@ -1107,9 +1075,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     if (dateTextDisplay) {
       dateTextDisplay.style.opacity = '0';
       setTimeout(() => {
-        dateTextDisplay.textContent = (activeDateMode === 'hijri') ? currentHijriText : currentGregorianText;
+        dateTextDisplay.textContent = (activeDateMode === 'hijri') ? (currentHijriText || '9 ربيع الثاني، 1448 هـ') : currentGregorianText;
         dateTextDisplay.style.opacity = '1';
-      }, 120);
+      }, 100);
     }
   }
 
@@ -1118,75 +1086,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     renderDateDisplay();
   }
 
-  // ربط الأسهم لتغيير الأيام السابقة والقادمة
-  const prevDayBtn = document.getElementById('prevDayBtn');
-  const nextDayBtn = document.getElementById('nextDayBtn');
-  const returnTodayBtn = document.getElementById('returnTodayBtn');
-  const dateStripContainer = document.getElementById('dateStripContainer');
-  const dateFlipBtn = document.getElementById('dateFlipBtn');
-
-  // السهم الأيمن: اليوم السابق
-  if (prevDayBtn) {
-    prevDayBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentDayOffset--;
-      fetchPrayerTimes();
-    });
-  }
-
-  // السهم الأيسر: اليوم التالي
-  if (nextDayBtn) {
-    nextDayBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentDayOffset++;
-      fetchPrayerTimes();
-    });
-  }
-
-  // زر العودة لليوم الحالي
-  if (returnTodayBtn) {
-    returnTodayBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentDayOffset = 0;
-      fetchPrayerTimes();
-    });
-  }
-
-  // التبديل بين الهجري والميلادي عبر لمس أيقونة السهمين أو السحب العمودي
-  if (dateFlipBtn) {
-    dateFlipBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleDateMode();
-    });
-  }
-
-  // دعم إيماءة السحب من أعلى لأسفل (Vertical Swipe) على الكرت لقلب التاريخ
-  let dateTouchStartY = 0;
-  if (dateStripContainer) {
-    dateStripContainer.addEventListener('touchstart', (e) => {
-      dateTouchStartY = e.touches[0].clientY;
-    }, { passive: true });
-
-    dateStripContainer.addEventListener('touchend', (e) => {
-      const diffY = e.changedTouches[0].clientY - dateTouchStartY;
-      if (Math.abs(diffY) > 25) {
-        toggleDateMode();
-      }
-    });
-
-    dateStripContainer.addEventListener('click', (e) => {
-      if (e.target !== prevDayBtn && e.target !== nextDayBtn && e.target !== returnTodayBtn) {
-        toggleDateMode();
-      }
-    });
-  }
-
-  // 3. حساب الصلاة القادمة والعداد التنازلي المباشر وفق توقيت المدينة الحقيقي
+  // 3. العداد التنازلي التفاعلي المباشر (كل ثانية)
   function startLiveCountdown() {
     setInterval(() => {
       if (!currentTimings) return;
 
-      // حساب الوقت الحالي بناءً على المنطقة الزمنية للمدينة المختارة (حتى لو كانت في قارة أخرى)
       let now = new Date();
       if (userLocation.timezone) {
         try {
@@ -1213,7 +1117,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         }
       }
 
-      // إذا انتهت صلوات اليوم تكون الصلاة القادمة فجر الغد
       if (!nextPrayer) {
         nextPrayer = PRAYER_KEYS[0];
         const timeStr = currentTimings['Fajr'].split(' ')[0];
@@ -1245,15 +1148,32 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }, 1000);
   }
 
-  // 4. نظام الموقع الشامل (تلقائي اختياري + قاعدة بيانات الخليج ومصر واليمن)
-  // التبديل بين التاريخ الهجري والميلادي عبر الأسهم أو لمس الكرت
-  const nextDayBtn = document.getElementById('nextDayBtn');
+  // أحداث التاريخ والأسهم (معرفة مرة واحدة فقط دون أي تكرار)
   const prevDayBtn = document.getElementById('prevDayBtn');
-  const dateStrip = document.querySelector('.date-strip');
+  const nextDayBtn = document.getElementById('nextDayBtn');
+  const returnTodayBtn = document.getElementById('returnTodayBtn');
+  const dateStripContainer = document.getElementById('dateStripContainer');
+  const dateFlipBtn = document.getElementById('dateFlipBtn');
 
-  if (nextDayBtn) nextDayBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
-  if (prevDayBtn) prevDayBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
-  if (dateStrip) dateStrip.addEventListener('click', toggleDateMode);
+  if (prevDayBtn) prevDayBtn.addEventListener('click', (e) => { e.stopPropagation(); currentDayOffset--; fetchPrayerTimes(); });
+  if (nextDayBtn) nextDayBtn.addEventListener('click', (e) => { e.stopPropagation(); currentDayOffset++; fetchPrayerTimes(); });
+  if (returnTodayBtn) returnTodayBtn.addEventListener('click', (e) => { e.stopPropagation(); currentDayOffset = 0; fetchPrayerTimes(); });
+  if (dateFlipBtn) dateFlipBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
+
+  if (dateStripContainer) {
+    let touchY = 0;
+    dateStripContainer.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+    dateStripContainer.addEventListener('touchend', (e) => {
+      if (Math.abs(e.changedTouches[0].clientY - touchY) > 25) toggleDateMode();
+    });
+    dateStripContainer.addEventListener('click', (e) => {
+      if (e.target !== prevDayBtn && e.target !== nextDayBtn && e.target !== returnTodayBtn) {
+        toggleDateMode();
+      }
+    });
+  }
+
+  // 4. قاعدة بيانات المدن المعتمدة مع المغرب والشام والعواصم
   const locationBadge = document.getElementById('locationBadge');
   const cityNameText = document.getElementById('cityNameText');
   const manualLocationModal = document.getElementById('manualLocationModal');
@@ -1265,7 +1185,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   let activeCountryFilter = 'all';
 
-  // قاعدة بيانات شاملة لمحافظات ومدن الخليج، اليمن، ومصر
   const REGION_CITIES = [
     // المملكة العربية السعودية
     { name: 'مكة المكرمة', country: 'السعودية', lat: 21.4225, lng: 39.8262 },
@@ -1300,28 +1219,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     { name: 'الجيزة', country: 'مصر', lat: 30.0131, lng: 31.2089 },
     { name: 'بورسعيد', country: 'مصر', lat: 31.2653, lng: 32.3019 },
     { name: 'السويس', country: 'مصر', lat: 29.9668, lng: 32.5498 },
-    { name: 'الإسماعيلية', country: 'مصر', lat: 30.5965, lng: 32.2715 },
     { name: 'المنصورة (الدقهلية)', country: 'مصر', lat: 31.0409, lng: 31.3785 },
     { name: 'طنطا (الغربية)', country: 'مصر', lat: 30.7865, lng: 31.0004 },
     { name: 'الزقازيق (الشرقية)', country: 'مصر', lat: 30.5877, lng: 31.5020 },
-    { name: 'دمنهور (البحيرة)', country: 'مصر', lat: 31.0403, lng: 30.4700 },
-    { name: 'كفر الشيخ', country: 'مصر', lat: 31.1107, lng: 30.9388 },
-    { name: 'شبين الكوم (المنوفية)', country: 'مصر', lat: 30.5599, lng: 31.0116 },
-    { name: 'بنها (القليوبية)', country: 'مصر', lat: 30.4660, lng: 31.1853 },
-    { name: 'الفيوم', country: 'مصر', lat: 29.3084, lng: 30.8428 },
-    { name: 'بني سويف', country: 'مصر', lat: 29.0661, lng: 31.0994 },
-    { name: 'المنيا', country: 'مصر', lat: 28.1099, lng: 30.7503 },
     { name: 'أسيوط', country: 'مصر', lat: 27.1783, lng: 31.1859 },
     { name: 'سوهاج', country: 'مصر', lat: 26.5590, lng: 31.6957 },
-    { name: 'قنا', country: 'مصر', lat: 26.1551, lng: 32.7160 },
     { name: 'الأقصر', country: 'مصر', lat: 25.6872, lng: 32.6396 },
     { name: 'أسوان', country: 'مصر', lat: 24.0889, lng: 32.8998 },
-    { name: 'دمياط', country: 'مصر', lat: 31.4175, lng: 31.8144 },
-    { name: 'الغردقة (البحر الأحمر)', country: 'مصر', lat: 27.2579, lng: 33.8116 },
-    { name: 'شرم الشيخ (جنوب سيناء)', country: 'مصر', lat: 27.9158, lng: 34.3299 },
-    { name: 'العريش (شمال سيناء)', country: 'مصر', lat: 31.1325, lng: 33.8033 },
-    { name: 'مرسى مطروح', country: 'مصر', lat: 31.3543, lng: 27.2373 },
-    { name: 'الخارجة (الوادي الجديد)', country: 'مصر', lat: 25.4514, lng: 30.5472 },
 
     // الجمهورية اليمنية
     { name: 'صنعاء', country: 'اليمن', lat: 15.3694, lng: 44.1910 },
@@ -1329,111 +1233,49 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     { name: 'تعز', country: 'اليمن', lat: 13.5795, lng: 44.0209 },
     { name: 'الحديدة', country: 'اليمن', lat: 14.7978, lng: 42.9545 },
     { name: 'المكلا (حضرموت)', country: 'اليمن', lat: 14.5425, lng: 49.1242 },
-    { name: 'سيئون (حضرموت)', country: 'اليمن', lat: 15.9392, lng: 48.7891 },
     { name: 'إب', country: 'اليمن', lat: 13.9667, lng: 44.1667 },
     { name: 'ذمار', country: 'اليمن', lat: 14.5428, lng: 44.4051 },
     { name: 'مأرب', country: 'اليمن', lat: 15.4633, lng: 45.3258 },
-    { name: 'صعدة', country: 'اليمن', lat: 16.9402, lng: 43.7639 },
-    { name: 'عتق (شبوة)', country: 'اليمن', lat: 14.5377, lng: 46.8319 },
-    { name: 'لحج (الحوطة)', country: 'اليمن', lat: 13.0583, lng: 44.8828 },
-    { name: 'زنجبار (أبين)', country: 'اليمن', lat: 13.1287, lng: 45.3807 },
-    { name: 'الغيضة (المهرة)', country: 'اليمن', lat: 16.2079, lng: 52.1760 },
-    { name: 'حجة', country: 'اليمن', lat: 15.6917, lng: 43.6028 },
-    { name: 'سقطرى (حديبو)', country: 'اليمن', lat: 12.6500, lng: 54.0167 },
 
-    // الإمارات العربية المتحدة
+    // الإمارات
     { name: 'أبوظبي', country: 'الإمارات', lat: 24.4539, lng: 54.3773 },
     { name: 'دبي', country: 'الإمارات', lat: 25.2048, lng: 55.2708 },
     { name: 'الشارقة', country: 'الإمارات', lat: 25.3463, lng: 55.4209 },
     { name: 'عجمان', country: 'الإمارات', lat: 25.4052, lng: 55.5136 },
     { name: 'رأس الخيمة', country: 'الإمارات', lat: 25.6741, lng: 55.9804 },
     { name: 'الفجيرة', country: 'الإمارات', lat: 25.1288, lng: 56.3265 },
-    { name: 'أم القيوين', country: 'الإمارات', lat: 25.5457, lng: 55.5533 },
-    { name: 'العين', country: 'الإمارات', lat: 24.1302, lng: 55.8023 },
 
-    // دولة الكويت
+    // الكويت وعمان وقطر والبحرين
     { name: 'الكويت (العاصمة)', country: 'الكويت', lat: 29.3759, lng: 47.9774 },
     { name: 'حولي', country: 'الكويت', lat: 29.3328, lng: 48.0282 },
-    { name: 'الفروانية', country: 'الكويت', lat: 29.2784, lng: 47.9587 },
-    { name: 'الأحمدي', country: 'الكويت', lat: 29.0769, lng: 48.0839 },
-    { name: 'الجهراء', country: 'الكويت', lat: 29.3375, lng: 47.6581 },
-    { name: 'مبارك الكبير', country: 'الكويت', lat: 29.2272, lng: 48.0694 },
-
-    // سلطنة عمان
     { name: 'مسقط', country: 'عمان', lat: 23.5880, lng: 58.3829 },
-    { name: 'صلالة (ظفار)', country: 'عمان', lat: 17.0151, lng: 54.0924 },
-    { name: 'صحار (شمال الباطنة)', country: 'عمان', lat: 24.3477, lng: 56.7094 },
-    { name: 'نزوى (الداخلية)', country: 'عمان', lat: 22.9333, lng: 57.5333 },
-    { name: 'صور (جنوب الشرقية)', country: 'عمان', lat: 22.5667, lng: 59.5289 },
-    { name: 'البريمي', country: 'عمان', lat: 24.2509, lng: 55.7931 },
-    { name: 'الرستاق (جنوب الباطنة)', country: 'عمان', lat: 23.3908, lng: 57.4244 },
-    { name: 'خصب (مسندم)', country: 'عمان', lat: 26.1799, lng: 56.2486 },
-
-    // دولة قطر
+    { name: 'صلالة', country: 'عمان', lat: 17.0151, lng: 54.0924 },
     { name: 'الدوحة', country: 'قطر', lat: 25.2854, lng: 51.5310 },
     { name: 'الريان', country: 'قطر', lat: 25.2919, lng: 51.4244 },
-    { name: 'الوكرة', country: 'قطر', lat: 25.1768, lng: 51.6048 },
-    { name: 'الخور', country: 'قطر', lat: 25.6839, lng: 51.5058 },
-
-    // مملكة البحرين
     { name: 'المنامة', country: 'البحرين', lat: 26.2285, lng: 50.5860 },
-    { name: 'المحرق', country: 'البحرين', lat: 26.2572, lng: 50.6119 },
-    { name: 'الرفاع', country: 'البحرين', lat: 26.1300, lng: 50.5550 },
-    { name: 'مدينة حمد', country: 'البحرين', lat: 26.1153, lng: 50.5069 },
 
-    // المملكة المغربية
+    // المغرب وفلسطين وعواصم إسلامية
     { name: 'الرباط', country: 'المغرب', lat: 34.0209, lng: -6.8416 },
     { name: 'الدار البيضاء', country: 'المغرب', lat: 33.5731, lng: -7.5898 },
     { name: 'مراكش', country: 'المغرب', lat: 31.6295, lng: -7.9811 },
-    { name: 'طنجة', country: 'المغرب', lat: 35.7595, lng: -5.8340 },
-    { name: 'فاس', country: 'المغرب', lat: 34.0181, lng: -5.0078 },
-    { name: 'أكادير', country: 'المغرب', lat: 30.4278, lng: -9.5981 },
-
-    // بلاد الشام والعراق وفلسطين
     { name: 'القدس الشريف', country: 'فلسطين', lat: 31.7683, lng: 35.2137 },
     { name: 'غزة', country: 'فلسطين', lat: 31.5017, lng: 34.4668 },
     { name: 'عمّان', country: 'الأردن', lat: 31.9454, lng: 35.9284 },
-    { name: 'الزرقاء', country: 'الأردن', lat: 32.0728, lng: 36.0880 },
-    { name: 'إربد', country: 'الأردن', lat: 32.5568, lng: 35.8469 },
     { name: 'دمشق', country: 'سوريا', lat: 33.5138, lng: 36.2765 },
-    { name: 'حلب', country: 'سوريا', lat: 36.2021, lng: 37.1343 },
     { name: 'بيروت', country: 'لبنان', lat: 33.8938, lng: 35.5018 },
     { name: 'بغداد', country: 'العراق', lat: 33.3152, lng: 44.3661 },
-    { name: 'البصرة', country: 'العراق', lat: 30.5085, lng: 47.7804 },
-    { name: 'أربيل', country: 'العراق', lat: 36.1901, lng: 44.0091 },
-
-    // شمال أفريقيا والسودان
     { name: 'تونس (العاصمة)', country: 'تونس', lat: 36.8065, lng: 10.1815 },
-    { name: 'صفاقس', country: 'تونس', lat: 34.7406, lng: 10.7603 },
     { name: 'الجزائر (العاصمة)', country: 'الجزائر', lat: 36.7538, lng: 3.0588 },
-    { name: 'وهران', country: 'الجزائر', lat: 35.6987, lng: -0.6349 },
-    { name: 'طرابلس', country: 'ليبيا', lat: 32.8872, lng: 13.1913 },
-    { name: 'بنغازي', country: 'ليبيا', lat: 32.1167, lng: 20.0667 },
-    { name: 'الخرطوم', country: 'السودان', lat: 15.5007, lng: 32.5599 },
-
-    // عواصم ومدن عالمية كبرى
     { name: 'إسطنبول', country: 'تركيا', lat: 41.0082, lng: 28.9784 },
     { name: 'لندن', country: 'بريطانيا', lat: 51.5074, lng: -0.1278 },
-    { name: 'باريس', country: 'فرنسا', lat: 48.8566, lng: 2.3522 },
-    { name: 'واشنطن', country: 'أمريكا', lat: 38.9072, lng: -77.0369 },
-    { name: 'نيويورك', country: 'أمريكا', lat: 40.7128, lng: -74.0060 },
-    { name: 'كوالالمبور', country: 'ماليزيا', lat: 3.1390, lng: 101.6869 }
+    { name: 'واشنطن', country: 'أمريكا', lat: 38.9072, lng: -77.0369 }
   ];
 
-  // خوارزمية تطبيع الحروف العربية ومعالجة الأخطاء الإملائية
   function normalizeArabic(text) {
     if (!text) return '';
-    return text
-      .trim()
-      .toLowerCase()
-      .replace(/[أإآٱ]/g, 'ا')
-      .replace(/ة/g, 'ه')
-      .replace(/ى/g, 'ي')
-      .replace(/[\u064B-\u065F]/g, '') // إزالة التشكيل
-      .replace(/^ال/, ''); // تجاهل ال التعريف للمقارنة
+    return text.trim().toLowerCase().replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\u064B-\u065F]/g, '').replace(/^ال/, '');
   }
 
-  // خوارزمية قياس نسبة التشابه بين كلمتين (Levenshtein Distance)
   function getWordSimilarity(s1, s2) {
     const n1 = normalizeArabic(s1);
     const n2 = normalizeArabic(s2);
@@ -1448,11 +1290,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     for (let j = 1; j <= len2; j++) {
       for (let i = 1; i <= len1; i++) {
         const indicator = n1[i - 1] === n2[j - 1] ? 0 : 1;
-        track[j][i] = Math.min(
-          track[j][i - 1] + 1,
-          track[j - 1][i] + 1,
-          track[j - 1][i - 1] + indicator
-        );
+        track[j][i] = Math.min(track[j][i - 1] + 1, track[j - 1][i] + 1, track[j - 1][i - 1] + indicator);
       }
     }
     const distance = track[len2][len1];
@@ -1460,14 +1298,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return maxLen === 0 ? 1 : 1 - distance / maxLen;
   }
 
-  // توليد وعرض بطاقات المدن مع دعم ذكاء تصحيح الأخطاء الإملائية
   function renderQuickCities(filterText = '') {
     if (!quickCitiesGrid) return;
     quickCitiesGrid.innerHTML = '';
     const rawQuery = filterText.trim();
     const query = normalizeArabic(rawQuery);
 
-    // 1. البحث المباشر
     const exactMatches = REGION_CITIES.filter(c => {
       const matchCountry = activeCountryFilter === 'all' || c.country === activeCountryFilter;
       const matchName = !query || normalizeArabic(c.name).includes(query) || normalizeArabic(c.country).includes(query);
@@ -1486,18 +1322,16 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       return;
     }
 
-    // 2. إذا لم يجد تطابقاً مباشراً وكان المستخدم كتب حرفين أو أكثر -> تفعيل الذكاء التقريبي (Fuzzy Match)
     if (rawQuery.length >= 2) {
       const fuzzySuggestions = REGION_CITIES.map(c => ({
         city: c,
         score: Math.max(getWordSimilarity(rawQuery, c.name), getWordSimilarity(rawQuery, c.country))
       }))
-      .filter(item => item.score >= 0.55) // تشابه 55% فأكثر
+      .filter(item => item.score >= 0.55)
       .sort((a, b) => b.score - a.score)
       .map(item => item.city);
 
       if (fuzzySuggestions.length > 0) {
-        // شريط تنبيه: هل تقصد إحدى هذه المدن؟
         const hint = document.createElement('div');
         hint.style.cssText = 'grid-column: span 3; font-size: 12.5px; color: #B45309; background: #FEF3C7; padding: 7px 10px; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 6px;';
         hint.textContent = 'هل تقصد إحدى هذه المدن القريبة؟';
@@ -1515,7 +1349,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         return;
       }
 
-      // 3. إذا لم يجد أي تطابق تقريبي، يعرض زر البحث عبر الخريطة
       const searchOnlineBtn = document.createElement('button');
       searchOnlineBtn.type = 'button';
       searchOnlineBtn.className = 'quick-city-btn';
@@ -1526,11 +1359,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // اختيار المدينة واعتماد طريقة الحساب المناسبة لمصر أو الخليج
   async function selectCity(name, lat, lng, country = '') {
-    // إذا كانت المدينة في مصر نعتمد طريقة الهيئة المصرية (5)، وغير ذلك أم القرى (4)
-    const method = (country === 'مصر' || name.includes('مصر')) ? 4 : 4; 
-    userLocation = { city: name, country: country, lat: lat, lng: lng, method: (country === 'مصر' ? 5 : 4) };
+    const method = (country === 'مصر' || name.includes('مصر')) ? 5 : 4; 
+    userLocation = { city: name, country: country, lat: lat, lng: lng, method: method };
     localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
 
     if (cityNameText) cityNameText.textContent = name;
@@ -1538,13 +1369,10 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     await fetchPrayerTimes();
   }
 
-  // البحث والتحقق الجغرافي الصارم لمنع المدن الوهمية
-  // البحث واقتراح المدن القريبة عبر الخريطة العالمية بدون رسائل خطأ
   async function searchCityOnline(query) {
     const cleanQuery = query.trim();
     if (!quickCitiesGrid) return;
 
-    // 1. إظهار مؤشر الانتظار اللطيف داخل النافذة
     quickCitiesGrid.innerHTML = `
       <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 16px; font-size: 13.5px;">
         جاري البحث عن مدن قريبة في الخريطة العالمية... ⏳
@@ -1552,7 +1380,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     `;
 
     try {
-      // جلب أقرب 5 نتائج من الخريطة باللغة العربية
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&addressdetails=1&limit=5&accept-language=ar`;
       const res = await fetch(url);
       const data = await res.json();
@@ -1560,13 +1387,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       quickCitiesGrid.innerHTML = '';
 
       if (data && data.length > 0) {
-        // 2. شريط توجيهي: مدن مقترحة من الخريطة
         const header = document.createElement('div');
         header.style.cssText = 'grid-column: span 3; font-size: 12.5px; color: #1D5D9B; background: #EEF6FC; border: 1px solid #BCD8F0; padding: 8px 10px; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 6px;';
         header.textContent = `📍 مدن قريبة تم العثور عليها للاسم: "${cleanQuery}"`;
         quickCitiesGrid.appendChild(header);
 
-        // 3. عرض المدن المقترحة كأزرار قابلة للنقر
         data.forEach(item => {
           const officialCity = item.name || item.display_name.split(',')[0].trim();
           const country = (item.address && item.address.country) ? item.address.country : '';
@@ -1585,10 +1410,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         });
 
       } else {
-        // 4. في حال لم تكن هناك أي مدينة قريبة إطلاقاً (نص عشوائي تام)
         quickCitiesGrid.innerHTML = `
           <div style="grid-column: span 3; text-align: center; color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; padding: 12px; border-radius: 10px; font-size: 13px;">
-            ⚠️ لم يتم العثور على أي مدينة مطابقة أو قريبة للاسم: "<strong>${cleanQuery}</strong>"<br>
+            ⚠️ لم يتم العثور على أي مدينة مطابقة للاسم: "<strong>${cleanQuery}</strong>"<br>
             <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">يرجى مراجعة الحروف أو الاختيار من القائمة.</span>
           </div>
         `;
@@ -1602,7 +1426,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // فلترة الدول بالتبويبات
   if (countryFilterBar) {
     countryFilterBar.querySelectorAll('.country-chip').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -1627,7 +1450,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     closeManualLocationBtn.addEventListener('click', () => manualLocationModal.classList.remove('show'));
   }
 
-  // النقر على المدينة في الهيدر يفتح النافذة مباشرة دون إجبار على الـ GPS
   if (locationBadge) {
     locationBadge.style.cursor = 'pointer';
     locationBadge.addEventListener('click', () => {
@@ -1635,7 +1457,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // زر التحديد التلقائي داخل النافذة (لمن يرغب بتفعيل الـ GPS يدوياً)
   if (autoDetectLocationBtn) {
     autoDetectLocationBtn.addEventListener('click', () => {
       autoDetectLocationBtn.innerHTML = `<span>جاري التحديد عبر الأقمار والشبكة...</span>`;
@@ -1671,31 +1492,28 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // نظام متابعة أداء الصلوات وحفظ علامات الـ Checkbox يومياً
-function initPrayerChecklist() {
-  const todayKey = 'hayat_prayers_' + new Date().toISOString().slice(0, 10);
-  const savedChecks = JSON.parse(localStorage.getItem(todayKey) || '{}');
+  function initPrayerChecklist() {
+    const todayKey = 'hayat_prayers_' + new Date().toISOString().slice(0, 10);
+    const savedChecks = JSON.parse(localStorage.getItem(todayKey) || '{}');
 
-  document.querySelectorAll('.prayer-row').forEach(row => {
-    const pKey = row.getAttribute('data-prayer');
-    const checkbox = row.querySelector('.prayer-check');
+    document.querySelectorAll('.prayer-row').forEach(row => {
+      const pKey = row.getAttribute('data-prayer');
+      const checkbox = row.querySelector('.prayer-check');
 
-    if (checkbox && pKey) {
-      // استرجاع علامات الصح المحفوظة لهذا اليوم
-      checkbox.checked = !!savedChecks[pKey];
+      if (checkbox && pKey) {
+        checkbox.checked = !!savedChecks[pKey];
+        checkbox.addEventListener('change', () => {
+          savedChecks[pKey] = checkbox.checked;
+          localStorage.setItem(todayKey, JSON.stringify(savedChecks));
+        });
+      }
+    });
+  }
 
-      // حفظ الحالة عند النقر على المربع
-      checkbox.addEventListener('change', () => {
-        savedChecks[pKey] = checkbox.checked;
-        localStorage.setItem(todayKey, JSON.stringify(savedChecks));
-      });
-    }
-  });
-}
-
-// تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
-fetchPrayerTimes();
-startLiveCountdown();
-initPrayerChecklist();
+  // تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
+  fetchPrayerTimes();
+  startLiveCountdown();
+  initPrayerChecklist();
 
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
