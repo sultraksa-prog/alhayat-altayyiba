@@ -253,11 +253,16 @@ if (clearCategorySearchBtn) {
   function createCategoryCard(group) {
     const totalItems = group.items ? group.items.length : 0;
     let completedItems = 0;
+    let readItemsCount = 0;
+
     if (totalItems > 0) {
       completedItems = group.items.filter(it => it.currentCount === 0).length;
+      readItemsCount = group.items.filter(it => it.currentCount < it.count).length;
     }
+
     const progressPercent = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
     const isCompleted = totalItems > 0 && progressPercent === 100;
+    const isStarted = readItemsCount > 0; // هل بدأ بقراءة جزء منها؟
 
     const card = document.createElement('div');
     card.className = `azkar-group-card ${isCompleted ? 'completed' : ''}`;
@@ -267,15 +272,64 @@ if (clearCategorySearchBtn) {
       <span class="azkar-group-title">${group.name}</span>
     `;
 
-    card.addEventListener('click', () => {
-  // إذا كانت المجموعة مكتملة مسبقاً في نفس اليوم
-  if (isCompleted) {
-    targetCompletedCategoryId = group.id;
-    document.getElementById('alreadyCompletedModal').classList.add('show');
-  } else {
-    openCategoryReader(group.id);
-  }
-});
+    // نظام رصد النقر المطوّل (Long Press)
+    let pressTimer = null;
+    let isLongPress = false;
+    let startX = 0;
+    let startY = 0;
+
+    const startPress = (e) => {
+      isLongPress = false;
+      if (e.type === 'touchstart') {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        if (navigator.vibrate) navigator.vibrate(45); // اهتزاز خفيف للتنبيه
+        openGroupLongPressModal(group, isStarted);
+      }, 550); // نصف ثانية للضغط المطول
+    };
+
+    const cancelPress = (e) => {
+      if (e.type === 'touchmove') {
+        // إذا كان المستخدم يمرر الصفحة بإصبعه يتم إلغاء النقر المطول فوراً
+        const diffX = Math.abs(e.touches[0].clientX - startX);
+        const diffY = Math.abs(e.touches[0].clientY - startY);
+        if (diffX > 10 || diffY > 10) clearTimeout(pressTimer);
+        return;
+      }
+      clearTimeout(pressTimer);
+    };
+
+    // أحداث اللمس للجوال
+    card.addEventListener('touchstart', startPress, { passive: true });
+    card.addEventListener('touchend', cancelPress);
+    card.addEventListener('touchmove', cancelPress, { passive: true });
+
+    // أحداث الفأرة للكمبيوتر
+    card.addEventListener('mousedown', startPress);
+    card.addEventListener('mouseup', cancelPress);
+    card.addEventListener('mouseleave', cancelPress);
+
+    // النقر العادي السريع
+    card.addEventListener('click', (e) => {
+      // إذا كان الحدث نقراً مطولاً نلغي النقر العادي
+      if (isLongPress) {
+        e.preventDefault();
+        e.stopPropagation();
+        isLongPress = false;
+        return;
+      }
+
+      if (isCompleted) {
+        targetCompletedCategoryId = group.id;
+        document.getElementById('alreadyCompletedModal').classList.add('show');
+      } else {
+        openCategoryReader(group.id);
+      }
+    });
+
     return card;
   }
 
@@ -863,3 +917,61 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
 });
+
+// ==================== نافذة وخيارات النقر المطوّل ====================
+  const groupLongPressModal = document.getElementById('groupLongPressModal');
+  const longPressModalTitle = document.getElementById('longPressModalTitle');
+  const longPressModalDesc = document.getElementById('longPressModalDesc');
+  const longPressModalActions = document.getElementById('longPressModalActions');
+
+  function openGroupLongPressModal(group, isStarted) {
+    longPressModalTitle.textContent = group.name;
+    longPressModalActions.innerHTML = '';
+
+    if (!isStarted) {
+      // الحالة 1: لم يبدأ بقراءتها بعد
+      longPressModalDesc.textContent = `هل ترغب في قراءة ${group.name} الآن؟`;
+      
+      longPressModalActions.innerHTML = `
+        <button class="modal-btn-primary" id="lpStartBtn" style="padding: 12px; font-size: 15px;">ابدأ القراءة</button>
+        <button class="modal-btn-link" id="lpCancelBtn" style="padding: 6px;">إلغاء</button>
+      `;
+
+      document.getElementById('lpStartBtn').onclick = () => {
+        groupLongPressModal.classList.remove('show');
+        openCategoryReader(group.id);
+      };
+    } else {
+      // الحالة 2: قرأ جزءاً منها (أو أكملها)
+      longPressModalDesc.textContent = 'لقد قرأت جزءاً من هذه الأذكار، هل ترغب في إكمالها أم البدء من جديد؟';
+
+      longPressModalActions.innerHTML = `
+        <button class="modal-btn-primary" id="lpResumeBtn" style="padding: 12px; font-size: 15px;">إكمال الأذكار</button>
+        <button class="modal-btn-link text-primary" id="lpResetBtn" style="padding: 8px; font-weight: 700;">تصفير العدادات والبدء من جديد</button>
+        <button class="modal-btn-link" id="lpCancelBtn" style="padding: 4px; color: var(--text-muted);">إلغاء</button>
+      `;
+
+      document.getElementById('lpResumeBtn').onclick = () => {
+        groupLongPressModal.classList.remove('show');
+        openCategoryReader(group.id);
+      };
+
+      document.getElementById('lpResetBtn').onclick = () => {
+        group.items.forEach(it => it.currentCount = it.count);
+        saveAzkarState();
+        renderAzkarCategories();
+        groupLongPressModal.classList.remove('show');
+        openCategoryReader(group.id);
+      };
+    }
+
+    document.getElementById('lpCancelBtn').onclick = () => {
+      groupLongPressModal.classList.remove('show');
+    };
+
+    groupLongPressModal.classList.add('show');
+  }
+
+  groupLongPressModal.addEventListener('click', (e) => {
+    if (e.target === groupLongPressModal) groupLongPressModal.classList.remove('show');
+  });
