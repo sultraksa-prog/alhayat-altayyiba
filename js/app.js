@@ -1136,7 +1136,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const countdownTimerEl = document.getElementById('countdownTimer');
 
       if (currentPrayerNameEl) currentPrayerNameEl.textContent = nextPrayer.name;
-      if (currentPrayerTimeEl) currentPrayerTimeEl.textContent = formatTo12Hour(currentTimings[nextPrayer.key]).replace(/[صم]/g, '').trim();
+      if (currentPrayerTimeEl) {
+        const formattedFull = formatTo12Hour(currentTimings[nextPrayer.key]);
+        currentPrayerTimeEl.textContent = formattedFull.replace(/[صم]/g, '').trim();
+        const periodEl = document.getElementById('currentPrayerPeriod');
+        if (periodEl) periodEl.textContent = formattedFull.includes('م') ? 'م' : 'ص';
+      }
       if (countdownTimerEl) {
         countdownTimerEl.textContent = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
       }
@@ -1510,6 +1515,18 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
+  // مراقبة تمرير الشاشة لتفعيل الهيدر الزجاجي الضبابي
+  window.addEventListener('scroll', () => {
+    const header = document.querySelector('.app-header');
+    if (header) {
+      if (window.scrollY > 20) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    }
+  });
+  
   // تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
   fetchPrayerTimes();
   startLiveCountdown();
