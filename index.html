@@ -226,17 +226,56 @@
       <a href="#" class="nav-item"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>الإعدادات</span></a>
     </nav>
 
-    <!-- نافذة المشاركة -->
+    <!-- ==================== نافذة المشاركة السفلية المطورة ==================== -->
     <div class="bottom-sheet-backdrop" id="shareModalBackdrop">
-      <div class="bottom-sheet">
+      <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
         <div class="sheet-drag-handle"></div>
-        <div class="sheet-header"><span class="sheet-title active">مشاركة التذكير</span><span class="sheet-title-dimmed">دعوة الأصدقاء</span></div>
-        <div class="sheet-preview-card">
-          <h3 class="preview-prayer-title">العصر 3:15 م</h3>
-          <div class="preview-row"><span>السعودية، الرياض</span></div>
-          <div class="preview-row"><span>07 ربيع الثاني، 1448 هـ</span></div>
+        
+        <!-- التبويبان: مشاركة التذكير / دعوة الأصدقاء -->
+        <div class="sheet-header">
+          <span class="sheet-tab active" id="tabShareTimings">مشاركة التذكير</span>
+          <span class="sheet-tab" id="tabShareInvite">دعوة الأصدقاء</span>
         </div>
-        <button class="sheet-action-btn" id="confirmShareBtn">مشاركة</button>
+
+        <!-- 1. محتوى تبويب: مشاركة مواقيت اليوم والتذكير -->
+        <div id="contentShareTimings">
+          <div class="sheet-preview-card" id="sharePreviewCard">
+            <h3 class="preview-prayer-title" id="shareNextPrayerTitle">الصلاة القادمة</h3>
+            <div class="preview-row">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#1D5D9B"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+              <span id="shareCardLocation">الرياض</span>
+            </div>
+            <div class="preview-row">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#F59E0B"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+              <span id="shareCardDate">التاريخ الهجري والميلادي</span>
+            </div>
+          </div>
+
+          <!-- خيارات المشاركة: كنص أو كصورة -->
+          <div class="share-actions-dual">
+            <button type="button" class="sheet-action-btn" id="btnShareAsText">
+              <span>مشاركة كنص 📝</span>
+            </button>
+            <button type="button" class="sheet-action-btn-secondary" id="btnShareAsImage">
+              <span>مشاركة كصورة فاخرة 🖼️</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. محتوى تبويب: دعوة الأصدقاء لتجربة التطبيق -->
+        <div id="contentShareInvite" style="display: none;">
+          <div class="sheet-preview-card text-center" style="padding: 24px 16px;">
+            <div style="font-size: 38px; margin-bottom: 8px;">🌙</div>
+            <h3 class="preview-prayer-title" id="inviteAppNameDisplay">الحياة الطيبة</h3>
+            <p id="inviteAppDescDisplay" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;"></p>
+            <span style="font-size: 12px; color: var(--primary-blue); font-weight: 700; direction: ltr; display: inline-block;" id="inviteAppUrlDisplay"></span>
+          </div>
+
+          <button type="button" class="sheet-action-btn" id="btnShareInvite">
+            <span>إرسال دعوة للأصدقاء 💌</span>
+          </button>
+        </div>
+
       </div>
     </div>
 
