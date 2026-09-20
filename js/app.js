@@ -76,6 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const screenAzkarFavorites = document.getElementById('screen-azkar-favorites');
   const screenAzkarReader = document.getElementById('screen-azkar-reader');
 
+  const screenGeneralSettings = document.getElementById('screen-general-settings');
+  const screenAboutApp = document.getElementById('screen-about-app');
+  const tabGeneralSettings = document.getElementById('tabGeneralSettings');
+  const openGeneralSettingsBtn = document.getElementById('openGeneralSettingsBtn');
+  const backToHomeFromSettingsBtn = document.getElementById('backToHomeFromSettingsBtn');
+  const backToSettingsFromAboutBtn = document.getElementById('backToSettingsFromAboutBtn');
+  const openDhikrSettingsFromMenu = document.getElementById('openDhikrSettingsFromMenu');
+  const openAboutScreenBtn = document.getElementById('openAboutScreenBtn');
+
   const tabHome = document.getElementById('tabHome');
   const tabAzkar = document.getElementById('tabAzkar');
   const openAzkarTileBtn = document.getElementById('openAzkarTileBtn');
@@ -103,13 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
     screen.classList.add('active');
     window.scrollTo(0, 0);
 
-    if (screen === screenHome) {
-      tabHome.classList.add('active');
-      tabAzkar.classList.remove('active');
-    } else {
-      tabHome.classList.remove('active');
-      tabAzkar.classList.add('active');
-    }
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
+  if (screen === screenHome) {
+    tabHome.classList.add('active');
+  } else if (screen === screenAzkarCategories || screen === screenAzkarFavorites || screen === screenAzkarReader) {
+    tabAzkar.classList.add('active');
+  } else if (screen === screenGeneralSettings || screen === screenAboutApp) {
+    if (tabGeneralSettings) tabGeneralSettings.classList.add('active');
+  }
   }
 
   // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
@@ -165,6 +175,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
+  
+  // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
+if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+if (tabGeneralSettings) tabGeneralSettings.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenGeneralSettings); });
+if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
+
+// فتح إعدادات الأذكار من داخل الإعدادات العامة
+if (openDhikrSettingsFromMenu) {
+  openDhikrSettingsFromMenu.addEventListener('click', () => {
+    syncSettingsUI();
+    azkarSettingsModal.classList.add('show');
+  });
+}
+
+// فتح شاشة حول التطبيق
+if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
+if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+  
   tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
@@ -979,12 +1007,59 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // متغيرات حفظ التاريخين الهجري والميلادي والوضع الحالي
+  // ==================== محرك الأيام والتاريخ الديناميكي ====================
+  let currentDayOffset = 0; // 0 تعني اليوم، -1 الأمس، +1 غداً
   let currentHijriText = '';
   let currentGregorianText = '';
+  let currentDayName = 'الأحد';
   let activeDateMode = 'hijri'; // 'hijri' أو 'gregorian'
 
-  // 2. تحديث نصوص المواعيد وتجهيز التاريخين
+  // جلب تاريخ محدد بناءً على الإزاحة (Offset)
+  function getTargetDateObject() {
+    let base = new Date();
+    if (userLocation.timezone) {
+      try {
+        base = new Date(new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
+      } catch (e) {}
+    }
+    base.setDate(base.getDate() + currentDayOffset);
+    return base;
+  }
+
+  // 1. تحديث دالة جلب المواقيت لتدعم اليوم المحدد بالأسهم
+  async function fetchPrayerTimes() {
+    const cityNameEl = document.getElementById('cityNameText');
+    if (cityNameEl) cityNameEl.textContent = userLocation.city;
+
+    const targetDate = getTargetDateObject();
+    const dStr = `${String(targetDate.getDate()).padStart(2, '0')}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${targetDate.getFullYear()}`;
+    const methodNum = userLocation.method || 4;
+    const url = `https://api.aladhan.com/v1/timings/${dStr}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data && data.data) {
+        currentTimings = data.data.timings;
+
+        if (data.data.meta && data.data.meta.timezone) {
+          userLocation.timezone = data.data.meta.timezone;
+        }
+
+        updatePrayerUI(data.data);
+      }
+    } catch (err) {
+      console.log('استخدام البيانات المحفوظة...');
+      const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
+      if (cached) {
+        currentTimings = cached.timings;
+        updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
+      }
+    }
+  }
+
+  // 2. تحديث الواجهة وتجهيز اسم اليوم والتاريخين
   function updatePrayerUI(apiData) {
     const timings = apiData.timings;
 
@@ -998,49 +1073,112 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       }
     });
 
-    // تجهيز التاريخ الهجري
+    const targetDate = getTargetDateObject();
+
+    // اسم اليوم بالعربية
+    const dayFormatter = new Intl.DateTimeFormat('ar-SA', { weekday: 'long' });
+    currentDayName = dayFormatter.format(targetDate);
+
+    // التاريخ الهجري
     if (apiData.date && apiData.date.hijri) {
       const h = apiData.date.hijri;
       currentHijriText = `${h.day} ${h.month.ar}، ${h.year} هـ`;
     }
 
-    // تجهيز التاريخ الميلادي باللغة العربية
-    let now = new Date();
-    if (userLocation.timezone) {
-      try {
-        now = new Date(new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
-      } catch (e) {}
-    }
-    const gregFormatter = new Intl.DateTimeFormat('ar-EG', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-    currentGregorianText = gregFormatter.format(now) + ' م';
+    // التاريخ الميلادي
+    const gregFormatter = new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+    currentGregorianText = gregFormatter.format(targetDate) + ' م';
 
     renderDateDisplay();
+
+    // إظهار أو إخفاء زر العودة لليوم
+    const returnTodayBtn = document.getElementById('returnTodayBtn');
+    if (returnTodayBtn) {
+      returnTodayBtn.style.display = (currentDayOffset !== 0) ? 'inline-block' : 'none';
+    }
   }
 
-  // دالة عرض التاريخ مع تأثير انتقال ناعم
+  // عرض التاريخ واسم اليوم في الكرت
   function renderDateDisplay() {
-    const dateDisplay = document.getElementById('hijriDateDisplay');
-    if (!dateDisplay) return;
+    const dateTextDisplay = document.getElementById('dateTextDisplay');
+    const dayNameDisplay = document.getElementById('dayNameDisplay');
 
-    dateDisplay.style.opacity = '0';
-    setTimeout(() => {
-      if (activeDateMode === 'hijri') {
-        dateDisplay.textContent = currentHijriText || '9 ربيع الثاني، 1448 هـ';
-      } else {
-        dateDisplay.textContent = currentGregorianText;
-      }
-      dateDisplay.style.opacity = '1';
-    }, 150);
+    if (dayNameDisplay) dayNameDisplay.textContent = currentDayName;
+    if (dateTextDisplay) {
+      dateTextDisplay.style.opacity = '0';
+      setTimeout(() => {
+        dateTextDisplay.textContent = (activeDateMode === 'hijri') ? currentHijriText : currentGregorianText;
+        dateTextDisplay.style.opacity = '1';
+      }, 120);
+    }
   }
 
-  // التبديل بين التاريخين
   function toggleDateMode() {
     activeDateMode = (activeDateMode === 'hijri') ? 'gregorian' : 'hijri';
     renderDateDisplay();
+  }
+
+  // ربط الأسهم لتغيير الأيام السابقة والقادمة
+  const prevDayBtn = document.getElementById('prevDayBtn');
+  const nextDayBtn = document.getElementById('nextDayBtn');
+  const returnTodayBtn = document.getElementById('returnTodayBtn');
+  const dateStripContainer = document.getElementById('dateStripContainer');
+  const dateFlipBtn = document.getElementById('dateFlipBtn');
+
+  // السهم الأيمن: اليوم السابق
+  if (prevDayBtn) {
+    prevDayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentDayOffset--;
+      fetchPrayerTimes();
+    });
+  }
+
+  // السهم الأيسر: اليوم التالي
+  if (nextDayBtn) {
+    nextDayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentDayOffset++;
+      fetchPrayerTimes();
+    });
+  }
+
+  // زر العودة لليوم الحالي
+  if (returnTodayBtn) {
+    returnTodayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentDayOffset = 0;
+      fetchPrayerTimes();
+    });
+  }
+
+  // التبديل بين الهجري والميلادي عبر لمس أيقونة السهمين أو السحب العمودي
+  if (dateFlipBtn) {
+    dateFlipBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDateMode();
+    });
+  }
+
+  // دعم إيماءة السحب من أعلى لأسفل (Vertical Swipe) على الكرت لقلب التاريخ
+  let dateTouchStartY = 0;
+  if (dateStripContainer) {
+    dateStripContainer.addEventListener('touchstart', (e) => {
+      dateTouchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    dateStripContainer.addEventListener('touchend', (e) => {
+      const diffY = e.changedTouches[0].clientY - dateTouchStartY;
+      if (Math.abs(diffY) > 25) {
+        toggleDateMode();
+      }
+    });
+
+    dateStripContainer.addEventListener('click', (e) => {
+      if (e.target !== prevDayBtn && e.target !== nextDayBtn && e.target !== returnTodayBtn) {
+        toggleDateMode();
+      }
+    });
   }
 
   // 3. حساب الصلاة القادمة والعداد التنازلي المباشر وفق توقيت المدينة الحقيقي
