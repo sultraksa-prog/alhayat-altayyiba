@@ -1059,7 +1059,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   const locationBadge = document.getElementById('locationBadge');
   const cityNameText = document.getElementById('cityNameText');
 
-  // دالة تحديد الموقع عبر الإنترنت (IP) في حال تعذر GPS (مثل أجهزة هواوي)
+  // دالة تحديد الموقع عبر الإنترنت (IP) في حال تعذر GPS
   async function fallbackLocationByIP() {
     try {
       const res = await fetch('https://ipapi.co/json/');
@@ -1094,14 +1094,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
             const lng = pos.coords.longitude;
             let detectedCity = 'موقعي الحالي';
 
-            // جلب اسم المدينة ومواقيت الصلاة في نفس الوقت بالتوازي لسرعة فائقة
             const geoPromise = fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`)
               .then(res => res.json())
               .catch(() => null);
 
             userLocation = { city: detectedCity, lat: lat, lng: lng };
 
-            // ننتظر فقط اسم المدينة ثم نحدث فوراً
             const geoData = await geoPromise;
             if (geoData && (geoData.city || geoData.locality || geoData.principalSubdivision)) {
               detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
@@ -1109,22 +1107,17 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
             userLocation.city = detectedCity;
             localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
-            
             locationBadge.style.opacity = '1';
             await fetchPrayerTimes();
           },
           async (err) => {
-            console.log('GPS تعذر، جاري التحويل للموقع التلقائي عبر الشبكة...');
-            // إذا فشل الـ GPS (مثل تابلت هواوي) نلجأ تلقائياً للموقع عبر الشبكة
             const ipSuccess = await fallbackLocationByIP();
             locationBadge.style.opacity = '1';
-
             if (!ipSuccess) {
               if (cityNameText) cityNameText.textContent = userLocation.city;
               alert('تعذر جلب الموقع بدقة، تم اعتماد توقيت مكة المكرمة.');
             }
           },
-          // إعدادات محسنة للجوال: سريعة جداً ولا تنتظر الأقمار الصناعية المرهقة
           { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
         );
       } else {
@@ -1136,9 +1129,43 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // بدء تشغيل المحرك وتحديث المواقيت فوراً
+  // بدء تشغيل المحرك
   fetchPrayerTimes();
   startLiveCountdown();
+
+  // ==================== معالج أزرار النقر المطوّل ====================
+  window.handleLongPressAction = function(actionType) {
+    const targetId = window.activeLongPressedGroupId;
+    const groupLongPressModal = document.getElementById('groupLongPressModal');
+
+    if (actionType === 'start' || actionType === 'resume') {
+      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+      if (targetId && window.openCategoryReader) {
+        window.openCategoryReader(targetId, false);
+      }
+    } else if (actionType === 'reset') {
+      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+      if (targetId && window.openCategoryReader) {
+        window.openCategoryReader(targetId, true);
+      }
+    } else if (actionType === 'cancel') {
+      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+    }
+  };
+
+  const groupLongPressModalEl = document.getElementById('groupLongPressModal');
+  if (groupLongPressModalEl) {
+    groupLongPressModalEl.addEventListener('click', (e) => {
+      if (e.target === groupLongPressModalEl) groupLongPressModalEl.classList.remove('show');
+    });
+  }
+
+  // تسجيل Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+  }
+
+}); // إغلاق الدالة الرئيسية للتطبيق بشكل صحيح
 
 // ==================== نافذة وخيارات النقر المطوّل (تشغيل مباشر ومضمون) ====================
   const groupLongPressModal = document.getElementById('groupLongPressModal');
