@@ -464,18 +464,27 @@ if (clearCategorySearchBtn) {
   let isEditMode = false;
   let isReorderMode = false;
 
-  function openCategoryReader(categoryId) {
-    currentActiveCategoryId = categoryId;
-    const category = azkarState.find(c => c.id === categoryId);
-    if (!category) return;
+  function openCategoryReader(categoryId, resetCounters = false) {
+  currentActiveCategoryId = categoryId;
+  const category = azkarState.find(c => c.id === categoryId);
+  if (!category) return;
 
-    readerCategoryTitle.textContent = category.name;
-    isEditMode = false;
-    isReorderMode = false;
-    renderDhikrCards();
-    showScreen(screenAzkarReader);
+  // إذا طُلب التصفير، يتم تصفير العدادات وحفظها فوراً من داخل نطاق البيانات
+  if (resetCounters && category.items) {
+    category.items.forEach(it => {
+      it.currentCount = it.count;
+    });
+    saveAzkarState();
+    renderAzkarCategories();
   }
-  window.openCategoryReader = openCategoryReader;
+
+  readerCategoryTitle.textContent = category.name;
+  isEditMode = false;
+  isReorderMode = false;
+  renderDhikrCards();
+  showScreen(screenAzkarReader);
+}
+window.openCategoryReader = openCategoryReader;
 
   function renderDhikrCards() {
     dhikrCardsContainer.innerHTML = '';
@@ -947,49 +956,24 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   // المعالج الشامل لأوامر الأزرار
   window.handleLongPressAction = function(actionType) {
-    const targetId = window.activeLongPressedGroupId;
+  const targetId = window.activeLongPressedGroupId;
 
-    if (actionType === 'start' || actionType === 'resume') {
-      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
-      if (targetId && window.openCategoryReader) {
-        window.openCategoryReader(targetId);
-      }
-    } else if (actionType === 'reset') {
-      if (targetId) {
-        // 1. تصفير عدادات المجموعة فوراً
-        const group = azkarState.find(g => g.id === targetId);
-        if (group && group.items) {
-          group.items.forEach(it => {
-            it.currentCount = it.count;
-          });
-          // حفظ التصفير في ذاكرة الهاتف بأمان
-          try {
-            saveAzkarState();
-          } catch (e) {
-            localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
-          }
-        }
-
-        // 2. إغلاق النافذة المنبثقة فوراً
-        if (groupLongPressModal) {
-          groupLongPressModal.classList.remove('show');
-        }
-
-        // 3. فتح شاشة قراءة الأذكار مباشرة وهي مصفّرة
-        if (window.openCategoryReader) {
-          window.openCategoryReader(targetId);
-        }
-
-        // 4. تحديث نسب الإنجاز في الخلفية دون تعطيل الشاشة
-        try {
-          if (typeof renderAzkarCategories === 'function') renderAzkarCategories();
-          if (typeof renderFavorites === 'function') renderFavorites();
-        } catch (err) {}
-      }
-    } else if (actionType === 'cancel') {
-      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+  if (actionType === 'start' || actionType === 'resume') {
+    // فتح المجموعة فوراً
+    if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+    if (targetId && window.openCategoryReader) {
+      window.openCategoryReader(targetId, false);
     }
-  };
+  } else if (actionType === 'reset') {
+    // إغلاق النافذة وتصفير المجموعة وفتحها بنفس الطريقة المضمونة
+    if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+    if (targetId && window.openCategoryReader) {
+      window.openCategoryReader(targetId, true); // true تعني: صفّر ثم افتح
+    }
+  } else if (actionType === 'cancel') {
+    if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+  }
+};
 
   if (groupLongPressModal) {
     groupLongPressModal.addEventListener('click', (e) => {
