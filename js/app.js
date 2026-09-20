@@ -940,7 +940,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return `${hours}:${String(minutes).padStart(2, '0')} ${period}`;
   }
 
-  // 1. جلب مواقيت الصلاة من AlAdhan API مع الحفظ المؤقت
+  // 1. جلب مواقيت الصلاة من AlAdhan API مع حفظ المنطقة الزمنية
   async function fetchPrayerTimes() {
     const cityNameEl = document.getElementById('cityNameText');
     if (cityNameEl) cityNameEl.textContent = userLocation.city;
@@ -954,9 +954,16 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
       if (data && data.data) {
         currentTimings = data.data.timings;
+
+        // حفظ المنطقة الزمنية للمدينة (مثل: America/New_York أو Africa/Casablanca)
+        if (data.data.meta && data.data.meta.timezone) {
+          userLocation.timezone = data.data.meta.timezone;
+        }
+
         localStorage.setItem('hayat_cached_timings', JSON.stringify({
           timings: currentTimings,
-          hijri: data.data.date.hijri
+          hijri: data.data.date.hijri,
+          timezone: userLocation.timezone
         }));
 
         updatePrayerUI(data.data);
@@ -966,6 +973,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
       if (cached) {
         currentTimings = cached.timings;
+        if (cached.timezone) userLocation.timezone = cached.timezone;
         updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
       }
     }
@@ -993,19 +1001,29 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // 3. حساب الصلاة القادمة والعداد التنازلي التفاعلي المباشر (كل ثانية)
+  // 3. حساب الصلاة القادمة والعداد التنازلي المباشر وفق توقيت المدينة الحقيقي
   function startLiveCountdown() {
     setInterval(() => {
       if (!currentTimings) return;
 
-      const now = new Date();
+      // حساب الوقت الحالي بناءً على المنطقة الزمنية للمدينة المختارة (حتى لو كانت في قارة أخرى)
+      let now = new Date();
+      if (userLocation.timezone) {
+        try {
+          const tzStr = new Date().toLocaleString('en-US', { timeZone: userLocation.timezone });
+          now = new Date(tzStr);
+        } catch (e) {
+          now = new Date();
+        }
+      }
+
       let nextPrayer = null;
       let nextPrayerDate = null;
 
       for (const p of PRAYER_KEYS) {
         const timeStr = currentTimings[p.key].split(' ')[0];
         const [h, m] = timeStr.split(':').map(Number);
-        const pDate = new Date();
+        const pDate = new Date(now.getTime());
         pDate.setHours(h, m, 0, 0);
 
         if (pDate > now) {
@@ -1015,11 +1033,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         }
       }
 
+      // إذا انتهت صلوات اليوم تكون الصلاة القادمة فجر الغد
       if (!nextPrayer) {
         nextPrayer = PRAYER_KEYS[0];
         const timeStr = currentTimings['Fajr'].split(' ')[0];
         const [h, m] = timeStr.split(':').map(Number);
-        nextPrayerDate = new Date();
+        nextPrayerDate = new Date(now.getTime());
         nextPrayerDate.setDate(nextPrayerDate.getDate() + 1);
         nextPrayerDate.setHours(h, m, 0, 0);
       }
@@ -1305,9 +1324,32 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // تشغيل جلب الأوقات وتشغيل العداد الحي التنازلي
-  fetchPrayerTimes();
-  startLiveCountdown();
+  // نظام متابعة أداء الصلوات وحفظ علامات الـ Checkbox يومياً
+function initPrayerChecklist() {
+  const todayKey = 'hayat_prayers_' + new Date().toISOString().slice(0, 10);
+  const savedChecks = JSON.parse(localStorage.getItem(todayKey) || '{}');
+
+  document.querySelectorAll('.prayer-row').forEach(row => {
+    const pKey = row.getAttribute('data-prayer');
+    const checkbox = row.querySelector('.prayer-check');
+
+    if (checkbox && pKey) {
+      // استرجاع علامات الصح المحفوظة لهذا اليوم
+      checkbox.checked = !!savedChecks[pKey];
+
+      // حفظ الحالة عند النقر على المربع
+      checkbox.addEventListener('change', () => {
+        savedChecks[pKey] = checkbox.checked;
+        localStorage.setItem(todayKey, JSON.stringify(savedChecks));
+      });
+    }
+  });
+}
+
+// تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
+fetchPrayerTimes();
+startLiveCountdown();
+initPrayerChecklist();
 
   // ==================== معالج أزرار النقر المطوّل ====================
   window.handleLongPressAction = function(actionType) {
