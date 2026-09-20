@@ -956,20 +956,35 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       }
     } else if (actionType === 'reset') {
       if (targetId) {
+        // 1. تصفير عدادات المجموعة فوراً
         const group = azkarState.find(g => g.id === targetId);
         if (group && group.items) {
-          group.items.forEach(it => it.currentCount = it.count);
-          saveAzkarState();
-          renderAzkarCategories();
-          const favScreen = document.getElementById('screen-azkar-favorites');
-          if (favScreen && favScreen.classList.contains('active')) {
-            renderFavorites();
+          group.items.forEach(it => {
+            it.currentCount = it.count;
+          });
+          // حفظ التصفير في ذاكرة الهاتف بأمان
+          try {
+            saveAzkarState();
+          } catch (e) {
+            localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
           }
         }
-        if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+
+        // 2. إغلاق النافذة المنبثقة فوراً
+        if (groupLongPressModal) {
+          groupLongPressModal.classList.remove('show');
+        }
+
+        // 3. فتح شاشة قراءة الأذكار مباشرة وهي مصفّرة
         if (window.openCategoryReader) {
           window.openCategoryReader(targetId);
         }
+
+        // 4. تحديث نسب الإنجاز في الخلفية دون تعطيل الشاشة
+        try {
+          if (typeof renderAzkarCategories === 'function') renderAzkarCategories();
+          if (typeof renderFavorites === 'function') renderFavorites();
+        } catch (err) {}
       }
     } else if (actionType === 'cancel') {
       if (groupLongPressModal) groupLongPressModal.classList.remove('show');
