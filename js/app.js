@@ -1351,41 +1351,66 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // البحث والتحقق الجغرافي الصارم لمنع المدن الوهمية
+  // البحث واقتراح المدن القريبة عبر الخريطة العالمية بدون رسائل خطأ
   async function searchCityOnline(query) {
     const cleanQuery = query.trim();
-    if (cleanQuery.length < 3) {
-      alert('يرجى كتابة 3 أحرف على الأقل للبحث عن المدينة.');
-      return;
-    }
+    if (!quickCitiesGrid) return;
+
+    // 1. إظهار مؤشر الانتظار اللطيف داخل النافذة
+    quickCitiesGrid.innerHTML = `
+      <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 16px; font-size: 13.5px;">
+        جاري البحث عن مدن قريبة في الخريطة العالمية... ⏳
+      </div>
+    `;
 
     try {
-      // البحث المخصص للمدن والمناطق الإدارية المعتمدة فقط
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&addressdetails=1&limit=3&accept-language=ar`;
+      // جلب أقرب 5 نتائج من الخريطة باللغة العربية
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&addressdetails=1&limit=5&accept-language=ar`;
       const res = await fetch(url);
       const data = await res.json();
 
-      // تصفية النتائج للتحقق أن النتيجة مكان سكني حقيقي (مدينة، بلدة، أو محافظة)
-      const validPlace = data.find(item => 
-        item.type === 'city' || 
-        item.type === 'town' || 
-        item.type === 'administrative' || 
-        item.class === 'place' || 
-        item.class === 'boundary'
-      ) || data[0];
+      quickCitiesGrid.innerHTML = '';
 
-      if (validPlace && validPlace.lat && validPlace.lon) {
-        // استخراج الاسم الجغرافي الحقيقي المعتمد من الخريطة مع دولته
-        const officialName = validPlace.name || validPlace.display_name.split(',')[0].trim();
-        const countryName = validPlace.address && validPlace.address.country ? validPlace.address.country : '';
-        const displayName = countryName ? `${officialName} (${countryName})` : officialName;
+      if (data && data.length > 0) {
+        // 2. شريط توجيهي: مدن مقترحة من الخريطة
+        const header = document.createElement('div');
+        header.style.cssText = 'grid-column: span 3; font-size: 12.5px; color: #1D5D9B; background: #EEF6FC; border: 1px solid #BCD8F0; padding: 8px 10px; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 6px;';
+        header.textContent = `📍 مدن قريبة تم العثور عليها للاسم: "${cleanQuery}"`;
+        quickCitiesGrid.appendChild(header);
 
-        selectCity(displayName, parseFloat(validPlace.lat), parseFloat(validPlace.lon), countryName);
+        // 3. عرض المدن المقترحة كأزرار قابلة للنقر
+        data.forEach(item => {
+          const officialCity = item.name || item.display_name.split(',')[0].trim();
+          const country = (item.address && item.address.country) ? item.address.country : '';
+          const state = (item.address && (item.address.state || item.address.region)) ? (item.address.state || item.address.region) : '';
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'quick-city-btn';
+          btn.style.cssText = 'border-color: #BCD8F0; padding: 10px 4px;';
+          btn.innerHTML = `
+            <span style="font-weight: 700;">${officialCity}</span>
+            <span class="city-sub-country">${country ? country : state}</span>
+          `;
+          btn.onclick = () => selectCity(officialCity, parseFloat(item.lat), parseFloat(item.lon), country);
+          quickCitiesGrid.appendChild(btn);
+        });
+
       } else {
-        // رفض قاطع إذا لم تكن مدينة حقيقية
-        alert(`عذراً، لم يتم العثور على أي مدينة حقيقية مسجلة باسم: "${cleanQuery}"\nيرجى التأكد من صحة الحروف.`);
+        // 4. في حال لم تكن هناك أي مدينة قريبة إطلاقاً (نص عشوائي تام)
+        quickCitiesGrid.innerHTML = `
+          <div style="grid-column: span 3; text-align: center; color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; padding: 12px; border-radius: 10px; font-size: 13px;">
+            ⚠️ لم يتم العثور على أي مدينة مطابقة أو قريبة للاسم: "<strong>${cleanQuery}</strong>"<br>
+            <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">يرجى مراجعة الحروف أو الاختيار من القائمة.</span>
+          </div>
+        `;
       }
-    } catch (e) {
-      alert('تعذر التحقق من الخريطة حالياً، يرجى اختيار إحدى المدن المعتمدة من القائمة.');
+    } catch (err) {
+      quickCitiesGrid.innerHTML = `
+        <div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 14px; font-size: 13px;">
+          تعذر الاتصال بالخريطة حالياً، يرجى الاختيار من المدن المتاحة أعلاه.
+        </div>
+      `;
     }
   }
 
