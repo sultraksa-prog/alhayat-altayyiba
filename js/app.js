@@ -1055,53 +1055,90 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // 4. طلب الموقع الجغرافي للمستخدم عند النقر على زر المدينة
+// 4. طلب الموقع الجغرافي السريع والمتوافق مع الجوالات وهواوي
   const locationBadge = document.getElementById('locationBadge');
+  const cityNameText = document.getElementById('cityNameText');
+
+  // دالة تحديد الموقع عبر الإنترنت (IP) في حال تعذر GPS (مثل أجهزة هواوي)
+  async function fallbackLocationByIP() {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      if (data && data.latitude && data.longitude) {
+        userLocation = {
+          city: data.city || data.region || 'موقعي الحالي',
+          lat: data.latitude,
+          lng: data.longitude
+        };
+        localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+        if (cityNameText) cityNameText.textContent = userLocation.city;
+        await fetchPrayerTimes();
+        return true;
+      }
+    } catch (e) {
+      console.log('IP fallback failed');
+    }
+    return false;
+  }
+
   if (locationBadge) {
     locationBadge.style.cursor = 'pointer';
     locationBadge.addEventListener('click', () => {
+      if (cityNameText) cityNameText.textContent = 'جاري التحديد...';
+      locationBadge.style.opacity = '0.7';
+
       if ('geolocation' in navigator) {
-        locationBadge.style.opacity = '0.6';
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             let detectedCity = 'موقعي الحالي';
 
-            // جلب اسم المدينة بالعربية عبر خدمة جغرافية مجانية
-            try {
-              const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`);
-              const geoData = await geoRes.json();
-              if (geoData.city || geoData.locality || geoData.principalSubdivision) {
-                detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
-              }
-            } catch (e) {}
+            // جلب اسم المدينة ومواقيت الصلاة في نفس الوقت بالتوازي لسرعة فائقة
+            const geoPromise = fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`)
+              .then(res => res.json())
+              .catch(() => null);
 
             userLocation = { city: detectedCity, lat: lat, lng: lng };
+
+            // ننتظر فقط اسم المدينة ثم نحدث فوراً
+            const geoData = await geoPromise;
+            if (geoData && (geoData.city || geoData.locality || geoData.principalSubdivision)) {
+              detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
+            }
+
+            userLocation.city = detectedCity;
             localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+            
             locationBadge.style.opacity = '1';
             await fetchPrayerTimes();
           },
-          (err) => {
+          async (err) => {
+            console.log('GPS تعذر، جاري التحويل للموقع التلقائي عبر الشبكة...');
+            // إذا فشل الـ GPS (مثل تابلت هواوي) نلجأ تلقائياً للموقع عبر الشبكة
+            const ipSuccess = await fallbackLocationByIP();
             locationBadge.style.opacity = '1';
-            alert('تعذر الوصول للموقع، تم اعتماد توقيت مكة المكرمة افتراضياً.');
+
+            if (!ipSuccess) {
+              if (cityNameText) cityNameText.textContent = userLocation.city;
+              alert('تعذر جلب الموقع بدقة، تم اعتماد توقيت مكة المكرمة.');
+            }
           },
-          { timeout: 10000, enableHighAccuracy: true }
+          // إعدادات محسنة للجوال: سريعة جداً ولا تنتظر الأقمار الصناعية المرهقة
+          { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
         );
       } else {
-        alert('المتصفح لا يدعم تحديد الموقع الجغرافي.');
+        fallbackLocationByIP().then(success => {
+          locationBadge.style.opacity = '1';
+          if (!success) alert('المتصفح لا يدعم تحديد الموقع.');
+        });
       }
     });
   }
 
-  // بدء تشغيل المحرك
+  // بدء تشغيل المحرك وتحديث المواقيت فوراً
   fetchPrayerTimes();
   startLiveCountdown();
-  
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
-  }
-
-});
 
 // ==================== نافذة وخيارات النقر المطوّل (تشغيل مباشر ومضمون) ====================
   const groupLongPressModal = document.getElementById('groupLongPressModal');
