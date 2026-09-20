@@ -192,7 +192,7 @@
         </button>
         <h2 class="section-page-title" id="readerCategoryTitle">الأذكار</h2>
         <div class="reader-header-actions">
-          <div class="header-icon-btn" title="الإعدادات">
+          <div class="header-icon-btn" id="openDhikrSettingsBtn" title="الإعدادات">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
           </div>
           <div class="header-icon-btn" id="readerMenuBtn" title="خيارات">
@@ -338,6 +338,115 @@
         <div class="modal-actions-row">
           <button class="modal-btn-primary" style="background: #D97706;" id="closeAlertModalBtn">حسناً، فهمت</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ==================== نافذة إعدادات الأذكار المنبثقة ==================== -->
+    <div class="bottom-sheet-backdrop" id="azkarSettingsModal">
+      <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+        <div class="sheet-drag-handle"></div>
+
+        <!-- 1. خيارات العرض (عامودي / افقي) -->
+        <div class="setting-block">
+          <h4 class="setting-label">خيارات العرض</h4>
+          <div class="setting-radio-group">
+            <label class="setting-radio-item">
+              <input type="radio" name="displayModeRadio" value="vertical" checked id="radioVertical">
+              <span class="custom-radio"></span>
+              <span>عامودي</span>
+            </label>
+            <label class="setting-radio-item">
+              <input type="radio" name="displayModeRadio" value="horizontal" id="radioHorizontal">
+              <span class="custom-radio"></span>
+              <span>افقي</span>
+            </label>
+          </div>
+        </div>
+
+        <hr class="setting-divider">
+
+        <!-- 2. حجم خط الأذكار -->
+        <div class="setting-block">
+          <div class="setting-header-inline">
+            <h4 class="setting-label">حجم خط أذكار اليوم والليلة</h4>
+            <span class="font-size-val" id="fontSizeDisplay">21</span>
+          </div>
+          <input type="range" id="fontSizeSlider" min="16" max="32" value="21" class="custom-slider">
+        </div>
+
+        <hr class="setting-divider">
+
+        <!-- 3. نوع الخط -->
+        <div class="setting-block">
+          <h4 class="setting-label">خط أذكار اليوم والليلة</h4>
+          <select id="fontFamilySelector" class="custom-font-select">
+            <option value="'Amiri', serif" selected>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ (الخط الأميري)</option>
+            <option value="'Cairo', sans-serif">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ (خط كايرو)</option>
+          </select>
+        </div>
+
+        <hr class="setting-divider">
+
+        <!-- 4. ارتجاج عند الصفر (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">ارتجاج عند الصفر</h4>
+            <p class="setting-desc">تفعيل هذا الخيار سيفعل الارتجاج عند وصول العداد للصفر في صفحة أذكار اليوم والليلة</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleVibrateOnZero" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 5. ارتجاج عند كل ضغطة (معطل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">ارتجاج عند كل ضغطة</h4>
+            <p class="setting-desc">ارتجاج خفيف عند كل ضغطة على الذكر</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleVibrateOnClick">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 6. اخفاء عند الصفر (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">اخفاء عند الصفر</h4>
+            <p class="setting-desc">بتفعيل هذا الخيار سيختفي الذكر عند وصول العداد للصفر في صفحة أذكار اليوم والليلة</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleHideOnZero" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 7. العد بالضغط على الذكر (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">العد بالضغط على الذكر</h4>
+            <p class="setting-desc">بتفعيل هذا الخيار يمكنك الضغط على اي مكان على الذكر للعد</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleTapAnywhere" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 8. تأكيد الخروج (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">تأكيد الخروج</h4>
+            <p class="setting-desc">تفعيل هذا الخيار سيمنع الخروج بالخطأ من اذكار اليوم والليلة</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleConfirmExit" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
       </div>
     </div>
 
