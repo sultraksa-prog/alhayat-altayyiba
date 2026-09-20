@@ -475,6 +475,7 @@ if (clearCategorySearchBtn) {
     renderDhikrCards();
     showScreen(screenAzkarReader);
   }
+  window.openCategoryReader = openCategoryReader;
 
   function renderDhikrCards() {
     dhikrCardsContainer.innerHTML = '';
