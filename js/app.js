@@ -1191,7 +1191,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     { name: 'المنامة', country: 'البحرين', lat: 26.2285, lng: 50.5860 },
     { name: 'المحرق', country: 'البحرين', lat: 26.2572, lng: 50.6119 },
     { name: 'الرفاع', country: 'البحرين', lat: 26.1300, lng: 50.5550 },
-    { name: 'مدينة حمد', country: 'البحرين', lat: 26.1153, lng: 50.5069 }
+    { name: 'مدينة حمد', country: 'البحرين', lat: 26.1153, lng: 50.5069 },
 
     // المملكة المغربية
     { name: 'الرباط', country: 'المغرب', lat: 34.0209, lng: -6.8416 },
