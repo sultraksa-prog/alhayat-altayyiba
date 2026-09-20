@@ -1,5 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+// ==================== إعدادات الأذكار ====================
+  const SETTINGS_KEY = 'hayat_dhikr_settings';
+  const DEFAULT_SETTINGS = {
+    displayMode: 'vertical',
+    fontSize: 21,
+    fontFamily: "'Amiri', serif",
+    vibrateOnZero: true,
+    vibrateOnClick: false,
+    hideOnZero: true,
+    tapAnywhere: true,
+    confirmExit: true
+  };
+
+  let dhikrSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
+
+  function saveSettings() {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(dhikrSettings));
+  }
+  
   // ==================== 1. نظام عزل المعرفات وحفظ البيانات ====================
   const SAVED_VERSION_KEY = 'hayat_azkar_version';
   const currentVersion = localStorage.getItem(SAVED_VERSION_KEY);
@@ -93,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (category && category.items && category.items.length > 0) {
     const isAllDone = category.items.every(it => it.currentCount === 0);
     // إذا لم يكمل الأذكار بعد، نظهر له نافذة تأكيد الخروج
-    if (!isAllDone) {
+    // إذا لم يكمل القراءة وخيار تأكيد الخروج مفعل
+    if (!isAllDone && dhikrSettings.confirmExit) {
       document.getElementById('exitConfirmModal').classList.add('show');
       return;
     }
@@ -339,6 +359,13 @@ if (clearCategorySearchBtn) {
 
   function renderDhikrCards() {
     dhikrCardsContainer.innerHTML = '';
+    
+    if (dhikrSettings.displayMode === 'horizontal') {
+    dhikrCardsContainer.classList.add('horizontal-mode');
+  } else {
+    dhikrCardsContainer.classList.remove('horizontal-mode');
+  }
+    
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category || !category.items || category.items.length === 0) {
       dhikrCardsContainer.innerHTML = `
@@ -378,7 +405,7 @@ if (clearCategorySearchBtn) {
           </div>
 
           ${item.pre ? `<div class="dhikr-pre-text">${item.pre}</div>` : ''}
-          <div class="dhikr-main-text">${item.text}</div>
+          <div class="dhikr-main-text" style="font-size: ${dhikrSettings.fontSize}px; font-family: ${dhikrSettings.fontFamily};">${item.text}</div>
 
           ${item.fullNote || item.alert ? `
             <div class="dhikr-note-wrapper">
@@ -403,7 +430,22 @@ if (clearCategorySearchBtn) {
         </button>
       `;
 
-      dhikrCardsContainer.appendChild(card);
+      // ميزة إخفاء الذكر عند الصفر
+    if (dhikrSettings.hideOnZero && isDone) {
+      card.style.display = 'none';
+    }
+
+    // ميزة العد بالضغط على أي مكان في البطاقة
+    if (dhikrSettings.tapAnywhere && !isDone) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e) => {
+        // تجنب العد المزدوج إذا ضغط على زر المشاركة أو التعديل
+        if (e.target.closest('.dhikr-card-top-actions') || e.target.closest('.dhikr-counter-btn') || e.target.closest('.dhikr-note-wrapper')) return;
+        decrementDhikr(item.id);
+      });
+    }
+
+    dhikrCardsContainer.appendChild(card);
     });
   }
 
@@ -415,7 +457,16 @@ if (clearCategorySearchBtn) {
     if (!item || item.currentCount <= 0) return;
 
     item.currentCount--;
-    if (navigator.vibrate) navigator.vibrate(35);
+
+  // 1. ارتجاج عند كل ضغطة
+  if (dhikrSettings.vibrateOnClick && navigator.vibrate) {
+    navigator.vibrate(30);
+  }
+
+  // 2. ارتجاج أطول عند وصول العداد للصفر
+  if (item.currentCount === 0 && dhikrSettings.vibrateOnZero && navigator.vibrate) {
+    navigator.vibrate([120, 60, 150]);
+  }
 
     saveAzkarState();
     renderDhikrCards();
@@ -595,6 +646,89 @@ if (clearCategorySearchBtn) {
     e.stopPropagation();
     readerDropdownMenu.classList.toggle('show');
   });
+  
+  // فتح وإغلاق شاشة الإعدادات
+  const openDhikrSettingsBtn = document.getElementById('openDhikrSettingsBtn');
+  const azkarSettingsModal = document.getElementById('azkarSettingsModal');
+
+  if (openDhikrSettingsBtn) {
+    openDhikrSettingsBtn.addEventListener('click', () => {
+      syncSettingsUI();
+      azkarSettingsModal.classList.add('show');
+    });
+  }
+
+  azkarSettingsModal.addEventListener('click', (e) => {
+    if (e.target === azkarSettingsModal) azkarSettingsModal.classList.remove('show');
+  });
+
+  // مزامنة واجهة الإعدادات مع القيم المحفوظة
+  function syncSettingsUI() {
+    if (dhikrSettings.displayMode === 'vertical') {
+      document.getElementById('radioVertical').checked = true;
+    } else {
+      document.getElementById('radioHorizontal').checked = true;
+    }
+    document.getElementById('fontSizeSlider').value = dhikrSettings.fontSize;
+    document.getElementById('fontSizeDisplay').textContent = dhikrSettings.fontSize;
+    document.getElementById('fontFamilySelector').value = dhikrSettings.fontFamily;
+
+    document.getElementById('toggleVibrateOnZero').checked = dhikrSettings.vibrateOnZero;
+    document.getElementById('toggleVibrateOnClick').checked = dhikrSettings.vibrateOnClick;
+    document.getElementById('toggleHideOnZero').checked = dhikrSettings.hideOnZero;
+    document.getElementById('toggleTapAnywhere').checked = dhikrSettings.tapAnywhere;
+    document.getElementById('toggleConfirmExit').checked = dhikrSettings.confirmExit;
+  }
+
+  // التفاعل وتطبيق الإعدادات فوراً
+  document.querySelectorAll('input[name="displayModeRadio"]').forEach(r => {
+    r.addEventListener('change', (e) => {
+      dhikrSettings.displayMode = e.target.value;
+      saveSettings();
+      renderDhikrCards();
+    });
+  });
+
+  document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
+    dhikrSettings.fontSize = parseInt(e.target.value);
+    document.getElementById('fontSizeDisplay').textContent = dhikrSettings.fontSize;
+    saveSettings();
+    renderDhikrCards();
+  });
+
+  document.getElementById('fontFamilySelector').addEventListener('change', (e) => {
+    dhikrSettings.fontFamily = e.target.value;
+    saveSettings();
+    renderDhikrCards();
+  });
+
+  document.getElementById('toggleVibrateOnZero').addEventListener('change', (e) => {
+    dhikrSettings.vibrateOnZero = e.target.checked;
+    saveSettings();
+  });
+
+  document.getElementById('toggleVibrateOnClick').addEventListener('change', (e) => {
+    dhikrSettings.vibrateOnClick = e.target.checked;
+    saveSettings();
+  });
+
+  document.getElementById('toggleHideOnZero').addEventListener('change', (e) => {
+    dhikrSettings.hideOnZero = e.target.checked;
+    saveSettings();
+    renderDhikrCards();
+  });
+
+  document.getElementById('toggleTapAnywhere').addEventListener('change', (e) => {
+    dhikrSettings.tapAnywhere = e.target.checked;
+    saveSettings();
+    renderDhikrCards();
+  });
+
+  document.getElementById('toggleConfirmExit').addEventListener('change', (e) => {
+    dhikrSettings.confirmExit = e.target.checked;
+    saveSettings();
+  });
+  
   document.addEventListener('click', () => readerDropdownMenu.classList.remove('show'));
 
   document.getElementById('toggleEditModeBtn').addEventListener('click', () => {
