@@ -85,7 +85,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
-  function showScreen(screen) {
+  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
+  // تسجيل الشاشة الرئيسية كنقطة بداية
+  if (!history.state) {
+    history.replaceState({ screenId: 'screen-home' }, '');
+  }
+
+  function showScreen(screen, pushToHistory = true) {
+    const activeScreen = document.querySelector('.screen-view.active');
+    
+    // تسجيل الشاشة في سجل الجوال عند الانتقال للأمام
+    if (pushToHistory && activeScreen && activeScreen !== screen) {
+      history.pushState({ screenId: screen.id }, '');
+    }
+
     document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
     screen.classList.add('active');
     window.scrollTo(0, 0);
@@ -98,6 +111,58 @@ document.addEventListener('DOMContentLoaded', () => {
       tabAzkar.classList.add('active');
     }
   }
+
+  // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
+  window.addEventListener('popstate', () => {
+    const activeScreen = document.querySelector('.screen-view.active');
+
+    // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، السحب يغلقها أولاً دون مغادرة الشاشة
+    const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
+    if (openModal) {
+      openModal.classList.remove('show');
+      // الحفاظ على تاريخ الشاشة حتى لا يستهلك السحب خطوة الشاشة
+      history.pushState({ screenId: activeScreen ? activeScreen.id : 'screen-home' }, '');
+      return;
+    }
+
+    // 2. إذا كان المستخدم في الشاشة الرئيسية، اتركه يخرج بشكل طبيعي
+    if (!activeScreen || activeScreen === screenHome) {
+      return;
+    }
+
+    // 3. إذا كان المستخدم في شاشة قراءة الأذكار
+    if (activeScreen === screenAzkarReader) {
+      const category = azkarState.find(c => c.id === currentActiveCategoryId);
+      if (category && category.items && category.items.length > 0) {
+        const isAllDone = category.items.every(it => it.currentCount === 0);
+        // إذا لم يكمل وخيار تأكيد الخروج مفعل
+        if (!isAllDone && dhikrSettings.confirmExit) {
+          history.pushState({ screenId: 'screen-azkar-reader' }, '');
+          document.getElementById('exitConfirmModal').classList.add('show');
+          return;
+        }
+      }
+      showScreen(screenAzkarCategories, false);
+      renderAzkarCategories();
+      return;
+    }
+
+    // 4. إذا كان في شاشة المفضلة، السحب يعيده إلى شاشة مجموعات الأذكار
+    if (activeScreen === screenAzkarFavorites) {
+      showScreen(screenAzkarCategories, false);
+      renderAzkarCategories();
+      return;
+    }
+
+    // 5. إذا كان في شاشة مجموعات الأذكار، السحب يعيده إلى الشاشة الرئيسية
+    if (activeScreen === screenAzkarCategories) {
+      showScreen(screenHome, false);
+      return;
+    }
+
+    // افتراضياً
+    showScreen(screenHome, false);
+  });
 
   tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
   tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
