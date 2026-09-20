@@ -1347,3 +1347,10 @@ html, body {
   min-width: 100%;
   scroll-snap-align: center;
 }
+
+/* منع ظهور قائمة المتصفح الافتراضية عند الضغط المطول على البطاقات */
+.azkar-group-card {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
