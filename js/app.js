@@ -1769,7 +1769,7 @@ ${APP_CONFIG.url}`;
     });
   }
 
-  // 3. مشاركة رسالة دعوة الأصدقاء
+  // 3. مشاركة رسالة دعوة الأصدقاء (بدون تكرار الرابط)
   if (btnShareInvite) {
     btnShareInvite.addEventListener('click', async () => {
       const inviteMessage = 
@@ -1784,8 +1784,7 @@ ${APP_CONFIG.url}`;
         try {
           await navigator.share({
             title: APP_CONFIG.name,
-            text: inviteMessage,
-            url: APP_CONFIG.url
+            text: inviteMessage
           });
         } catch(e) {}
       } else {
