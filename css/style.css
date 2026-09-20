@@ -1,3 +1,52 @@
+/* ==================== الخطوط العربية المدمجة محلياً ==================== */
+@font-face {
+  font-family: 'AmiriLocal';
+  src: url('../fonts/amiri.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ScheherazadeLocal';
+  src: url('../fonts/scheherazade.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NotoNaskhLocal';
+  src: url('../fonts/noto-naskh.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RuqaaLocal';
+  src: url('../fonts/ruqaa.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TajawalLocal';
+  src: url('../fonts/tajawal.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CairoLocal';
+  src: url('../fonts/cairo.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* متغيرات التصميم - أزرق ملكي متكامل */
 :root {
   --primary-deep: #09203F;
