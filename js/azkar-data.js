@@ -1,5 +1,5 @@
 // بنك الأذكار الكامل والدقيق - تطبيق الحياة الطيبة (النسخة 3.0)
-const AZKAR_DATA_VERSION = '3.0_EXACT_USER_SOURCE';
+const AZKAR_DATA_VERSION = '3.1_AJR_FILTER';
 
 // النص الحرفي للمستخدم مقسماً بالشرطات
 const RAW_USER_SOURCE = `
@@ -812,9 +812,13 @@ function parseRawUserAzkar(raw) {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
 
-      // فحص هل السطر تنبيه خاص
+// فحص هل السطر تنبيه خاص
       const isAlert = line.startsWith('(تنبيه:') || line.startsWith('تنبيه:') || line.includes('الإمام ابن باز');
-      // فحص هل السطر فضل أو حديث تابع للذكر
+      
+      // فحص هل السطر يبدأ بكلمة (الاجر / الأجر / أجر / اجر) مع أو بدون نقطتين أو أقواس
+      const isAjr = /^[\(\[\{]?(?:ال)?أ?[إا]جر[\)\]\}]?\s*[:\-–—]?\s*/i.test(line);
+
+      // فحص هل السطر فضل أو حديث معروف
       const isVirtue = line.startsWith('من قالها') || line.startsWith('حُطَّتْ') || line.startsWith('كانت له') || 
                        line.startsWith('تعدل') || line.startsWith('بناء قصر') || line.startsWith('أنهن') || 
                        line.startsWith('أفضل') || line.startsWith('خير') || line.startsWith('قَالَ النَّبِيُّ') || 
@@ -823,8 +827,13 @@ function parseRawUserAzkar(raw) {
 
       if (isAlert && currentItem) {
         currentItem.alert = line.replace(/^\(تنبيه:\s*/, '').replace(/\)$/, '').trim();
-      } else if (isVirtue && currentItem) {
-        currentItem.fullNote = (currentItem.fullNote ? currentItem.fullNote + '\n' : '') + line;
+      } else if ((isAjr || isVirtue) && currentItem) {
+        // تنظيف وحذف كلمة "الاجر" أو "الأجر" وما بعدها من فواصل/نقطتين حتى لا تظهر للمستخدم
+        let cleanNote = line;
+        if (isAjr) {
+          cleanNote = line.replace(/^[\(\[\{]?(?:ال)?أ?[إا]جر[\)\]\}]?\s*[:\-–—]?\s*/i, '').trim();
+        }
+        currentItem.fullNote = (currentItem.fullNote ? currentItem.fullNote + '\n' : '') + cleanNote;
       } else {
         // بداية ذكر جديد
         if (currentItem) items.push(currentItem);
