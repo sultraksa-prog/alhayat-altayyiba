@@ -1559,6 +1559,223 @@ fetchPrayerTimes();
 startLiveCountdown();
 initPrayerChecklist();
 
+  // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
+  const APP_CONFIG = {
+    name: 'الحياة الطيبة',
+    url: window.location.href.split('#')[0], // رابط التطبيق الحالي تلقائياً
+    shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات' // وصف التطبيق (6 كلمات)
+  };
+
+  const openShareBtn = document.getElementById('openShareBtn');
+  const shareModalBackdrop = document.getElementById('shareModalBackdrop');
+  const tabShareTimings = document.getElementById('tabShareTimings');
+  const tabShareInvite = document.getElementById('tabShareInvite');
+  const contentShareTimings = document.getElementById('contentShareTimings');
+  const contentShareInvite = document.getElementById('contentShareInvite');
+
+  const shareNextPrayerTitle = document.getElementById('shareNextPrayerTitle');
+  const shareCardLocation = document.getElementById('shareCardLocation');
+  const shareCardDate = document.getElementById('shareCardDate');
+  const inviteAppNameDisplay = document.getElementById('inviteAppNameDisplay');
+  const inviteAppDescDisplay = document.getElementById('inviteAppDescDisplay');
+  const inviteAppUrlDisplay = document.getElementById('inviteAppUrlDisplay');
+
+  const btnShareAsText = document.getElementById('btnShareAsText');
+  const btnShareAsImage = document.getElementById('btnShareAsImage');
+  const btnShareInvite = document.getElementById('btnShareInvite');
+
+  // فتح نافذة المشاركة وتجهيز البيانات الحية
+  if (openShareBtn && shareModalBackdrop) {
+    openShareBtn.addEventListener('click', () => {
+      const nextPrayerName = document.getElementById('currentPrayerName')?.textContent || 'الصلاة';
+      const nextPrayerTime = document.getElementById('currentPrayerTime')?.textContent || '';
+      const cityName = userLocation.city || 'مكة المكرمة';
+
+      if (shareNextPrayerTitle) shareNextPrayerTitle.textContent = `موعد صلاة ${nextPrayerName}: ${nextPrayerTime}`;
+      if (shareCardLocation) shareCardLocation.textContent = `${cityName} (${userLocation.country || 'المملكة'})`;
+      if (shareCardDate) shareCardDate.textContent = `${currentHijriText} - ${currentGregorianText}`;
+
+      if (inviteAppNameDisplay) inviteAppNameDisplay.textContent = APP_CONFIG.name;
+      if (inviteAppDescDisplay) inviteAppDescDisplay.textContent = APP_CONFIG.shortDesc;
+      if (inviteAppUrlDisplay) inviteAppUrlDisplay.textContent = APP_CONFIG.url;
+
+      shareModalBackdrop.classList.add('show');
+    });
+
+    shareModalBackdrop.addEventListener('click', (e) => {
+      if (e.target === shareModalBackdrop) shareModalBackdrop.classList.remove('show');
+    });
+  }
+
+  // التبديل بين تبويبي: مشاركة التذكير / دعوة الأصدقاء
+  if (tabShareTimings && tabShareInvite) {
+    tabShareTimings.addEventListener('click', () => {
+      tabShareTimings.classList.add('active');
+      tabShareInvite.classList.remove('active');
+      contentShareTimings.style.display = 'block';
+      contentShareInvite.style.display = 'none';
+    });
+
+    tabShareInvite.addEventListener('click', () => {
+      tabShareInvite.classList.add('active');
+      tabShareTimings.classList.remove('active');
+      contentShareInvite.style.display = 'block';
+      contentShareTimings.style.display = 'none';
+    });
+  }
+
+  // 1. مشاركة مواقيت اليوم كنص
+  if (btnShareAsText) {
+    btnShareAsText.addEventListener('click', async () => {
+      let timingsText = '';
+      if (currentTimings) {
+        PRAYER_KEYS.forEach(p => {
+          timingsText += `• ${p.name}: ${formatTo12Hour(currentTimings[p.key])}\n`;
+        });
+      }
+
+      const fullShareMessage = 
+`🕌 مواقيت الصلاة - ${userLocation.city}
+📅 ${currentHijriText}
+📆 ${currentGregorianText}
+
+${timingsText}
+✨ تم استخراج المواقيت عبر تطبيق: ${APP_CONFIG.name}
+📲 جرّب التطبيق الآن:
+${APP_CONFIG.url}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: APP_CONFIG.name, text: fullShareMessage });
+        } catch(e) {}
+      } else {
+        await navigator.clipboard.writeText(fullShareMessage);
+        alert('تم نسخ مواقيت الصلاة وبيانات اليوم بنجاح!');
+      }
+      shareModalBackdrop.classList.remove('show');
+    });
+  }
+
+  // 2. توليد ومشاركة بطاقة صورة حية عبر Canvas
+  if (btnShareAsImage) {
+    btnShareAsImage.addEventListener('click', async () => {
+      btnShareAsImage.innerHTML = '<span>جاري إنشاء الصورة... 🎨</span>';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1350;
+      const ctx = canvas.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#09203F');
+      grad.addColorStop(0.5, '#113F67');
+      grad.addColorStop(1, '#1D5D9B');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#FCD34D';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 58px "Cairo", sans-serif';
+      ctx.fillText(APP_CONFIG.name, canvas.width / 2, 140);
+
+      ctx.font = '36px "Cairo", sans-serif';
+      ctx.fillStyle = '#FCD34D';
+      ctx.fillText(`📍 مواقيت الصلاة لمدينة ${userLocation.city}`, canvas.width / 2, 215);
+
+      ctx.fillStyle = '#E2E8F0';
+      ctx.font = '32px "Cairo", sans-serif';
+      ctx.fillText(`${currentHijriText}  |  ${currentGregorianText}`, canvas.width / 2, 280);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(120, 320);
+      ctx.lineTo(canvas.width - 120, 320);
+      ctx.stroke();
+
+      let startY = 400;
+      PRAYER_KEYS.forEach((p, idx) => {
+        ctx.fillStyle = (idx % 2 === 0) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.14)';
+        ctx.beginPath();
+        ctx.roundRect(140, startY - 50, canvas.width - 280, 85, 18);
+        ctx.fill();
+
+        ctx.font = 'bold 38px "Cairo", sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'right';
+        ctx.fillText(p.name, canvas.width - 190, startY + 8);
+
+        ctx.fillStyle = '#FCD34D';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatTo12Hour(currentTimings[p.key]), 190, startY + 8);
+
+        startY += 115;
+      });
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 34px "Cairo", sans-serif';
+      ctx.fillText(APP_CONFIG.shortDesc, canvas.width / 2, canvas.height - 150);
+
+      ctx.fillStyle = '#93C5FD';
+      ctx.font = '30px "Cairo", sans-serif';
+      ctx.fillText(APP_CONFIG.url, canvas.width / 2, canvas.height - 95);
+
+      canvas.toBlob(async (blob) => {
+        btnShareAsImage.innerHTML = '<span>مشاركة كصورة فاخرة 🖼️</span>';
+        const file = new File([blob], 'prayer-times.png', { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `مواقيت الصلاة - ${userLocation.city}`,
+              text: `مواقيت الصلاة لمدينة ${userLocation.city} عبر تطبيق ${APP_CONFIG.name}`
+            });
+          } catch(e) {}
+        } else {
+          const link = document.createElement('a');
+          link.download = `مواقيت-${userLocation.city}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+          alert('تم إنشاء وتنزيل بطاقة المواقيت كصورة بنجاح!');
+        }
+        shareModalBackdrop.classList.remove('show');
+      }, 'image/png');
+    });
+  }
+
+  // 3. مشاركة رسالة دعوة الأصدقاء
+  if (btnShareInvite) {
+    btnShareInvite.addEventListener('click', async () => {
+      const inviteMessage = 
+`السلام عليكم ورحمة الله وبركاته 🌸
+أدعوك لتجربة تطبيق "${APP_CONFIG.name}":
+✨ ${APP_CONFIG.shortDesc}
+
+📲 افتح التطبيق مباشرة عبر الرابط:
+${APP_CONFIG.url}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: APP_CONFIG.name,
+            text: inviteMessage,
+            url: APP_CONFIG.url
+          });
+        } catch(e) {}
+      } else {
+        await navigator.clipboard.writeText(inviteMessage);
+        alert('تم نسخ رسالة الدعوة والرابط بنجاح لمشاركتها مع أصدقائك!');
+      }
+      shareModalBackdrop.classList.remove('show');
+    });
+  }
+
   // ==================== معالج أزرار النقر المطوّل ====================
   window.handleLongPressAction = function(actionType) {
     const targetId = window.activeLongPressedGroupId;
