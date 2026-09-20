@@ -1684,7 +1684,7 @@ ${APP_CONFIG.url}`;
 
       ctx.font = '36px "Cairo", sans-serif';
       ctx.fillStyle = '#FCD34D';
-      ctx.fillText(`📍 مواقيت الصلاة لمدينة ${userLocation.city}`, canvas.width / 2, 215);
+      ctx.fillText(`📍 مواقيت الصلاة - ${userLocation.city}`, canvas.width / 2, 215);
 
       ctx.fillStyle = '#E2E8F0';
       ctx.font = '32px "Cairo", sans-serif';
@@ -1726,15 +1726,35 @@ ${APP_CONFIG.url}`;
       ctx.fillText(APP_CONFIG.url, canvas.width / 2, canvas.height - 95);
 
       canvas.toBlob(async (blob) => {
-        btnShareAsImage.innerHTML = '<span>مشاركة كصورة فاخرة 🖼️</span>';
+        btnShareAsImage.innerHTML = '<span>مشاركة كصورة 🖼️</span>';
         const file = new File([blob], 'prayer-times.png', { type: 'image/png' });
 
+        // 1. تجهيز نص أوقات الصلاة كاملاً
+        let timingsText = '';
+        if (currentTimings) {
+          PRAYER_KEYS.forEach(p => {
+            timingsText += `• ${p.name}: ${formatTo12Hour(currentTimings[p.key])}\n`;
+          });
+        }
+
+        // 2. صياغة الرسالة الكاملة المرفقة مع الصورة
+        const fullImageMessage = 
+`🕌 مواقيت الصلاة - ${userLocation.city}
+📅 ${currentHijriText}
+📆 ${currentGregorianText}
+
+${timingsText}
+✨ تم استخراج المواقيت عبر تطبيق: ${APP_CONFIG.name}
+📲 جرّب التطبيق الآن:
+${APP_CONFIG.url}`;
+
+        // 3. إرسال الصورة مدمجاً معها النص الكامل
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
               files: [file],
               title: `مواقيت الصلاة - ${userLocation.city}`,
-              text: `مواقيت الصلاة لمدينة ${userLocation.city} عبر تطبيق ${APP_CONFIG.name}`
+              text: fullImageMessage
             });
           } catch(e) {}
         } else {
