@@ -1156,3 +1156,12 @@ html, body {
   color: var(--text-muted);
   cursor: pointer;
 }
+
+/* أزرار نوافذ التنبيه والخروج */
+#confirmExitBtn:active {
+  opacity: 0.7;
+}
+
+#continueReadingBtn:active, #finishDoneBtn:active {
+  transform: scale(0.96);
+}
