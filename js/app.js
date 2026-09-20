@@ -1192,6 +1192,44 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     { name: 'المحرق', country: 'البحرين', lat: 26.2572, lng: 50.6119 },
     { name: 'الرفاع', country: 'البحرين', lat: 26.1300, lng: 50.5550 },
     { name: 'مدينة حمد', country: 'البحرين', lat: 26.1153, lng: 50.5069 }
+
+    // المملكة المغربية
+    { name: 'الرباط', country: 'المغرب', lat: 34.0209, lng: -6.8416 },
+    { name: 'الدار البيضاء', country: 'المغرب', lat: 33.5731, lng: -7.5898 },
+    { name: 'مراكش', country: 'المغرب', lat: 31.6295, lng: -7.9811 },
+    { name: 'طنجة', country: 'المغرب', lat: 35.7595, lng: -5.8340 },
+    { name: 'فاس', country: 'المغرب', lat: 34.0181, lng: -5.0078 },
+    { name: 'أكادير', country: 'المغرب', lat: 30.4278, lng: -9.5981 },
+
+    // بلاد الشام والعراق وفلسطين
+    { name: 'القدس الشريف', country: 'فلسطين', lat: 31.7683, lng: 35.2137 },
+    { name: 'غزة', country: 'فلسطين', lat: 31.5017, lng: 34.4668 },
+    { name: 'عمّان', country: 'الأردن', lat: 31.9454, lng: 35.9284 },
+    { name: 'الزرقاء', country: 'الأردن', lat: 32.0728, lng: 36.0880 },
+    { name: 'إربد', country: 'الأردن', lat: 32.5568, lng: 35.8469 },
+    { name: 'دمشق', country: 'سوريا', lat: 33.5138, lng: 36.2765 },
+    { name: 'حلب', country: 'سوريا', lat: 36.2021, lng: 37.1343 },
+    { name: 'بيروت', country: 'لبنان', lat: 33.8938, lng: 35.5018 },
+    { name: 'بغداد', country: 'العراق', lat: 33.3152, lng: 44.3661 },
+    { name: 'البصرة', country: 'العراق', lat: 30.5085, lng: 47.7804 },
+    { name: 'أربيل', country: 'العراق', lat: 36.1901, lng: 44.0091 },
+
+    // شمال أفريقيا والسودان
+    { name: 'تونس (العاصمة)', country: 'تونس', lat: 36.8065, lng: 10.1815 },
+    { name: 'صفاقس', country: 'تونس', lat: 34.7406, lng: 10.7603 },
+    { name: 'الجزائر (العاصمة)', country: 'الجزائر', lat: 36.7538, lng: 3.0588 },
+    { name: 'وهران', country: 'الجزائر', lat: 35.6987, lng: -0.6349 },
+    { name: 'طرابلس', country: 'ليبيا', lat: 32.8872, lng: 13.1913 },
+    { name: 'بنغازي', country: 'ليبيا', lat: 32.1167, lng: 20.0667 },
+    { name: 'الخرطوم', country: 'السودان', lat: 15.5007, lng: 32.5599 },
+
+    // عواصم ومدن عالمية كبرى
+    { name: 'إسطنبول', country: 'تركيا', lat: 41.0082, lng: 28.9784 },
+    { name: 'لندن', country: 'بريطانيا', lat: 51.5074, lng: -0.1278 },
+    { name: 'باريس', country: 'فرنسا', lat: 48.8566, lng: 2.3522 },
+    { name: 'واشنطن', country: 'أمريكا', lat: 38.9072, lng: -77.0369 },
+    { name: 'نيويورك', country: 'أمريكا', lat: 40.7128, lng: -74.0060 },
+    { name: 'كوالالمبور', country: 'ماليزيا', lat: 3.1390, lng: 101.6869 }
   ];
 
   // توليد وعرض بطاقات المدن مع الدولة
@@ -1241,18 +1279,42 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     await fetchPrayerTimes();
   }
 
-  // البحث الجغرافي الحر عبر OpenStreetMap
+  // البحث والتحقق الجغرافي الصارم لمنع المدن الوهمية
   async function searchCityOnline(query) {
+    const cleanQuery = query.trim();
+    if (cleanQuery.length < 3) {
+      alert('يرجى كتابة 3 أحرف على الأقل للبحث عن المدينة.');
+      return;
+    }
+
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+      // البحث المخصص للمدن والمناطق الإدارية المعتمدة فقط
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&addressdetails=1&limit=3&accept-language=ar`;
+      const res = await fetch(url);
       const data = await res.json();
-      if (data && data.length > 0) {
-        selectCity(query, parseFloat(data[0].lat), parseFloat(data[0].lon), 'أخرى');
+
+      // تصفية النتائج للتحقق أن النتيجة مكان سكني حقيقي (مدينة، بلدة، أو محافظة)
+      const validPlace = data.find(item => 
+        item.type === 'city' || 
+        item.type === 'town' || 
+        item.type === 'administrative' || 
+        item.class === 'place' || 
+        item.class === 'boundary'
+      ) || data[0];
+
+      if (validPlace && validPlace.lat && validPlace.lon) {
+        // استخراج الاسم الجغرافي الحقيقي المعتمد من الخريطة مع دولته
+        const officialName = validPlace.name || validPlace.display_name.split(',')[0].trim();
+        const countryName = validPlace.address && validPlace.address.country ? validPlace.address.country : '';
+        const displayName = countryName ? `${officialName} (${countryName})` : officialName;
+
+        selectCity(displayName, parseFloat(validPlace.lat), parseFloat(validPlace.lon), countryName);
       } else {
-        alert('لم يتم العثور على المدينة، يرجى كتابة الاسم بدقة.');
+        // رفض قاطع إذا لم تكن مدينة حقيقية
+        alert(`عذراً، لم يتم العثور على أي مدينة حقيقية مسجلة باسم: "${cleanQuery}"\nيرجى التأكد من صحة الحروف.`);
       }
     } catch (e) {
-      alert('تعذر البحث عبر الإنترنت، يرجى الاختيار من القائمة.');
+      alert('تعذر التحقق من الخريطة حالياً، يرجى اختيار إحدى المدن المعتمدة من القائمة.');
     }
   }
 
