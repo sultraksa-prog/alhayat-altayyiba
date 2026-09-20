@@ -919,27 +919,24 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
 });
 
-// ==================== نافذة وخيارات النقر المطوّل ====================
+// ==================== نافذة وخيارات النقر المطوّل (تشغيل مباشر ومضمون) ====================
   const groupLongPressModal = document.getElementById('groupLongPressModal');
   const longPressModalTitle = document.getElementById('longPressModalTitle');
   const longPressModalDesc = document.getElementById('longPressModalDesc');
   const lpNotStartedActions = document.getElementById('lpNotStartedActions');
   const lpStartedActions = document.getElementById('lpStartedActions');
 
-  // متغير عالمي لحفظ معرّف المجموعة المحددة بالنقر المطول بدقة
-  let activeLongPressedGroupId = null;
+  window.activeLongPressedGroupId = null;
 
   function openGroupLongPressModal(group, isStarted) {
-    activeLongPressedGroupId = group.id; // حفظ هوية المجموعة
+    window.activeLongPressedGroupId = group.id;
     longPressModalTitle.textContent = group.name;
 
     if (!isStarted) {
-      // الحالة 1: لم يبدأ بعد
       longPressModalDesc.textContent = `هل ترغب في قراءة ${group.name} الآن؟`;
       lpNotStartedActions.style.display = 'flex';
       lpStartedActions.style.display = 'none';
     } else {
-      // الحالة 2: قرأ جزءاً منها أو أكملها
       longPressModalDesc.textContent = 'لقد قرأت جزءاً من هذه الأذكار، هل ترغب في إكمالها أم تصفير العدادات والبدء من جديد؟';
       lpNotStartedActions.style.display = 'none';
       lpStartedActions.style.display = 'flex';
@@ -948,44 +945,39 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     groupLongPressModal.classList.add('show');
   }
 
-  // 1. زر "ابدأ القراءة" (يفتح نفس المجموعة المحددة فوراً)
-  document.getElementById('lpStartBtn').addEventListener('click', () => {
-    groupLongPressModal.classList.remove('show');
-    if (activeLongPressedGroupId) {
-      openCategoryReader(activeLongPressedGroupId);
-    }
-  });
+  // المعالج الشامل لأوامر الأزرار
+  window.handleLongPressAction = function(actionType) {
+    const targetId = window.activeLongPressedGroupId;
 
-  // 2. زر "إكمال الأذكار" (يفتح نفس المجموعة ليواصل القراءة من حيث توقف)
-  document.getElementById('lpResumeBtn').addEventListener('click', () => {
-    groupLongPressModal.classList.remove('show');
-    if (activeLongPressedGroupId) {
-      openCategoryReader(activeLongPressedGroupId);
-    }
-  });
-
-  // 3. زر "تصفير العدادات والبدء من جديد" (يصفر عدادات المجموعة ويفتحها فوراً)
-  document.getElementById('lpResetBtn').addEventListener('click', () => {
-    if (activeLongPressedGroupId) {
-      const group = azkarState.find(g => g.id === activeLongPressedGroupId);
-      if (group && group.items) {
-        group.items.forEach(it => it.currentCount = it.count);
-        saveAzkarState();
-        renderAzkarCategories();
-        if (document.querySelector('.screen-view.active') === screenAzkarFavorites) {
-          renderFavorites();
+    if (actionType === 'start' || actionType === 'resume') {
+      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+      if (targetId && window.openCategoryReader) {
+        window.openCategoryReader(targetId);
+      }
+    } else if (actionType === 'reset') {
+      if (targetId) {
+        const group = azkarState.find(g => g.id === targetId);
+        if (group && group.items) {
+          group.items.forEach(it => it.currentCount = it.count);
+          saveAzkarState();
+          renderAzkarCategories();
+          const favScreen = document.getElementById('screen-azkar-favorites');
+          if (favScreen && favScreen.classList.contains('active')) {
+            renderFavorites();
+          }
+        }
+        if (groupLongPressModal) groupLongPressModal.classList.remove('show');
+        if (window.openCategoryReader) {
+          window.openCategoryReader(targetId);
         }
       }
-      groupLongPressModal.classList.remove('show');
-      openCategoryReader(activeLongPressedGroupId);
+    } else if (actionType === 'cancel') {
+      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
     }
-  });
+  };
 
-  // أزرار الإلغاء
-  const closeLPModal = () => groupLongPressModal.classList.remove('show');
-  document.getElementById('lpCancelBtn1').addEventListener('click', closeLPModal);
-  document.getElementById('lpCancelBtn2').addEventListener('click', closeLPModal);
-
-  groupLongPressModal.addEventListener('click', (e) => {
-    if (e.target === groupLongPressModal) groupLongPressModal.classList.remove('show');
-  });
+  if (groupLongPressModal) {
+    groupLongPressModal.addEventListener('click', (e) => {
+      if (e.target === groupLongPressModal) groupLongPressModal.classList.remove('show');
+    });
+  }
