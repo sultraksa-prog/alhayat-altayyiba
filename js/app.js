@@ -953,7 +953,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
       if (data && data.data) {
         currentTimings = data.data.timings;
-        // حفظ نسخة احتياطية للعمل بدون إنترنت
         localStorage.setItem('hayat_cached_timings', JSON.stringify({
           timings: currentTimings,
           hijri: data.data.date.hijri
@@ -962,8 +961,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         updatePrayerUI(data.data);
       }
     } catch (err) {
-      console.log('جاري استخدام البيانات المحفوظة محلياً...');
-      // في حال انقطاع الإنترنت نعتمد على النسخة المخزنة
+      console.log('استخدام البيانات المحفوظة محلياً...');
       const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
       if (cached) {
         currentTimings = cached.timings;
@@ -976,7 +974,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   function updatePrayerUI(apiData) {
     const timings = apiData.timings;
 
-    // تحديث أوقات الصلوات في الجدول
     PRAYER_KEYS.forEach(p => {
       const row = document.querySelector(`.prayer-row[data-prayer="${p.key.toLowerCase()}"]`);
       if (row) {
@@ -987,7 +984,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       }
     });
 
-    // تحديث التاريخ الهجري (تقويم أم القرى)
     if (apiData.date && apiData.date.hijri) {
       const h = apiData.date.hijri;
       const hijriText = `${h.day} ${h.month.ar}، ${h.year} هـ`;
@@ -1005,7 +1001,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       let nextPrayer = null;
       let nextPrayerDate = null;
 
-      // البحث عن الصلاة القادمة لليوم
       for (const p of PRAYER_KEYS) {
         const timeStr = currentTimings[p.key].split(' ')[0];
         const [h, m] = timeStr.split(':').map(Number);
@@ -1019,9 +1014,8 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         }
       }
 
-      // إذا انتهت صلوات اليوم (بعد العشاء) -> الصلاة القادمة هي فجر الغد
       if (!nextPrayer) {
-        nextPrayer = PRAYER_KEYS[0]; // الفجر
+        nextPrayer = PRAYER_KEYS[0];
         const timeStr = currentTimings['Fajr'].split(' ')[0];
         const [h, m] = timeStr.split(':').map(Number);
         nextPrayerDate = new Date();
@@ -1029,13 +1023,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         nextPrayerDate.setHours(h, m, 0, 0);
       }
 
-      // حساب الفارق الزمني بالثواني
       const diffSec = Math.max(0, Math.floor((nextPrayerDate - now) / 1000));
       const hours = Math.floor(diffSec / 3600);
       const minutes = Math.floor((diffSec % 3600) / 60);
       const seconds = diffSec % 60;
 
-      // تحديث شاشة الـ Hero العلوية
       const currentPrayerNameEl = document.getElementById('currentPrayerName');
       const currentPrayerTimeEl = document.getElementById('currentPrayerTime');
       const countdownTimerEl = document.getElementById('countdownTimer');
@@ -1046,7 +1038,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         countdownTimerEl.textContent = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
       }
 
-      // تمييز صف الصلاة القادمة في القائمة بلون مختلف
       document.querySelectorAll('.prayer-row').forEach(row => row.classList.remove('active-prayer'));
       const activeRow = document.querySelector(`.prayer-row[data-prayer="${nextPrayer.key.toLowerCase()}"]`);
       if (activeRow) activeRow.classList.add('active-prayer');
@@ -1054,31 +1045,93 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }, 1000);
   }
 
-  // 4. طلب الموقع الجغرافي للمستخدم عند النقر على زر المدينة
-// 4. طلب الموقع الجغرافي السريع والمتوافق مع الجوالات وهواوي
+  // 4. نظام تحديد الموقع اليدوي والسريع (متوافق مع هواوي وكافة الجوالات)
   const locationBadge = document.getElementById('locationBadge');
   const cityNameText = document.getElementById('cityNameText');
+  const manualLocationModal = document.getElementById('manualLocationModal');
+  const quickCitiesGrid = document.getElementById('quickCitiesGrid');
+  const manualCityInput = document.getElementById('manualCityInput');
+  const closeManualLocationBtn = document.getElementById('closeManualLocationBtn');
 
-  // دالة تحديد الموقع عبر الإنترنت (IP) في حال تعذر GPS
-  async function fallbackLocationByIP() {
+  const SAUDI_CITIES = [
+    { name: 'مكة المكرمة', lat: 21.4225, lng: 39.8262 },
+    { name: 'المدينة المنورة', lat: 24.4672, lng: 39.6111 },
+    { name: 'الرياض', lat: 24.7136, lng: 46.6753 },
+    { name: 'جدة', lat: 21.5433, lng: 39.1728 },
+    { name: 'الدمام', lat: 26.4207, lng: 50.0888 },
+    { name: 'الخبر', lat: 26.2818, lng: 50.1989 },
+    { name: 'بريدة', lat: 26.3260, lng: 43.9750 },
+    { name: 'عنيزة', lat: 26.0844, lng: 43.9936 },
+    { name: 'تبوك', lat: 28.3835, lng: 36.5662 },
+    { name: 'أبها', lat: 18.2164, lng: 42.5053 },
+    { name: 'خميس مشيط', lat: 18.3064, lng: 42.7330 },
+    { name: 'الطائف', lat: 21.2854, lng: 40.4222 },
+    { name: 'حائل', lat: 27.5219, lng: 41.6907 },
+    { name: 'جازان', lat: 16.8892, lng: 42.5511 },
+    { name: 'نجران', lat: 17.4924, lng: 44.1277 },
+    { name: 'الجبيل', lat: 27.0046, lng: 49.6606 },
+    { name: 'ينبع', lat: 24.0891, lng: 38.0637 },
+    { name: 'الأحساء (الهفوف)', lat: 25.3835, lng: 49.5862 }
+  ];
+
+  function renderQuickCities(filter = '') {
+    if (!quickCitiesGrid) return;
+    quickCitiesGrid.innerHTML = '';
+    const filtered = SAUDI_CITIES.filter(c => c.name.includes(filter.trim()));
+
+    filtered.forEach(cityObj => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'quick-city-btn';
+      btn.textContent = cityObj.name;
+      btn.onclick = () => selectCity(cityObj.name, cityObj.lat, cityObj.lng);
+      quickCitiesGrid.appendChild(btn);
+    });
+
+    if (filtered.length === 0 && filter.trim().length > 2) {
+      const searchOnlineBtn = document.createElement('button');
+      searchOnlineBtn.type = 'button';
+      searchOnlineBtn.className = 'quick-city-btn';
+      searchOnlineBtn.style.gridColumn = 'span 3';
+      searchOnlineBtn.textContent = `🔍 بحث عبر الإنترنت عن: "${filter}"`;
+      searchOnlineBtn.onclick = () => searchCityOnline(filter.trim());
+      quickCitiesGrid.appendChild(searchOnlineBtn);
+    }
+  }
+
+  async function selectCity(name, lat, lng) {
+    userLocation = { city: name, lat: lat, lng: lng };
+    localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+    if (cityNameText) cityNameText.textContent = name;
+    if (manualLocationModal) manualLocationModal.classList.remove('show');
+    await fetchPrayerTimes();
+  }
+
+  async function searchCityOnline(query) {
     try {
-      const res = await fetch('https://ipapi.co/json/');
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
       const data = await res.json();
-      if (data && data.latitude && data.longitude) {
-        userLocation = {
-          city: data.city || data.region || 'موقعي الحالي',
-          lat: data.latitude,
-          lng: data.longitude
-        };
-        localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
-        if (cityNameText) cityNameText.textContent = userLocation.city;
-        await fetchPrayerTimes();
-        return true;
+      if (data && data.length > 0) {
+        selectCity(query, parseFloat(data[0].lat), parseFloat(data[0].lon));
+      } else {
+        alert('لم يتم العثور على المدينة، يرجى كتابة الاسم بدقة.');
       }
     } catch (e) {
-      console.log('IP fallback failed');
+      alert('تعذر البحث عبر الإنترنت، يرجى اختيار إحدى المدن المتاحة.');
     }
-    return false;
+  }
+
+  function openManualLocationModal() {
+    renderQuickCities('');
+    if (manualCityInput) manualCityInput.value = '';
+    if (manualLocationModal) manualLocationModal.classList.add('show');
+  }
+
+  if (manualCityInput) {
+    manualCityInput.addEventListener('input', (e) => renderQuickCities(e.target.value));
+  }
+  if (closeManualLocationBtn) {
+    closeManualLocationBtn.addEventListener('click', () => manualLocationModal.classList.remove('show'));
   }
 
   if (locationBadge) {
@@ -1094,42 +1147,32 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
             const lng = pos.coords.longitude;
             let detectedCity = 'موقعي الحالي';
 
-            const geoPromise = fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`)
-              .then(res => res.json())
-              .catch(() => null);
+            try {
+              const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`);
+              const geoData = await geoRes.json();
+              if (geoData.city || geoData.locality || geoData.principalSubdivision) {
+                detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
+              }
+            } catch (e) {}
 
-            userLocation = { city: detectedCity, lat: lat, lng: lng };
-
-            const geoData = await geoPromise;
-            if (geoData && (geoData.city || geoData.locality || geoData.principalSubdivision)) {
-              detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
-            }
-
-            userLocation.city = detectedCity;
-            localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
             locationBadge.style.opacity = '1';
-            await fetchPrayerTimes();
+            selectCity(detectedCity, lat, lng);
           },
-          async (err) => {
-            const ipSuccess = await fallbackLocationByIP();
+          (err) => {
             locationBadge.style.opacity = '1';
-            if (!ipSuccess) {
-              if (cityNameText) cityNameText.textContent = userLocation.city;
-              alert('تعذر جلب الموقع بدقة، تم اعتماد توقيت مكة المكرمة.');
-            }
+            if (cityNameText) cityNameText.textContent = userLocation.city;
+            openManualLocationModal();
           },
-          { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
+          { timeout: 4000, enableHighAccuracy: false, maximumAge: 600000 }
         );
       } else {
-        fallbackLocationByIP().then(success => {
-          locationBadge.style.opacity = '1';
-          if (!success) alert('المتصفح لا يدعم تحديد الموقع.');
-        });
+        locationBadge.style.opacity = '1';
+        openManualLocationModal();
       }
     });
   }
 
-  // بدء تشغيل المحرك
+  // تشغيل جلب الأوقات وتشغيل العداد الحي التنازلي
   fetchPrayerTimes();
   startLiveCountdown();
 
