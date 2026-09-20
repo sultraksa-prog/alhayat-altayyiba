@@ -493,6 +493,28 @@
 
   </div>
 
+  <!-- ==================== نافذة التحديد اليدوي للمدينة ==================== -->
+    <div class="custom-modal-backdrop" id="manualLocationModal">
+      <div class="custom-modal-card" style="max-height: 85vh; display: flex; flex-direction: column;">
+        <h3 class="modal-card-title" style="color: var(--primary-blue); margin-bottom: 6px;">اختر مدينتك</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">اختر من المدن الشائعة أو اكتب اسم مدينتك:</p>
+        
+        <!-- مربع البحث عن أي مدينة -->
+        <div class="search-input-box" style="margin-bottom: 12px;">
+          <input type="text" id="manualCityInput" placeholder="اكتب اسم مدينتك هنا (مثال: بريدة، تبوك...)">
+        </div>
+
+        <!-- أزرار المدن الشائعة بنقرة واحدة -->
+        <div class="quick-cities-grid" id="quickCitiesGrid">
+          <!-- يتم توليد أزرار المدن تلقائياً -->
+        </div>
+
+        <div class="modal-actions-row" style="margin-top: 14px;">
+          <button type="button" class="modal-btn-link" id="closeManualLocationBtn">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
   <script src="js/azkar-data.js"></script>
   <script src="js/app.js"></script>
 </body>
