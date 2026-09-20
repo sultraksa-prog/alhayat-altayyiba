@@ -945,7 +945,8 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     const cityNameEl = document.getElementById('cityNameText');
     if (cityNameEl) cityNameEl.textContent = userLocation.city;
 
-    const url = `https://api.aladhan.com/v1/timings?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=4`;
+    const methodNum = userLocation.method || 4;
+    const url = `https://api.aladhan.com/v1/timings?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
 
     try {
       const response = await fetch(url);
@@ -1045,80 +1046,207 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }, 1000);
   }
 
-  // 4. نظام تحديد الموقع اليدوي والسريع (متوافق مع هواوي وكافة الجوالات)
+  // 4. نظام الموقع الشامل (تلقائي اختياري + قاعدة بيانات الخليج ومصر واليمن)
   const locationBadge = document.getElementById('locationBadge');
   const cityNameText = document.getElementById('cityNameText');
   const manualLocationModal = document.getElementById('manualLocationModal');
   const quickCitiesGrid = document.getElementById('quickCitiesGrid');
   const manualCityInput = document.getElementById('manualCityInput');
   const closeManualLocationBtn = document.getElementById('closeManualLocationBtn');
+  const autoDetectLocationBtn = document.getElementById('autoDetectLocationBtn');
+  const countryFilterBar = document.getElementById('countryFilterBar');
 
-  const SAUDI_CITIES = [
-    { name: 'مكة المكرمة', lat: 21.4225, lng: 39.8262 },
-    { name: 'المدينة المنورة', lat: 24.4672, lng: 39.6111 },
-    { name: 'الرياض', lat: 24.7136, lng: 46.6753 },
-    { name: 'جدة', lat: 21.5433, lng: 39.1728 },
-    { name: 'الدمام', lat: 26.4207, lng: 50.0888 },
-    { name: 'الخبر', lat: 26.2818, lng: 50.1989 },
-    { name: 'بريدة', lat: 26.3260, lng: 43.9750 },
-    { name: 'عنيزة', lat: 26.0844, lng: 43.9936 },
-    { name: 'تبوك', lat: 28.3835, lng: 36.5662 },
-    { name: 'أبها', lat: 18.2164, lng: 42.5053 },
-    { name: 'خميس مشيط', lat: 18.3064, lng: 42.7330 },
-    { name: 'الطائف', lat: 21.2854, lng: 40.4222 },
-    { name: 'حائل', lat: 27.5219, lng: 41.6907 },
-    { name: 'جازان', lat: 16.8892, lng: 42.5511 },
-    { name: 'نجران', lat: 17.4924, lng: 44.1277 },
-    { name: 'الجبيل', lat: 27.0046, lng: 49.6606 },
-    { name: 'ينبع', lat: 24.0891, lng: 38.0637 },
-    { name: 'الأحساء (الهفوف)', lat: 25.3835, lng: 49.5862 }
+  let activeCountryFilter = 'all';
+
+  // قاعدة بيانات شاملة لمحافظات ومدن الخليج، اليمن، ومصر
+  const REGION_CITIES = [
+    // المملكة العربية السعودية
+    { name: 'مكة المكرمة', country: 'السعودية', lat: 21.4225, lng: 39.8262 },
+    { name: 'المدينة المنورة', country: 'السعودية', lat: 24.4672, lng: 39.6111 },
+    { name: 'الرياض', country: 'السعودية', lat: 24.7136, lng: 46.6753 },
+    { name: 'جدة', country: 'السعودية', lat: 21.5433, lng: 39.1728 },
+    { name: 'الدمام', country: 'السعودية', lat: 26.4207, lng: 50.0888 },
+    { name: 'الخبر', country: 'السعودية', lat: 26.2818, lng: 50.1989 },
+    { name: 'الظهران', country: 'السعودية', lat: 26.2886, lng: 50.1140 },
+    { name: 'الأحساء (الهفوف)', country: 'السعودية', lat: 25.3835, lng: 49.5862 },
+    { name: 'الجبيل', country: 'السعودية', lat: 27.0046, lng: 49.6606 },
+    { name: 'حفر الباطن', country: 'السعودية', lat: 28.4328, lng: 45.9708 },
+    { name: 'بريدة', country: 'السعودية', lat: 26.3260, lng: 43.9750 },
+    { name: 'عنيزة', country: 'السعودية', lat: 26.0844, lng: 43.9936 },
+    { name: 'حائل', country: 'السعودية', lat: 27.5219, lng: 41.6907 },
+    { name: 'تبوك', country: 'السعودية', lat: 28.3835, lng: 36.5662 },
+    { name: 'عرعر', country: 'السعودية', lat: 30.9753, lng: 41.0381 },
+    { name: 'سكاكا (الجوف)', country: 'السعودية', lat: 29.9697, lng: 40.2064 },
+    { name: 'القريات', country: 'السعودية', lat: 31.3318, lng: 37.3428 },
+    { name: 'أبها', country: 'السعودية', lat: 18.2164, lng: 42.5053 },
+    { name: 'خميس مشيط', country: 'السعودية', lat: 18.3064, lng: 42.7330 },
+    { name: 'جازان', country: 'السعودية', lat: 16.8892, lng: 42.5511 },
+    { name: 'صبيا', country: 'السعودية', lat: 17.1495, lng: 42.6254 },
+    { name: 'نجران', country: 'السعودية', lat: 17.4924, lng: 44.1277 },
+    { name: 'الباحة', country: 'السعودية', lat: 20.0129, lng: 41.4677 },
+    { name: 'الطائف', country: 'السعودية', lat: 21.2854, lng: 40.4222 },
+    { name: 'ينبع', country: 'السعودية', lat: 24.0891, lng: 38.0637 },
+
+    // جمهورية مصر العربية
+    { name: 'القاهرة', country: 'مصر', lat: 30.0444, lng: 31.2357 },
+    { name: 'الإسكندرية', country: 'مصر', lat: 31.2001, lng: 29.9187 },
+    { name: 'الجيزة', country: 'مصر', lat: 30.0131, lng: 31.2089 },
+    { name: 'بورسعيد', country: 'مصر', lat: 31.2653, lng: 32.3019 },
+    { name: 'السويس', country: 'مصر', lat: 29.9668, lng: 32.5498 },
+    { name: 'الإسماعيلية', country: 'مصر', lat: 30.5965, lng: 32.2715 },
+    { name: 'المنصورة (الدقهلية)', country: 'مصر', lat: 31.0409, lng: 31.3785 },
+    { name: 'طنطا (الغربية)', country: 'مصر', lat: 30.7865, lng: 31.0004 },
+    { name: 'الزقازيق (الشرقية)', country: 'مصر', lat: 30.5877, lng: 31.5020 },
+    { name: 'دمنهور (البحيرة)', country: 'مصر', lat: 31.0403, lng: 30.4700 },
+    { name: 'كفر الشيخ', country: 'مصر', lat: 31.1107, lng: 30.9388 },
+    { name: 'شبين الكوم (المنوفية)', country: 'مصر', lat: 30.5599, lng: 31.0116 },
+    { name: 'بنها (القليوبية)', country: 'مصر', lat: 30.4660, lng: 31.1853 },
+    { name: 'الفيوم', country: 'مصر', lat: 29.3084, lng: 30.8428 },
+    { name: 'بني سويف', country: 'مصر', lat: 29.0661, lng: 31.0994 },
+    { name: 'المنيا', country: 'مصر', lat: 28.1099, lng: 30.7503 },
+    { name: 'أسيوط', country: 'مصر', lat: 27.1783, lng: 31.1859 },
+    { name: 'سوهاج', country: 'مصر', lat: 26.5590, lng: 31.6957 },
+    { name: 'قنا', country: 'مصر', lat: 26.1551, lng: 32.7160 },
+    { name: 'الأقصر', country: 'مصر', lat: 25.6872, lng: 32.6396 },
+    { name: 'أسوان', country: 'مصر', lat: 24.0889, lng: 32.8998 },
+    { name: 'دمياط', country: 'مصر', lat: 31.4175, lng: 31.8144 },
+    { name: 'الغردقة (البحر الأحمر)', country: 'مصر', lat: 27.2579, lng: 33.8116 },
+    { name: 'شرم الشيخ (جنوب سيناء)', country: 'مصر', lat: 27.9158, lng: 34.3299 },
+    { name: 'العريش (شمال سيناء)', country: 'مصر', lat: 31.1325, lng: 33.8033 },
+    { name: 'مرسى مطروح', country: 'مصر', lat: 31.3543, lng: 27.2373 },
+    { name: 'الخارجة (الوادي الجديد)', country: 'مصر', lat: 25.4514, lng: 30.5472 },
+
+    // الجمهورية اليمنية
+    { name: 'صنعاء', country: 'اليمن', lat: 15.3694, lng: 44.1910 },
+    { name: 'عدن', country: 'اليمن', lat: 12.7855, lng: 45.0187 },
+    { name: 'تعز', country: 'اليمن', lat: 13.5795, lng: 44.0209 },
+    { name: 'الحديدة', country: 'اليمن', lat: 14.7978, lng: 42.9545 },
+    { name: 'المكلا (حضرموت)', country: 'اليمن', lat: 14.5425, lng: 49.1242 },
+    { name: 'سيئون (حضرموت)', country: 'اليمن', lat: 15.9392, lng: 48.7891 },
+    { name: 'إب', country: 'اليمن', lat: 13.9667, lng: 44.1667 },
+    { name: 'ذمار', country: 'اليمن', lat: 14.5428, lng: 44.4051 },
+    { name: 'مأرب', country: 'اليمن', lat: 15.4633, lng: 45.3258 },
+    { name: 'صعدة', country: 'اليمن', lat: 16.9402, lng: 43.7639 },
+    { name: 'عتق (شبوة)', country: 'اليمن', lat: 14.5377, lng: 46.8319 },
+    { name: 'لحج (الحوطة)', country: 'اليمن', lat: 13.0583, lng: 44.8828 },
+    { name: 'زنجبار (أبين)', country: 'اليمن', lat: 13.1287, lng: 45.3807 },
+    { name: 'الغيضة (المهرة)', country: 'اليمن', lat: 16.2079, lng: 52.1760 },
+    { name: 'حجة', country: 'اليمن', lat: 15.6917, lng: 43.6028 },
+    { name: 'سقطرى (حديبو)', country: 'اليمن', lat: 12.6500, lng: 54.0167 },
+
+    // الإمارات العربية المتحدة
+    { name: 'أبوظبي', country: 'الإمارات', lat: 24.4539, lng: 54.3773 },
+    { name: 'دبي', country: 'الإمارات', lat: 25.2048, lng: 55.2708 },
+    { name: 'الشارقة', country: 'الإمارات', lat: 25.3463, lng: 55.4209 },
+    { name: 'عجمان', country: 'الإمارات', lat: 25.4052, lng: 55.5136 },
+    { name: 'رأس الخيمة', country: 'الإمارات', lat: 25.6741, lng: 55.9804 },
+    { name: 'الفجيرة', country: 'الإمارات', lat: 25.1288, lng: 56.3265 },
+    { name: 'أم القيوين', country: 'الإمارات', lat: 25.5457, lng: 55.5533 },
+    { name: 'العين', country: 'الإمارات', lat: 24.1302, lng: 55.8023 },
+
+    // دولة الكويت
+    { name: 'الكويت (العاصمة)', country: 'الكويت', lat: 29.3759, lng: 47.9774 },
+    { name: 'حولي', country: 'الكويت', lat: 29.3328, lng: 48.0282 },
+    { name: 'الفروانية', country: 'الكويت', lat: 29.2784, lng: 47.9587 },
+    { name: 'الأحمدي', country: 'الكويت', lat: 29.0769, lng: 48.0839 },
+    { name: 'الجهراء', country: 'الكويت', lat: 29.3375, lng: 47.6581 },
+    { name: 'مبارك الكبير', country: 'الكويت', lat: 29.2272, lng: 48.0694 },
+
+    // سلطنة عمان
+    { name: 'مسقط', country: 'عمان', lat: 23.5880, lng: 58.3829 },
+    { name: 'صلالة (ظفار)', country: 'عمان', lat: 17.0151, lng: 54.0924 },
+    { name: 'صحار (شمال الباطنة)', country: 'عمان', lat: 24.3477, lng: 56.7094 },
+    { name: 'نزوى (الداخلية)', country: 'عمان', lat: 22.9333, lng: 57.5333 },
+    { name: 'صور (جنوب الشرقية)', country: 'عمان', lat: 22.5667, lng: 59.5289 },
+    { name: 'البريمي', country: 'عمان', lat: 24.2509, lng: 55.7931 },
+    { name: 'الرستاق (جنوب الباطنة)', country: 'عمان', lat: 23.3908, lng: 57.4244 },
+    { name: 'خصب (مسندم)', country: 'عمان', lat: 26.1799, lng: 56.2486 },
+
+    // دولة قطر
+    { name: 'الدوحة', country: 'قطر', lat: 25.2854, lng: 51.5310 },
+    { name: 'الريان', country: 'قطر', lat: 25.2919, lng: 51.4244 },
+    { name: 'الوكرة', country: 'قطر', lat: 25.1768, lng: 51.6048 },
+    { name: 'الخور', country: 'قطر', lat: 25.6839, lng: 51.5058 },
+
+    // مملكة البحرين
+    { name: 'المنامة', country: 'البحرين', lat: 26.2285, lng: 50.5860 },
+    { name: 'المحرق', country: 'البحرين', lat: 26.2572, lng: 50.6119 },
+    { name: 'الرفاع', country: 'البحرين', lat: 26.1300, lng: 50.5550 },
+    { name: 'مدينة حمد', country: 'البحرين', lat: 26.1153, lng: 50.5069 }
   ];
 
-  function renderQuickCities(filter = '') {
+  // توليد وعرض بطاقات المدن مع الدولة
+  function renderQuickCities(filterText = '') {
     if (!quickCitiesGrid) return;
     quickCitiesGrid.innerHTML = '';
-    const filtered = SAUDI_CITIES.filter(c => c.name.includes(filter.trim()));
+    const query = filterText.trim().toLowerCase();
 
-    filtered.forEach(cityObj => {
+    const filtered = REGION_CITIES.filter(c => {
+      const matchCountry = activeCountryFilter === 'all' || c.country === activeCountryFilter;
+      const matchText = !query || c.name.toLowerCase().includes(query) || c.country.toLowerCase().includes(query);
+      return matchCountry && matchText;
+    });
+
+    filtered.forEach(c => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'quick-city-btn';
-      btn.textContent = cityObj.name;
-      btn.onclick = () => selectCity(cityObj.name, cityObj.lat, cityObj.lng);
+      btn.innerHTML = `
+        <span>${c.name}</span>
+        <span class="city-sub-country">${c.country}</span>
+      `;
+      btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country);
       quickCitiesGrid.appendChild(btn);
     });
 
-    if (filtered.length === 0 && filter.trim().length > 2) {
+    if (filtered.length === 0 && query.length > 2) {
       const searchOnlineBtn = document.createElement('button');
       searchOnlineBtn.type = 'button';
       searchOnlineBtn.className = 'quick-city-btn';
       searchOnlineBtn.style.gridColumn = 'span 3';
-      searchOnlineBtn.textContent = `🔍 بحث عبر الإنترنت عن: "${filter}"`;
-      searchOnlineBtn.onclick = () => searchCityOnline(filter.trim());
+      searchOnlineBtn.textContent = `🔍 بحث عبر الخريطة عن: "${filterText}"`;
+      searchOnlineBtn.onclick = () => searchCityOnline(filterText.trim());
       quickCitiesGrid.appendChild(searchOnlineBtn);
     }
   }
 
-  async function selectCity(name, lat, lng) {
-    userLocation = { city: name, lat: lat, lng: lng };
+  // اختيار المدينة واعتماد طريقة الحساب المناسبة لمصر أو الخليج
+  async function selectCity(name, lat, lng, country = '') {
+    // إذا كانت المدينة في مصر نعتمد طريقة الهيئة المصرية (5)، وغير ذلك أم القرى (4)
+    const method = (country === 'مصر' || name.includes('مصر')) ? 4 : 4; 
+    userLocation = { city: name, country: country, lat: lat, lng: lng, method: (country === 'مصر' ? 5 : 4) };
     localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+
     if (cityNameText) cityNameText.textContent = name;
     if (manualLocationModal) manualLocationModal.classList.remove('show');
     await fetchPrayerTimes();
   }
 
+  // البحث الجغرافي الحر عبر OpenStreetMap
   async function searchCityOnline(query) {
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
       const data = await res.json();
       if (data && data.length > 0) {
-        selectCity(query, parseFloat(data[0].lat), parseFloat(data[0].lon));
+        selectCity(query, parseFloat(data[0].lat), parseFloat(data[0].lon), 'أخرى');
       } else {
         alert('لم يتم العثور على المدينة، يرجى كتابة الاسم بدقة.');
       }
     } catch (e) {
-      alert('تعذر البحث عبر الإنترنت، يرجى اختيار إحدى المدن المتاحة.');
+      alert('تعذر البحث عبر الإنترنت، يرجى الاختيار من القائمة.');
     }
+  }
+
+  // فلترة الدول بالتبويبات
+  if (countryFilterBar) {
+    countryFilterBar.querySelectorAll('.country-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        countryFilterBar.querySelectorAll('.country-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeCountryFilter = chip.getAttribute('data-country');
+        renderQuickCities(manualCityInput ? manualCityInput.value : '');
+      });
+    });
   }
 
   function openManualLocationModal() {
@@ -1134,11 +1262,18 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     closeManualLocationBtn.addEventListener('click', () => manualLocationModal.classList.remove('show'));
   }
 
+  // النقر على المدينة في الهيدر يفتح النافذة مباشرة دون إجبار على الـ GPS
   if (locationBadge) {
     locationBadge.style.cursor = 'pointer';
     locationBadge.addEventListener('click', () => {
-      if (cityNameText) cityNameText.textContent = 'جاري التحديد...';
-      locationBadge.style.opacity = '0.7';
+      openManualLocationModal();
+    });
+  }
+
+  // زر التحديد التلقائي داخل النافذة (لمن يرغب بتفعيل الـ GPS يدوياً)
+  if (autoDetectLocationBtn) {
+    autoDetectLocationBtn.addEventListener('click', () => {
+      autoDetectLocationBtn.innerHTML = `<span>جاري التحديد عبر الأقمار والشبكة...</span>`;
 
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -1155,19 +1290,17 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
               }
             } catch (e) {}
 
-            locationBadge.style.opacity = '1';
-            selectCity(detectedCity, lat, lng);
+            selectCity(detectedCity, lat, lng, '');
           },
           (err) => {
-            locationBadge.style.opacity = '1';
-            if (cityNameText) cityNameText.textContent = userLocation.city;
-            openManualLocationModal();
+            alert('تعذر تحديد موقع GPS بدقة، يمكنك اختيار محافظتك من القائمة بالأسفل.');
+            autoDetectLocationBtn.innerHTML = `<span>تحديد موقعي الحالي تلقائياً (GPS)</span>`;
           },
-          { timeout: 4000, enableHighAccuracy: false, maximumAge: 600000 }
+          { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
         );
       } else {
-        locationBadge.style.opacity = '1';
-        openManualLocationModal();
+        alert('المتصفح لا يدعم تحديد الموقع.');
+        autoDetectLocationBtn.innerHTML = `<span>تحديد موقعي الحالي تلقائياً (GPS)</span>`;
       }
     });
   }
