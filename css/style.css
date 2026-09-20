@@ -207,21 +207,29 @@ html, body {
 
 /* هيدر الصفحة الرئيسية */
 /* الهيدر العلوي المثبت عند التمرير بنعومة وفخامة */
-.app-header {
-  position: sticky;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px;
-  background: rgba(9, 32, 63, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
+/* الهيدر العلوي المدمج والشفاف */
+  .app-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+
+  /* يتحول لزجاج ضبابي فخم فقط عندما يبدأ المستخدم بالتمرير لأسفل */
+  .app-header.scrolled {
+    background: rgba(9, 32, 63, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
 
 .header-actions {
   display: flex;
@@ -255,16 +263,17 @@ html, body {
   cursor: pointer;
 }
 
-/* بطاقة الصلاة الحالية */
-.hero-card {
-  background: var(--hero-gradient);
-  color: #FFFFFF;
-  padding: 80px 20px 30px 20px;
-  border-bottom-left-radius: 28px;
-  border-bottom-right-radius: 28px;
-  position: relative;
-  overflow: hidden;
-}
+/* كرت الصلاة العلوي المندمج بالكامل */
+  .hero-card {
+    background: var(--hero-gradient);
+    color: #FFFFFF;
+    margin-top: -62px; /* سحب الكرت للأعلى ليلتحم بالهيدر */
+    padding: 80px 20px 24px 20px; /* موازنة المسافة بدقة */
+    border-bottom-left-radius: 28px;
+    border-bottom-right-radius: 28px;
+    position: relative;
+    overflow: hidden;
+  }
 
 .mosque-watermark {
   position: absolute;
