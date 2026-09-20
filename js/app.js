@@ -1232,37 +1232,108 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     { name: 'كوالالمبور', country: 'ماليزيا', lat: 3.1390, lng: 101.6869 }
   ];
 
-  // توليد وعرض بطاقات المدن مع الدولة
+  // خوارزمية تطبيع الحروف العربية ومعالجة الأخطاء الإملائية
+  function normalizeArabic(text) {
+    if (!text) return '';
+    return text
+      .trim()
+      .toLowerCase()
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .replace(/[\u064B-\u065F]/g, '') // إزالة التشكيل
+      .replace(/^ال/, ''); // تجاهل ال التعريف للمقارنة
+  }
+
+  // خوارزمية قياس نسبة التشابه بين كلمتين (Levenshtein Distance)
+  function getWordSimilarity(s1, s2) {
+    const n1 = normalizeArabic(s1);
+    const n2 = normalizeArabic(s2);
+    if (n1 === n2) return 1.0;
+    if (n1.includes(n2) || n2.includes(n1)) return 0.85;
+
+    const len1 = n1.length, len2 = n2.length;
+    const track = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null));
+    for (let i = 0; i <= len1; i++) track[0][i] = i;
+    for (let j = 0; j <= len2; j++) track[j][0] = j;
+
+    for (let j = 1; j <= len2; j++) {
+      for (let i = 1; i <= len1; i++) {
+        const indicator = n1[i - 1] === n2[j - 1] ? 0 : 1;
+        track[j][i] = Math.min(
+          track[j][i - 1] + 1,
+          track[j - 1][i] + 1,
+          track[j - 1][i - 1] + indicator
+        );
+      }
+    }
+    const distance = track[len2][len1];
+    const maxLen = Math.max(len1, len2);
+    return maxLen === 0 ? 1 : 1 - distance / maxLen;
+  }
+
+  // توليد وعرض بطاقات المدن مع دعم ذكاء تصحيح الأخطاء الإملائية
   function renderQuickCities(filterText = '') {
     if (!quickCitiesGrid) return;
     quickCitiesGrid.innerHTML = '';
-    const query = filterText.trim().toLowerCase();
+    const rawQuery = filterText.trim();
+    const query = normalizeArabic(rawQuery);
 
-    const filtered = REGION_CITIES.filter(c => {
+    // 1. البحث المباشر
+    const exactMatches = REGION_CITIES.filter(c => {
       const matchCountry = activeCountryFilter === 'all' || c.country === activeCountryFilter;
-      const matchText = !query || c.name.toLowerCase().includes(query) || c.country.toLowerCase().includes(query);
-      return matchCountry && matchText;
+      const matchName = !query || normalizeArabic(c.name).includes(query) || normalizeArabic(c.country).includes(query);
+      return matchCountry && matchName;
     });
 
-    filtered.forEach(c => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'quick-city-btn';
-      btn.innerHTML = `
-        <span>${c.name}</span>
-        <span class="city-sub-country">${c.country}</span>
-      `;
-      btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country);
-      quickCitiesGrid.appendChild(btn);
-    });
+    if (exactMatches.length > 0) {
+      exactMatches.forEach(c => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quick-city-btn';
+        btn.innerHTML = `<span>${c.name}</span><span class="city-sub-country">${c.country}</span>`;
+        btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country);
+        quickCitiesGrid.appendChild(btn);
+      });
+      return;
+    }
 
-    if (filtered.length === 0 && query.length > 2) {
+    // 2. إذا لم يجد تطابقاً مباشراً وكان المستخدم كتب حرفين أو أكثر -> تفعيل الذكاء التقريبي (Fuzzy Match)
+    if (rawQuery.length >= 2) {
+      const fuzzySuggestions = REGION_CITIES.map(c => ({
+        city: c,
+        score: Math.max(getWordSimilarity(rawQuery, c.name), getWordSimilarity(rawQuery, c.country))
+      }))
+      .filter(item => item.score >= 0.55) // تشابه 55% فأكثر
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.city);
+
+      if (fuzzySuggestions.length > 0) {
+        // شريط تنبيه: هل تقصد إحدى هذه المدن؟
+        const hint = document.createElement('div');
+        hint.style.cssText = 'grid-column: span 3; font-size: 12.5px; color: #B45309; background: #FEF3C7; padding: 7px 10px; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 6px;';
+        hint.textContent = 'هل تقصد إحدى هذه المدن القريبة؟';
+        quickCitiesGrid.appendChild(hint);
+
+        fuzzySuggestions.slice(0, 6).forEach(c => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'quick-city-btn';
+          btn.style.borderColor = '#FCD34D';
+          btn.innerHTML = `<span>${c.name}</span><span class="city-sub-country">${c.country}</span>`;
+          btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country);
+          quickCitiesGrid.appendChild(btn);
+        });
+        return;
+      }
+
+      // 3. إذا لم يجد أي تطابق تقريبي، يعرض زر البحث عبر الخريطة
       const searchOnlineBtn = document.createElement('button');
       searchOnlineBtn.type = 'button';
       searchOnlineBtn.className = 'quick-city-btn';
       searchOnlineBtn.style.gridColumn = 'span 3';
-      searchOnlineBtn.textContent = `🔍 بحث عبر الخريطة عن: "${filterText}"`;
-      searchOnlineBtn.onclick = () => searchCityOnline(filterText.trim());
+      searchOnlineBtn.textContent = `🔍 بحث عبر الخريطة العالمية عن: "${rawQuery}"`;
+      searchOnlineBtn.onclick = () => searchCityOnline(rawQuery);
       quickCitiesGrid.appendChild(searchOnlineBtn);
     }
   }
