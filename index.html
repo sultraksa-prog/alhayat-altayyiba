@@ -71,7 +71,7 @@
         <!-- زر "اليوم" العائم أعلى يسار حاوية التاريخ -->
         <button type="button" class="return-today-pill" id="returnTodayBtn" style="display: none;">اليوم</button>
 
-        <!-- السهم الأيمن: يشير للخارج جهة اليمين -->
+        <!-- السهم الأيمن: اليوم السابق -->
         <button type="button" class="date-nav-btn" id="prevDayBtn" title="اليوم السابق">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -85,23 +85,9 @@
           </div>
         </div>
 
-        <!-- السهم الأيسر: يشير للخارج جهة اليسار -->
+        <!-- السهم الأيسر: اليوم التالي -->
         <button type="button" class="date-nav-btn" id="nextDayBtn" title="اليوم التالي">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-
-        <!-- مساحة التاريخ واسم اليوم -->
-        <div class="date-info-central">
-          <div class="date-main-row" id="dateTextClickArea" title="انقر أو اسحب لقلب التاريخ">
-            <span class="day-name-badge" id="dayNameDisplay">الأحد</span>
-            <span id="dateTextDisplay">9 ربيع الثاني، 1448 هـ</span>
-            <span class="date-flip-indicator" id="dateFlipBtn">⇅</span>
-          </div>
-        </div>
-
-        <!-- السهم الأيسر (معكوس: أيقونة تشير لليوم التالي بحجم مريح) -->
-        <button type="button" class="date-nav-btn" id="nextDayBtn" title="اليوم التالي">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </section>
 
