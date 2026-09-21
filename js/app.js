@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function showScreen(screen, pushToHistory = true) {
     const activeScreen = document.querySelector('.screen-view.active');
     
-    // تسجيل الشاشة في سجل الجوال عند الانتقال للأمام
     if (pushToHistory && activeScreen && activeScreen !== screen) {
       history.pushState({ screenId: screen.id }, '');
     }
@@ -118,14 +117,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo(0, 0);
 
     document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
-  if (screen === screenHome) {
-    tabHome.classList.add('active');
-  } else if (screen === screenAzkarCategories || screen === screenAzkarFavorites || screen === screenAzkarReader) {
-    tabAzkar.classList.add('active');
-  } else if (screen === screenGeneralSettings || screen === screenAboutApp) {
-    if (tabGeneralSettings) tabGeneralSettings.classList.add('active');
-  } else if (screen === screenQibla) {
-    if (tabQibla) tabQibla.classList.add('active');
+    const tabQiblaEl = document.getElementById('tabQibla');
+
+    if (screen === screenHome) {
+      tabHome.classList.add('active');
+    } else if (screen === screenAzkarCategories || screen === screenAzkarFavorites || screen === screenAzkarReader) {
+      tabAzkar.classList.add('active');
+    } else if (screen.id === 'screen-qibla') {
+      if (tabQiblaEl) tabQiblaEl.classList.add('active');
+    } else if (screen === screenGeneralSettings || screen === screenAboutApp) {
+      if (tabGeneralSettings) tabGeneralSettings.classList.add('active');
+    }
   }
 
   // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
@@ -181,6 +183,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
+  
+  const tabQiblaBtn = document.getElementById('tabQibla');
+  const screenQiblaView = document.getElementById('screen-qibla');
+  if (tabQiblaBtn && screenQiblaView) {
+    tabQiblaBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showScreen(screenQiblaView);
+      if (typeof initQiblaCompass === 'function') initQiblaCompass();
+    });
+  }
+
+  const backFromQiblaBtn = document.getElementById('backToHomeFromQiblaBtn');
+  if (backFromQiblaBtn) {
+    backFromQiblaBtn.addEventListener('click', () => {
+      if (typeof stopQiblaCompass === 'function') stopQiblaCompass();
+      showScreen(screenHome);
+    });
+  }
+
+  // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
   
   // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
 if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
