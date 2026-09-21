@@ -1927,3 +1927,190 @@ html, body {
   border: 1px solid #BCD8F0;
 }
 
+/* ==================== تنسيقات شاشة حول التطبيق الفاخرة ==================== */
+.about-screen-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 90px;
+}
+
+/* الكرت العلوي للهوية */
+.about-hero-card {
+  background: var(--hero-gradient);
+  border-radius: 22px;
+  padding: 24px 18px;
+  text-align: center;
+  color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(9, 32, 63, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+.about-logo-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px auto;
+}
+
+.about-logo-icon {
+  font-size: 32px;
+}
+
+.about-app-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #FFFFFF;
+}
+
+.about-app-tagline {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.about-pills-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.about-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.about-pill.pill-gold {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FCD34D;
+}
+
+/* شبكة القيم والمزايا */
+.about-values-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-value-item {
+  background: var(--bg-surface);
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.value-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #EEF6FC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.value-content h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.value-content p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* بطاقة المطور المهندس سلطان الجابري */
+.developer-lux-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 1.5px solid #BCD8F0;
+  padding: 18px;
+  box-shadow: 0 6px 20px rgba(29, 93, 155, 0.08);
+  position: relative;
+}
+
+.dev-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dev-avatar-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #113F67, #1D5D9B);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(17, 63, 103, 0.25);
+  flex-shrink: 0;
+}
+
+.dev-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dev-role-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  text-transform: uppercase;
+}
+
+.dev-person-name {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.dev-divider-gold {
+  height: 2px;
+  background: linear-gradient(to left, transparent, #FCD34D, transparent);
+  margin: 14px 0 12px 0;
+}
+
+.dev-duaa-text {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+.about-footer-badge {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 6px 0;
+}
