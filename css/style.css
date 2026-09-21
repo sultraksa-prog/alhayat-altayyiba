@@ -1672,139 +1672,250 @@ html, body {
   color: white;
 }
 
-/* ==================== تنسيقات شاشة بوصلة القبلة ==================== */
+/* ==================== تنسيقات بوصلة القبلة والخريطة الاحترافية ==================== */
 .qibla-screen-body {
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
+  padding-bottom: 90px;
 }
 
-.qibla-info-card {
+/* كرت الخريطة العلوي والمسافة */
+.qibla-map-card {
   width: 100%;
-  background: var(--bg-surface);
+  background: #FFFFFF;
   border-radius: 18px;
-  padding: 16px 20px;
-  box-shadow: var(--shadow-card);
   border: 1px solid #E2E8F0;
-  text-align: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 
-.qibla-city-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.qibla-city-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--primary-deep);
-}
-
-.qibla-angle-badge {
-  background: #FEF3C7;
-  color: #B45309;
-  border: 1px solid #FCD34D;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.qibla-status-text {
-  font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 600;
-  transition: color 0.3s;
-}
-
-.qibla-status-text.aligned {
-  color: #16A34A;
-  font-weight: 800;
-}
-
-/* قرص البوصلة */
-.compass-wrapper {
+.map-view-container {
   position: relative;
-  width: 280px;
-  height: 280px;
-  margin: 10px 0;
+  width: 100%;
+  height: 140px;
+  background: #E8F4F8;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.compass-dial {
+#qiblaMapCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.map-refresh-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #CBD5E1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.qibla-metrics-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 10px 16px;
+  border-top: 1px solid #F1F5F9;
+  background: #FFFFFF;
+}
+
+.metric-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.metric-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--primary-deep);
+}
+
+.metric-lbl {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.metric-divider {
+  width: 1px;
+  height: 30px;
+  background: #E2E8F0;
+}
+
+/* زر المظهر */
+.qibla-theme-trigger-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.qibla-theme-btn {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+/* مسرح قرص البوصلة */
+.qibla-compass-stage {
+  position: relative;
+  width: 290px;
+  height: 290px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.compass-dial-advanced {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle, #FFFFFF 65%, #EEF6FC 100%);
-  border: 8px solid var(--primary-deep);
-  box-shadow: 0 10px 30px rgba(9, 32, 63, 0.15), inset 0 0 15px rgba(9, 32, 63, 0.05);
   position: relative;
-  transition: transform 0.15s ease-out;
+  transition: transform 0.12s cubic-bezier(0.1, 0.3, 0.1, 1);
   will-change: transform;
 }
 
-.direction-mark {
+/* الأنماط الثلاثة */
+/* 1. الأبيض النقي (مطابق للصورة) */
+.compass-dial-advanced.theme-white {
+  background: radial-gradient(circle, #FFFFFF 62%, #F8FAFC 85%, #E2E8F0 100%);
+  border: 4px solid #E2E8F0;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.08), inset 0 0 12px rgba(0,0,0,0.03);
+}
+
+/* 2. الذهبي التراثي */
+.compass-dial-advanced.theme-gold {
+  background: radial-gradient(circle, #FFFBEB 60%, #FEF3C7 85%, #FDE68A 100%);
+  border: 5px solid #F59E0B;
+  box-shadow: 0 12px 36px rgba(180, 83, 9, 0.15);
+}
+
+/* 3. الأزرق الملكي المتناسق */
+.compass-dial-advanced.theme-blue {
+  background: radial-gradient(circle, #F0F9FF 60%, #E0F2FE 85%, #BAE6FD 100%);
+  border: 5px solid var(--primary-blue);
+  box-shadow: 0 12px 36px rgba(29, 93, 155, 0.18);
+}
+
+/* علامات الاتجاهات N, E, S, W */
+.c-mark {
   position: absolute;
   font-weight: 800;
   font-size: 15px;
-  color: var(--text-muted);
+  color: #334155;
+  font-family: sans-serif;
 }
+.c-n { top: 12px; left: 50%; transform: translateX(-50%); font-weight: 900; }
+.c-s { bottom: 12px; left: 50%; transform: translateX(-50%); }
+.c-e { right: 14px; top: 50%; transform: translateY(-50%); }
+.c-w { left: 14px; top: 50%; transform: translateY(-50%); }
 
-.direction-mark.n { top: 8px; left: 50%; transform: translateX(-50%); color: #DC2626; font-weight: 900; }
-.direction-mark.s { bottom: 8px; left: 50%; transform: translateX(-50%); }
-.direction-mark.e { right: 12px; top: 50%; transform: translateY(-50%); }
-.direction-mark.w { left: 12px; top: 50%; transform: translateY(-50%); }
-
-/* مؤشر اتجاه الكعبة */
-.kaaba-target-node {
+/* مؤشر الكعبة في المدار */
+.kaaba-orbit-node {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   pointer-events: none;
 }
 
-.kaaba-icon-badge {
+.kaaba-3d-box {
   position: absolute;
-  top: -16px;
+  top: -18px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 24px;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+  font-size: 28px;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
 
-.kaaba-pointer-line {
+.kaaba-alignment-triangle {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid #16A34A;
+  display: none;
+}
+
+/* عندما يتطابق الرأس مع الكعبة */
+.compass-dial-advanced.aligned .kaaba-alignment-triangle {
+  display: block;
+}
+.compass-dial-advanced.aligned .kaaba-3d-box {
+  transform: translateX(-50%) scale(1.15);
+  filter: drop-shadow(0 0 12px #F59E0B);
+}
+
+/* مؤشر الشمس */
+.sun-orbit-node {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.sun-badge {
   position: absolute;
   top: 24px;
-  left: 50%;
-  width: 3px;
-  height: 100px;
-  background: linear-gradient(to bottom, #F59E0B, transparent);
-  transform: translateX(-50%);
+  left: 28%;
+  font-size: 18px;
+  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.4));
 }
 
-/* إبرة البوصلة والمحور */
-.compass-needle {
+/* الإبرة ثلاثية الأبعاد */
+.compass-needle-3d {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 6px;
-  height: 160px;
-  margin-top: -80px;
-  margin-left: -3px;
-  background: linear-gradient(to bottom, #DC2626 50%, #94A3B8 50%);
-  border-radius: 9999px;
+  width: 14px;
+  height: 180px;
+  margin-top: -90px;
+  margin-left: -7px;
   pointer-events: none;
 }
 
-.compass-center-pivot {
+.needle-north {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 90px solid #16A34A; /* رأس أخضر ناصع */
+}
+
+.needle-south {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 90px solid #CBD5E1;
+}
+
+.needle-center-cap {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1812,39 +1923,139 @@ html, body {
   height: 18px;
   margin-top: -9px;
   margin-left: -9px;
-  background: var(--primary-deep);
-  border: 3px solid #FFFFFF;
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  z-index: 10;
+  background: #FFFFFF;
+  border: 3px solid #64748B;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.compass-dial.aligned {
-  border-color: #16A34A !important;
-  box-shadow: 0 0 25px rgba(22, 163, 74, 0.4);
+/* ميزان الماء (Spirit Bubble Level) */
+.spirit-bubble-level {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #94A3B8;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
-.qibla-permission-btn {
-  background: var(--primary-blue);
+.spirit-bubble-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DC2626; /* أحمر إن كان مائلاً */
+  transition: all 0.1s ease;
+}
+
+.spirit-bubble-level.level-flat .spirit-bubble-dot {
+  background: #16A34A; /* أخضر إذا استوى */
+}
+
+/* زر التفعيل والتنبيهات */
+.qibla-gps-prompt {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.qibla-gps-prompt p {
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.qibla-activate-btn {
+  background: #16A34A;
   color: #FFFFFF;
   border: none;
-  padding: 12px 24px;
+  padding: 8px 30px;
   border-radius: 9999px;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-fab);
 }
 
-.qibla-tips-box {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 12px;
+.qibla-flat-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--text-secondary);
-  line-height: 1.6;
-  text-align: center;
+}
+
+/* شبكة أنماط المظهر */
+.qibla-themes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-top: 10px;
+}
+
+.theme-card {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.theme-card.active {
+  border-color: #16A34A;
+  background: #F0FDF4;
+}
+
+.theme-preview-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.preview-white { background: #FFFFFF; border: 2px solid #CBD5E1; }
+.preview-gold  { background: #FEF3C7; border: 2px solid #F59E0B; }
+.preview-blue  { background: #E0F2FE; border: 2px solid var(--primary-blue); }
+
+.theme-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.theme-apply-btn {
+  width: 100%;
+  padding: 6px 0;
+  border-radius: 8px;
+  border: none;
+  background: #E2E8F0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.theme-card.active .theme-apply-btn {
+  background: #DCFCE7;
+  color: #15803D;
 }
 
 /* ==================== تنسيقات شاشة الإعدادات العصرية ==================== */
