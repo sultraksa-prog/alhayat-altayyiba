@@ -1921,19 +1921,21 @@ ${APP_CONFIG.url}`;
     });
   }
 
-// ==================== محرك بوصلة اتجاه القبلة المطور (ثنائي النظام) ====================
+// ==================== محرك بوصلة اتجاه القبلة المطور والذكي ====================
   const KAABA_LAT = 21.422487;
   const KAABA_LNG = 39.826206;
   let qiblaBearing = 0;
   let isCompassListening = false;
   let hasVibratedForAligned = false;
+  let qiblaActiveMode = 'gps'; // 'gps' أو 'offline'
   let currentTheme = localStorage.getItem('hayat_qibla_theme') || 'theme-white';
+  let deviceCurrentHeading = 0;
 
   // 1. حساب زاوية القبلة الدقيقة
-  function calculateQiblaAngle(userLat, userLng) {
-    const phi1 = userLat * (Math.PI / 180);
+  function calculateQiblaAngle(lat, lng) {
+    const phi1 = lat * (Math.PI / 180);
     const phi2 = KAABA_LAT * (Math.PI / 180);
-    const deltaLambda = (KAABA_LNG - userLng) * (Math.PI / 180);
+    const deltaLambda = (KAABA_LNG - lng) * (Math.PI / 180);
 
     const y = Math.sin(deltaLambda);
     const x = Math.cos(phi1) * Math.tan(phi2) - Math.sin(phi1) * Math.cos(deltaLambda);
@@ -1941,9 +1943,9 @@ ${APP_CONFIG.url}`;
     return Math.round((qibla + 360) % 360);
   }
 
-  // 2. حساب المسافة إلى مكة بالكيلومتر (معادلة Haversine)
+  // 2. حساب المسافة إلى مكة
   function calculateDistanceToKaaba(lat, lng) {
-    const R = 6371; // نصف قطر الأرض كم
+    const R = 6371;
     const dLat = (KAABA_LAT - lat) * (Math.PI / 180);
     const dLng = (KAABA_LNG - lng) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -1953,8 +1955,8 @@ ${APP_CONFIG.url}`;
     return (R * c).toFixed(1);
   }
 
-  // 3. رسم الخريطة التوضيحية ومسار الخط المتقطع الأخضر
-  function drawQiblaMapTrack(userLat, userLng) {
+  // 3. رسم مسار الخريطة
+  function drawQiblaMapTrack(cityName) {
     const canvas = document.getElementById('qiblaMapCanvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -1962,44 +1964,38 @@ ${APP_CONFIG.url}`;
     const h = canvas.height;
 
     ctx.clearRect(0, 0, w, h);
-
-    // خلفية الخريطة الرملية والمائية
     ctx.fillStyle = '#F4EEDB';
     ctx.fillRect(0, 0, w, h);
 
-    // رسم البحر الأحمر تقريبياً
+    // مسطح بحري تقريبي
     ctx.fillStyle = '#BAE6FD';
     ctx.beginPath();
-    ctx.moveTo(w * 0.2, 0);
+    ctx.moveTo(w * 0.15, 0);
     ctx.lineTo(w * 0.35, h);
-    ctx.lineTo(w * 0.15, h);
-    ctx.lineTo(w * 0.05, 0);
+    ctx.lineTo(w * 0.1, h);
+    ctx.lineTo(0, 0);
     ctx.closePath();
     ctx.fill();
 
-    // نقطة مكة المكرمة (الكعبة)
-    const kX = w * 0.38;
+    const kX = w * 0.35;
     const kY = h * 0.65;
-
-    // نقطة موقع المستخدم
     const uX = w * 0.78;
-    const uY = h * 0.3;
+    const uY = h * 0.35;
 
-    // رسم خط المسار الأخضر المتقطع
+    // خط المسار المتقطع
     ctx.beginPath();
-    ctx.setLineDash([6, 6]);
+    ctx.setLineDash([5, 5]);
     ctx.strokeStyle = '#16A34A';
     ctx.lineWidth = 3;
     ctx.moveTo(uX, uY);
     ctx.lineTo(kX, kY);
     ctx.stroke();
-    ctx.setLineDash([]); // إعادة التعيين
+    ctx.setLineDash([]);
 
-    // رسم علامة الكعبة المشرفة
+    // رمز الكعبة المشرفة وموقع المستخدم
     ctx.font = '22px sans-serif';
     ctx.fillText('🕋', kX - 12, kY + 8);
 
-    // رسم مؤشر المستخدم (دائرة خضراء)
     ctx.fillStyle = '#16A34A';
     ctx.beginPath();
     ctx.arc(uX, uY, 7, 0, Math.PI * 2);
@@ -2009,14 +2005,13 @@ ${APP_CONFIG.url}`;
     ctx.arc(uX, uY, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // أسماء المدن
-    ctx.font = 'bold 11px Cairo, sans-serif';
-    ctx.fillStyle = '#334155';
-    ctx.fillText('مكة المكرمة', kX - 25, kY + 22);
-    ctx.fillText(userLocation.city || 'موقعي', uX - 20, uY + 20);
+    ctx.font = 'bold 11.5px Cairo, sans-serif';
+    ctx.fillStyle = '#1E293B';
+    ctx.fillText('مكة المكرمة', kX - 22, kY + 24);
+    ctx.fillText(cityName, uX - 25, uY + 20);
   }
 
-  // 4. تشغيل وتهيئة البوصلة
+  // 4. تهيئة شاشة القبلة بالكامل
   function initQiblaCompass() {
     const lat = userLocation.lat || 21.4225;
     const lng = userLocation.lng || 39.8262;
@@ -2024,62 +2019,114 @@ ${APP_CONFIG.url}`;
 
     const qiblaAngleDisplay = document.getElementById('qiblaAngleDisplay');
     const qiblaDistanceDisplay = document.getElementById('qiblaDistanceDisplay');
+    const qiblaCurrentCityDisplay = document.getElementById('qiblaCurrentCityDisplay');
     const kaabaOrbitNode = document.getElementById('kaabaOrbitNode');
     const compassDial = document.getElementById('compassDial');
 
     if (qiblaAngleDisplay) qiblaAngleDisplay.textContent = `${qiblaBearing}°`;
     if (qiblaDistanceDisplay) qiblaDistanceDisplay.textContent = `${calculateDistanceToKaaba(lat, lng)} كم`;
+    if (qiblaCurrentCityDisplay) qiblaCurrentCityDisplay.textContent = userLocation.city || 'مكة المكرمة';
     if (kaabaOrbitNode) kaabaOrbitNode.style.transform = `rotate(${qiblaBearing}deg)`;
 
-    // تطبيق النمط المختار
     if (compassDial) {
       compassDial.className = `compass-dial-advanced ${currentTheme}`;
     }
 
-    drawQiblaMapTrack(lat, lng);
-    startCompassSensors();
+    drawQiblaMapTrack(userLocation.city || 'موقعي');
+    checkLocationSmartState();
   }
 
-  // 5. استقبال وتفسير بيانات المستشعرات (البوصلة + ميزان الماء)
+  // 5. الفحص الذكي لحالة الموقع والشبكة وإظهار التنبيه المناسب
+  function checkLocationSmartState() {
+    const alertBox = document.getElementById('qiblaSmartAlert');
+    const alertText = document.getElementById('smartAlertText');
+    const alertBtn = document.getElementById('smartAlertBtn');
+
+    if (!alertBox || !alertText || !alertBtn) return;
+
+    // أولوية 1: فحص الاتصال بالإنترنت
+    if (!navigator.onLine) {
+      switchToOfflineMode();
+      alertBox.style.display = 'flex';
+      alertText.textContent = 'أنت غير متصل بالإنترنت. تم تفعيل النمط أوفلاين تلقائياً.';
+      alertBtn.textContent = 'المدينة المحفوظة';
+      alertBtn.onclick = () => openManualLocationModal();
+      return;
+    }
+
+    // أولوية 2: إذا كان نمط أوفلاين مختاراً يدوياً
+    if (qiblaActiveMode === 'offline') {
+      alertBox.style.display = 'none';
+      return;
+    }
+
+    // أولوية 3: فحص صلاحية GPS
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+        if (status.state === 'granted') {
+          alertBox.style.display = 'none'; // الموقع يعمل ومُصرّح له: إخفاء الزر تماماً
+        } else if (status.state === 'denied') {
+          alertBox.style.display = 'flex';
+          alertText.textContent = 'إذن الموقع مرفوض في المتصفح. يمكنك تفعيله من إعدادات الموقع أو استخدام النمط بدون نت.';
+          alertBtn.textContent = 'استخدم بدون نت';
+          alertBtn.onclick = () => switchToOfflineMode();
+        } else {
+          // حالة prompt
+          alertBox.style.display = 'flex';
+          alertText.textContent = 'يرجى السماح بالوصول لموقعك لتحديد القبلة بأعلى دقة.';
+          alertBtn.textContent = 'تفعيل الموقع';
+          alertBtn.onclick = () => requestGpsLocation();
+        }
+      }).catch(() => {
+        alertBox.style.display = 'none';
+      });
+    }
+  }
+
+  function requestGpsLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLocation.lat = pos.coords.latitude;
+          userLocation.lng = pos.coords.longitude;
+          userLocation.city = 'موقعي الحالي';
+          localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+          initQiblaCompass();
+        },
+        (err) => {
+          alert('تعذر جلب موقع GPS. تم التحويل لنمط بدون إنترنت باستخدام مدينتك المحفوظة.');
+          switchToOfflineMode();
+        }
+      );
+    }
+  }
+
+  function switchToOfflineMode() {
+    qiblaActiveMode = 'offline';
+    document.getElementById('modeOfflineBtn')?.classList.add('active');
+    document.getElementById('modeGpsBtn')?.classList.remove('active');
+    initQiblaCompass();
+  }
+
+  // 6. تشغيل حركة البوصلة وتفسير المستشعرات
   function handleOrientation(e) {
     let heading = 0;
     if (e.webkitCompassHeading) {
-      // آيفون (Apple iOS)
       heading = e.webkitCompassHeading;
     } else if (e.alpha !== null) {
-      // أندرويد والمتصفحات القياسية
       heading = 360 - e.alpha;
     }
 
-    heading = Math.round(heading);
-    const compassDial = document.getElementById('compassDial');
+    deviceCurrentHeading = Math.round(heading);
+    applyCompassRotation(deviceCurrentHeading);
 
-    if (compassDial) {
-      compassDial.style.transform = `rotate(${-heading}deg)`;
-    }
-
-    // فحص المحاذاة مع الكعبة المشرفة (±5 درجات)
-    const diff = Math.abs((heading - qiblaBearing + 360) % 360);
-    const isAligned = diff <= 5 || diff >= 355;
-
-    if (isAligned) {
-      if (compassDial) compassDial.classList.add('aligned');
-      if (!hasVibratedForAligned && navigator.vibrate) {
-        navigator.vibrate(60);
-        hasVibratedForAligned = true;
-      }
-    } else {
-      if (compassDial) compassDial.classList.remove('aligned');
-      hasVibratedForAligned = false;
-    }
-
-    // محاكاة ميزان الماء عبر زوايا الميلان (beta & gamma)
+    // ميزان الماء
     const spiritBubbleDot = document.getElementById('spiritBubbleDot');
     const spiritLevel = document.getElementById('spiritLevel');
     if (e.beta !== null && e.gamma !== null && spiritBubbleDot) {
-      const b = Math.max(-15, Math.min(15, e.beta));
-      const g = Math.max(-15, Math.min(15, e.gamma));
-      spiritBubbleDot.style.transform = `translate(${g * 0.8}px, ${b * 0.8}px)`;
+      const b = Math.max(-14, Math.min(14, e.beta));
+      const g = Math.max(-14, Math.min(14, e.gamma));
+      spiritBubbleDot.style.transform = `translate(${g * 0.7}px, ${b * 0.7}px)`;
 
       if (Math.abs(e.beta) < 10 && Math.abs(e.gamma) < 10) {
         if (spiritLevel) spiritLevel.classList.add('level-flat');
@@ -2089,36 +2136,66 @@ ${APP_CONFIG.url}`;
     }
   }
 
-  // تشغيل المستشعرات مع طلب الإذن إن لزم الأمر
-  async function startCompassSensors() {
-    if (isCompassListening) return;
+  function applyCompassRotation(heading) {
+    const compassDial = document.getElementById('compassDial');
+    const alignBadge = document.getElementById('qiblaAlignBadge');
 
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      const activateBtn = document.getElementById('activateSensorsBtn');
-      const promptBox = document.getElementById('qiblaGpsPrompt');
-      if (promptBox) promptBox.style.display = 'flex';
+    if (compassDial) {
+      compassDial.style.transform = `rotate(${-heading}deg)`;
+    }
 
-      if (activateBtn) {
-        activateBtn.onclick = async () => {
-          try {
-            const resp = await DeviceOrientationEvent.requestPermission();
-            if (resp === 'granted') {
-              promptBox.style.display = 'none';
-              attachSensorListeners();
-            }
-          } catch (err) {
-            attachSensorListeners();
-          }
-        };
+    const diff = Math.abs((heading - qiblaBearing + 360) % 360);
+    const isAligned = diff <= 5 || diff >= 355;
+
+    if (isAligned) {
+      if (compassDial) compassDial.classList.add('aligned');
+      if (alignBadge) {
+        alignBadge.textContent = '✨ أنت باتجاه القبلة الآن';
+        alignBadge.classList.add('aligned');
+      }
+      if (!hasVibratedForAligned && navigator.vibrate) {
+        navigator.vibrate(60);
+        hasVibratedForAligned = true;
       }
     } else {
-      const promptBox = document.getElementById('qiblaGpsPrompt');
-      if (promptBox) promptBox.style.display = 'none';
-      attachSensorListeners();
+      if (compassDial) compassDial.classList.remove('aligned');
+      if (alignBadge) {
+        alignBadge.textContent = 'وجّه الهاتف للكعبة';
+        alignBadge.classList.remove('aligned');
+      }
+      hasVibratedForAligned = false;
     }
   }
 
-  function attachSensorListeners() {
+  // 7. النقر على الزر البارز لتشغيل الحساسات
+  const startCompassSensorsBtn = document.getElementById('startCompassSensorsBtn');
+  const qiblaStartBox = document.getElementById('qiblaStartBox');
+
+  if (startCompassSensorsBtn) {
+    startCompassSensorsBtn.addEventListener('click', async () => {
+      // إذا كان الجهاز آيفون بنظام iOS 13 فما فوق
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const resp = await DeviceOrientationEvent.requestPermission();
+          if (resp === 'granted') {
+            attachCompassListeners();
+            if (qiblaStartBox) qiblaStartBox.style.display = 'none';
+          } else {
+            alert('تم رفض إذن المستشعر في هاتفك.');
+          }
+        } catch (e) {
+          attachCompassListeners();
+          if (qiblaStartBox) qiblaStartBox.style.display = 'none';
+        }
+      } else {
+        // أندرويد والأجهزة القياسية
+        attachCompassListeners();
+        if (qiblaStartBox) qiblaStartBox.style.display = 'none';
+      }
+    });
+  }
+
+  function attachCompassListeners() {
     if ('ondeviceorientationabsolute' in window) {
       window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     } else if ('ondeviceorientation' in window) {
@@ -2133,49 +2210,29 @@ ${APP_CONFIG.url}`;
     isCompassListening = false;
   }
 
-  // إدارة أنماط المظهر (أبيض، ذهبي، أزرق)
-  const openQiblaThemeModalBtn = document.getElementById('openQiblaThemeModalBtn');
-  const qiblaThemeModal = document.getElementById('qiblaThemeModal');
-  const closeQiblaThemeBtn = document.getElementById('closeQiblaThemeBtn');
+  // ميزة للمطور: إمكانية تدوير البوصلة بسحب القرص باللمس أو الفأرة للتجربة على الكمبيوتر
+  const compassDialEl = document.getElementById('compassDial');
+  if (compassDialEl) {
+    let isDragging = false;
+    let startAngle = 0;
 
-  if (openQiblaThemeModalBtn && qiblaThemeModal) {
-    openQiblaThemeModalBtn.addEventListener('click', () => qiblaThemeModal.classList.add('show'));
-  }
-  if (closeQiblaThemeBtn && qiblaThemeModal) {
-    closeQiblaThemeBtn.addEventListener('click', () => qiblaThemeModal.classList.remove('show'));
-  }
-
-  document.querySelectorAll('.theme-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.theme-card').forEach(c => {
-        c.classList.remove('active');
-        c.querySelector('.theme-apply-btn').textContent = 'استخدم';
-      });
-      card.classList.add('active');
-      card.querySelector('.theme-apply-btn').textContent = 'مستخدم';
-
-      currentTheme = card.getAttribute('data-theme');
-      localStorage.setItem('hayat_qibla_theme', currentTheme);
-
-      const compassDial = document.getElementById('compassDial');
-      if (compassDial) {
-        compassDial.className = `compass-dial-advanced ${currentTheme}`;
-      }
-      setTimeout(() => qiblaThemeModal.classList.remove('show'), 250);
+    compassDialEl.addEventListener('mousedown', (e) => { isDragging = true; startAngle = e.clientX; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const delta = (e.clientX - startAngle) % 360;
+      applyCompassRotation(delta);
     });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+  }
+
+  // أحداث محول النمط (GPS / أوفلاين)
+  document.getElementById('modeGpsBtn')?.addEventListener('click', () => {
+    qiblaActiveMode = 'gps';
+    document.getElementById('modeGpsBtn').classList.add('active');
+    document.getElementById('modeOfflineBtn').classList.remove('active');
+    requestGpsLocation();
   });
 
-  // زر تحديث الموقع GPS من الخريطة
-  const refreshGpsBtn = document.getElementById('refreshGpsBtn');
-  if (refreshGpsBtn) {
-    refreshGpsBtn.addEventListener('click', () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          userLocation.lat = pos.coords.latitude;
-          userLocation.lng = pos.coords.longitude;
-          localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
-          initQiblaCompass();
-        });
-      }
-    });
-  }
+  document.getElementById('modeOfflineBtn')?.addEventListener('click', () => {
+    switchToOfflineMode();
+  });
