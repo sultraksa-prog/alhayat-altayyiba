@@ -320,6 +320,57 @@
       </div>
     </div>
 
+    <!-- ==================== الشاشة: بوصلة اتجاه القبلة ==================== -->
+    <div id="screen-qibla" class="screen-view">
+      <header class="section-nav-header">
+        <button class="nav-back-btn" id="backToHomeFromQiblaBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <h2 class="section-page-title">اتجاه القبلة</h2>
+        <div style="width: 24px;"></div>
+      </header>
+
+      <div class="qibla-screen-body">
+        <!-- كرت بيانات المدينة وزاوية القبلة -->
+        <div class="qibla-info-card">
+          <div class="qibla-city-row">
+            <span class="qibla-city-name" id="qiblaCityDisplay">مكة المكرمة</span>
+            <span class="qibla-angle-badge" id="qiblaAngleDisplay">0°</span>
+          </div>
+          <div class="qibla-status-text" id="qiblaStatusText">حرّك هاتفك حتى يتطابق السهم مع الكعبة المشرفة</div>
+        </div>
+
+        <!-- قرص البوصلة التفاعلي -->
+        <div class="compass-wrapper">
+          <div class="compass-dial" id="compassDial">
+            <div class="direction-mark n">ش</div>
+            <div class="direction-mark e">ق</div>
+            <div class="direction-mark s">ج</div>
+            <div class="direction-mark w">غ</div>
+            
+            <!-- مؤشر الكعبة المشرفة -->
+            <div class="kaaba-target-node" id="kaabaTargetNode">
+              <div class="kaaba-icon-badge">🕋</div>
+              <div class="kaaba-pointer-line"></div>
+            </div>
+
+            <!-- إبرة البوصلة الشمالية/الجنوبية -->
+            <div class="compass-needle"></div>
+            <div class="compass-center-pivot"></div>
+          </div>
+        </div>
+
+        <!-- زر تفعيل الحساس (ضروري لمتصفح سفاري وآيفون) وتنبيه المعايرة -->
+        <button type="button" class="qibla-permission-btn" id="qiblaPermissionBtn" style="display: none;">
+          <span>تفعيل بوصلة الجوال 🧭</span>
+        </button>
+
+        <div class="qibla-tips-box">
+          <p>💡 للحصول على أفضل دقة: ضع الهاتف أفقياً على راحة يدك وابتعد عن المعادن والأجهزة الإلكترونية.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== الشاشة 2: مجموعات أذكار المسلم ==================== -->
     <div id="screen-azkar-categories" class="screen-view">
       <header class="section-nav-header">
@@ -428,8 +479,7 @@
     <nav class="bottom-nav">
       <a href="#" class="nav-item active" id="tabHome"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>الرئيسية</span></a>
       <a href="#" class="nav-item" id="tabAzkar"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg><span>أذكار المسلم</span></a>
-      <a href="#" class="nav-item"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><polygon points="12 8 15 15 12 13 9 15" fill="currentColor"/></svg><span>القبلة</span></a>
-      <a href="#" class="nav-item" id="tabGeneralSettings">
+      <a href="#" class="nav-item" id="tabQibla"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><polygon points="12 8 15 15 12 13 9 15" fill="currentColor"/></svg><span>القبلة</span></a>      <a href="#" class="nav-item" id="tabGeneralSettings">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       <span>الإعدادات</span>
     </a>
