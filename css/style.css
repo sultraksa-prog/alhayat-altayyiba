@@ -1672,3 +1672,178 @@ html, body {
   color: white;
 }
 
+/* ==================== تنسيقات شاشة بوصلة القبلة ==================== */
+.qibla-screen-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.qibla-info-card {
+  width: 100%;
+  background: var(--bg-surface);
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid #E2E8F0;
+  text-align: center;
+}
+
+.qibla-city-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.qibla-city-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.qibla-angle-badge {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.qibla-status-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.qibla-status-text.aligned {
+  color: #16A34A;
+  font-weight: 800;
+}
+
+/* قرص البوصلة */
+.compass-wrapper {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compass-dial {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFFFFF 65%, #EEF6FC 100%);
+  border: 8px solid var(--primary-deep);
+  box-shadow: 0 10px 30px rgba(9, 32, 63, 0.15), inset 0 0 15px rgba(9, 32, 63, 0.05);
+  position: relative;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+.direction-mark {
+  position: absolute;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.direction-mark.n { top: 8px; left: 50%; transform: translateX(-50%); color: #DC2626; font-weight: 900; }
+.direction-mark.s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.direction-mark.e { right: 12px; top: 50%; transform: translateY(-50%); }
+.direction-mark.w { left: 12px; top: 50%; transform: translateY(-50%); }
+
+/* مؤشر اتجاه الكعبة */
+.kaaba-target-node {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.kaaba-icon-badge {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+}
+
+.kaaba-pointer-line {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  width: 3px;
+  height: 100px;
+  background: linear-gradient(to bottom, #F59E0B, transparent);
+  transform: translateX(-50%);
+}
+
+/* إبرة البوصلة والمحور */
+.compass-needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 160px;
+  margin-top: -80px;
+  margin-left: -3px;
+  background: linear-gradient(to bottom, #DC2626 50%, #94A3B8 50%);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.compass-center-pivot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  margin-left: -9px;
+  background: var(--primary-deep);
+  border: 3px solid #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+.compass-dial.aligned {
+  border-color: #16A34A !important;
+  box-shadow: 0 0 25px rgba(22, 163, 74, 0.4);
+}
+
+.qibla-permission-btn {
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-fab);
+}
+
+.qibla-tips-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: center;
+}
+
