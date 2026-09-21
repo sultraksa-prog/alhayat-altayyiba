@@ -392,53 +392,129 @@
       </div>
     </div>
 
-    <!-- ==================== الشاشة: بوصلة اتجاه القبلة ==================== -->
+    <!-- ==================== الشاشة: بوصلة اتجاه القبلة المطورة ==================== -->
     <div id="screen-qibla" class="screen-view">
       <header class="section-nav-header">
         <button class="nav-back-btn" id="backToHomeFromQiblaBtn">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <h2 class="section-page-title">اتجاه القبلة</h2>
-        <div style="width: 24px;"></div>
+        <h2 class="section-page-title">القبلة</h2>
+        <div class="header-actions">
+          <button class="header-action-btn-circle" id="qiblaHelpBtn" title="تعليمات البوصلة">؟</button>
+        </div>
       </header>
 
       <div class="qibla-screen-body">
-        <!-- كرت بيانات المدينة وزاوية القبلة -->
-        <div class="qibla-info-card">
-          <div class="qibla-city-row">
-            <span class="qibla-city-name" id="qiblaCityDisplay">مكة المكرمة</span>
-            <span class="qibla-angle-badge" id="qiblaAngleDisplay">0°</span>
+        
+        <!-- 1. كرت الخريطة العلوية ومسار الكعبة -->
+        <div class="qibla-map-card">
+          <div class="map-view-container" id="qiblaMapCanvasContainer">
+            <canvas id="qiblaMapCanvas" width="380" height="150"></canvas>
+            <button class="map-refresh-btn" id="refreshGpsBtn" title="تحديث الموقع">🔄</button>
           </div>
-          <div class="qibla-status-text" id="qiblaStatusText">حرّك هاتفك حتى يتطابق السهم مع الكعبة المشرفة</div>
+
+          <!-- كرتي المسافة وزاوية الجهاز -->
+          <div class="qibla-metrics-bar">
+            <div class="metric-col">
+              <span class="metric-val" id="qiblaDistanceDisplay">-- كم</span>
+              <span class="metric-lbl">المسافة من مكة</span>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-col">
+              <span class="metric-val" id="qiblaAngleDisplay">--°</span>
+              <span class="metric-lbl">زاوية القبلة</span>
+            </div>
+          </div>
         </div>
 
-        <!-- قرص البوصلة التفاعلي -->
-        <div class="compass-wrapper">
-          <div class="compass-dial" id="compassDial">
-            <div class="direction-mark n">ش</div>
-            <div class="direction-mark e">ق</div>
-            <div class="direction-mark s">ج</div>
-            <div class="direction-mark w">غ</div>
+        <!-- 2. زر تغيير المظهر العائم على اليمين -->
+        <div class="qibla-theme-trigger-row">
+          <button type="button" class="qibla-theme-btn" id="openQiblaThemeModalBtn">
+            <span style="font-size: 20px;">🎨</span>
+            <span>المظهر</span>
+          </button>
+        </div>
+
+        <!-- 3. قرص البوصلة التفاعلي الرئيسي -->
+        <div class="qibla-compass-stage">
+          <div class="compass-dial-advanced theme-white" id="compassDial">
             
-            <!-- مؤشر الكعبة المشرفة -->
-            <div class="kaaba-target-node" id="kaabaTargetNode">
-              <div class="kaaba-icon-badge">🕋</div>
-              <div class="kaaba-pointer-line"></div>
+            <!-- علامات الاتجاهات بالإنجليزية كما بالصورة -->
+            <span class="c-mark c-n">N</span>
+            <span class="c-mark c-e">E</span>
+            <span class="c-mark c-s">S</span>
+            <span class="c-mark c-w">W</span>
+
+            <!-- دائرة الكعبة المشرفة ومثلث المحاذاة الأخضر -->
+            <div class="kaaba-orbit-node" id="kaabaOrbitNode">
+              <div class="kaaba-alignment-triangle" id="kaabaTriangle"></div>
+              <div class="kaaba-3d-box" id="kaaba3dBox">🕋</div>
             </div>
 
-            <!-- إبرة البوصلة الشمالية/الجنوبية -->
-            <div class="compass-needle"></div>
-            <div class="compass-center-pivot"></div>
+            <!-- مؤشر موقع الشمس التقريبي -->
+            <div class="sun-orbit-node" id="sunOrbitNode">
+              <div class="sun-badge">☀️</div>
+            </div>
+
+            <!-- الإبرة المغناطيسية الفاخرة (رأس أخضر للشمال) -->
+            <div class="compass-needle-3d">
+              <div class="needle-north"></div>
+              <div class="needle-south"></div>
+              <div class="needle-center-cap"></div>
+            </div>
+
+            <!-- ميزان الاستواء والماء (Bubble Level) داخل البوصلة -->
+            <div class="spirit-bubble-level" id="spiritLevel">
+              <div class="spirit-bubble-dot" id="spiritBubbleDot"></div>
+            </div>
           </div>
         </div>
 
-        <!-- زر تفعيل الحساس (ضروري لمتصفح سفاري وآيفون) وتنبيه المعايرة -->
-        <button type="button" class="qibla-permission-btn" id="qiblaPermissionBtn" style="display: none;">
-          <span>تفعيل بوصلة الجوال 🧭</span>
-        </button>
+        <!-- 4. رسالة تفعيل الموقع أو الإذن إن لم يكن مفعلاً -->
+        <div class="qibla-gps-prompt" id="qiblaGpsPrompt">
+          <p id="qiblaPromptText">اضغط لتفعيل حساسات البوصلة وتحديد الموقع بدقة</p>
+          <button type="button" class="qibla-activate-btn" id="activateSensorsBtn">تفعيل</button>
+        </div>
 
-        <div class="qibla-tips-box">
-          <p>💡 للحصول على أفضل دقة: ضع الهاتف أفقياً على راحة يدك وابتعد عن المعادن والأجهزة الإلكترونية.</p>
+        <!-- شريط التوجيه السفلي -->
+        <div class="qibla-flat-notice">
+          <span class="flat-icon">📳</span>
+          <span id="qiblaFlatNoticeText">يرجى وضع الهاتف على سطحٍ مستوٍ أولاً</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- مودال اختيار نمط البوصلة (المظهر) -->
+    <div class="bottom-sheet-backdrop" id="qiblaThemeModal">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">إختر النمط</h3>
+          <button class="modal-btn-link" id="closeQiblaThemeBtn" style="font-size: 18px;">✕</button>
+        </div>
+
+        <div class="qibla-themes-grid">
+          <!-- النمط 1: الأبيض -->
+          <div class="theme-card active" data-theme="theme-white">
+            <div class="theme-preview-circle preview-white">🧭</div>
+            <span class="theme-name">قبلة بيضاء</span>
+            <button type="button" class="theme-apply-btn">مستخدم</button>
+          </div>
+
+          <!-- النمط 2: الذهبي -->
+          <div class="theme-card" data-theme="theme-gold">
+            <div class="theme-preview-circle preview-gold">🧭</div>
+            <span class="theme-name">قبلة ذهبية</span>
+            <button type="button" class="theme-apply-btn">استخدم</button>
+          </div>
+
+          <!-- النمط 3: الأزرق الملكي -->
+          <div class="theme-card" data-theme="theme-blue">
+            <div class="theme-preview-circle preview-blue">🧭</div>
+            <span class="theme-name">قبلة زرقاء</span>
+            <button type="button" class="theme-apply-btn">استخدم</button>
+          </div>
         </div>
       </div>
     </div>
