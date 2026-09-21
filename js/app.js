@@ -72,6 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ==================== 3. نظام التنقل بين الشاشات ====================
   const screenHome = document.getElementById('screen-home');
+
+  const screenQibla = document.getElementById('screen-qibla');
+  const tabQibla = document.getElementById('tabQibla');
+  const backToHomeFromQiblaBtn = document.getElementById('backToHomeFromQiblaBtn');
+  
   const screenAzkarCategories = document.getElementById('screen-azkar-categories');
   const screenAzkarFavorites = document.getElementById('screen-azkar-favorites');
   const screenAzkarReader = document.getElementById('screen-azkar-reader');
@@ -119,7 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tabAzkar.classList.add('active');
   } else if (screen === screenGeneralSettings || screen === screenAboutApp) {
     if (tabGeneralSettings) tabGeneralSettings.classList.add('active');
-  }
+  } else if (screen === screenQibla) {
+    if (tabQibla) tabQibla.classList.add('active');
   }
 
   // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
@@ -194,6 +200,19 @@ if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showS
 if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
   
   tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  if (tabQibla) {
+    tabQibla.addEventListener('click', (e) => {
+      e.preventDefault();
+      showScreen(screenQibla);
+      initQiblaCompass();
+    });
+  }
+  if (backToHomeFromQiblaBtn) {
+    backToHomeFromQiblaBtn.addEventListener('click', () => {
+      stopQiblaCompass();
+      showScreen(screenHome);
+    });
+  }
   openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
   if (openFavTileBtn) {
@@ -1878,4 +1897,119 @@ ${APP_CONFIG.url}`;
     groupLongPressModal.addEventListener('click', (e) => {
       if (e.target === groupLongPressModal) groupLongPressModal.classList.remove('show');
     });
+  }
+
+// ==================== محرك بوصلة اتجاه القبلة ====================
+  const KAABA_LAT = 21.422487;
+  const KAABA_LNG = 39.826206;
+  let qiblaBearing = 0;
+  let isCompassListening = false;
+  let hasVibratedForAligned = false;
+
+  function calculateQiblaAngle(userLat, userLng) {
+    const phi1 = userLat * (Math.PI / 180);
+    const phi2 = KAABA_LAT * (Math.PI / 180);
+    const deltaLambda = (KAABA_LNG - userLng) * (Math.PI / 180);
+
+    const y = Math.sin(deltaLambda);
+    const x = Math.cos(phi1) * Math.tan(phi2) - Math.sin(phi1) * Math.cos(deltaLambda);
+    let qibla = Math.atan2(y, x) * (180 / Math.PI);
+    return Math.round((qibla + 360) % 360);
+  }
+
+  function initQiblaCompass() {
+    const lat = userLocation.lat || 21.4225;
+    const lng = userLocation.lng || 39.8262;
+    qiblaBearing = calculateQiblaAngle(lat, lng);
+
+    const qiblaCityDisplay = document.getElementById('qiblaCityDisplay');
+    const qiblaAngleDisplay = document.getElementById('qiblaAngleDisplay');
+    const kaabaTargetNode = document.getElementById('kaabaTargetNode');
+    const qiblaPermissionBtn = document.getElementById('qiblaPermissionBtn');
+
+    if (qiblaCityDisplay) qiblaCityDisplay.textContent = userLocation.city || 'مكة المكرمة';
+    if (qiblaAngleDisplay) qiblaAngleDisplay.textContent = `${qiblaBearing}°`;
+    if (kaabaTargetNode) kaabaTargetNode.style.transform = `rotate(${qiblaBearing}deg)`;
+
+    // طلب الإذن في هواتف آيفون (iOS Safari)
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      if (qiblaPermissionBtn) {
+        qiblaPermissionBtn.style.display = 'block';
+        qiblaPermissionBtn.onclick = async () => {
+          try {
+            const resp = await DeviceOrientationEvent.requestPermission();
+            if (resp === 'granted') {
+              qiblaPermissionBtn.style.display = 'none';
+              startCompassSensors();
+            } else {
+              alert('تم رفض إذن البوصلة. يمكنك توجيه الهاتف يدوياً بناءً على الدرجة الظاهرة.');
+            }
+          } catch (e) {
+            startCompassSensors();
+          }
+        };
+      }
+    } else {
+      if (qiblaPermissionBtn) qiblaPermissionBtn.style.display = 'none';
+      startCompassSensors();
+    }
+  }
+
+  function handleOrientation(e) {
+    let heading = 0;
+    if (e.webkitCompassHeading) {
+      // أجهزة Apple iOS
+      heading = e.webkitCompassHeading;
+    } else if (e.alpha !== null) {
+      // أجهزة أندرويد والمتصفحات القياسية
+      heading = 360 - e.alpha;
+    }
+
+    heading = Math.round(heading);
+    const compassDial = document.getElementById('compassDial');
+    const qiblaStatusText = document.getElementById('qiblaStatusText');
+
+    if (compassDial) {
+      // تدوير القرص بحسب اتجاه الشمال الفعلي للهاتف
+      compassDial.style.transform = `rotate(${-heading}deg)`;
+    }
+
+    // حساب زاوية الفرق بين وجهة الهاتف والكعبة
+    const diff = Math.abs((heading - qiblaBearing + 360) % 360);
+    const isAligned = diff <= 4 || diff >= 356;
+
+    if (isAligned) {
+      if (compassDial) compassDial.classList.add('aligned');
+      if (qiblaStatusText) {
+        qiblaStatusText.textContent = '✨ أنت باتجاه القبلة المشرفة الآن! تقبل الله طاعتكم';
+        qiblaStatusText.classList.add('aligned');
+      }
+      if (!hasVibratedForAligned && navigator.vibrate) {
+        navigator.vibrate(60);
+        hasVibratedForAligned = true;
+      }
+    } else {
+      if (compassDial) compassDial.classList.remove('aligned');
+      if (qiblaStatusText) {
+        qiblaStatusText.textContent = 'حرّك هاتفك حتى يتطابق السهم مع الكعبة المشرفة';
+        qiblaStatusText.classList.remove('aligned');
+      }
+      hasVibratedForAligned = false;
+    }
+  }
+
+  function startCompassSensors() {
+    if (isCompassListening) return;
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    } else if ('ondeviceorientation' in window) {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+    isCompassListening = true;
+  }
+
+  function stopQiblaCompass() {
+    window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.removeEventListener('deviceorientation', handleOrientation, true);
+    isCompassListening = false;
   }
