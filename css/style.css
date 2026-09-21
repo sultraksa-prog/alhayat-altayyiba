@@ -1847,3 +1847,83 @@ html, body {
   text-align: center;
 }
 
+/* ==================== تنسيقات شاشة الإعدادات العصرية ==================== */
+.settings-list-menu {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-menu-card {
+  background: var(--bg-surface);
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.settings-menu-card:active {
+  transform: scale(0.98);
+  background-color: #F8FAFC;
+}
+
+.settings-card-right-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-grow: 1;
+}
+
+.settings-item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-item-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: right;
+  flex-grow: 1;
+}
+
+/* ألوان خلفيات الأيقونات الهادئة */
+.bg-icon-emerald { background: #ECFDF5; color: #059669; }
+.bg-icon-amber   { background: #FEF3C7; color: #D97706; }
+.bg-icon-teal    { background: #E6FFFA; color: #0D9488; }
+.bg-icon-blue    { background: #EEF6FC; color: var(--primary-blue); }
+.bg-icon-indigo  { background: #EEF2FF; color: #4F46E5; }
+.bg-icon-sky     { background: #E0F2FE; color: #0284C7; }
+.bg-icon-mint    { background: #F0FDF4; color: #16A34A; }
+.bg-icon-purple  { background: #F5F3FF; color: #7C3AED; }
+
+/* تمييز خفيف لكرت إعدادات الأذكار */
+.settings-menu-card.highlight-card {
+  border-color: #BCD8F0;
+  background: #FAFDFE;
+}
+
+/* وسم اللغة الحالية */
+.settings-badge-lang {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  background: #EEF6FC;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid #BCD8F0;
+}
+
