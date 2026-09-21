@@ -241,52 +241,75 @@
         <div style="width: 24px;"></div>
       </header>
 
-      <!-- قائمة عناصر الإعدادات المطابقة للصورة -->
       <div class="settings-list-menu">
-        <div class="settings-menu-item" onclick="alert('إعدادات الأذان ستتوفر قريباً')">
-          <span>إعدادات الأذان</span>
-          <span class="settings-item-chevron">&#10094;</span>
-        </div>
-
-        <div class="settings-menu-item" onclick="alert('إشعارات الصلاة ستتوفر قريباً')">
-          <span>إشعارات الصلاة</span>
-          <span class="settings-item-chevron">&#10094;</span>
-        </div>
-
-        <div class="settings-menu-item" onclick="alert('إعدادات القرآن الكريم ستتوفر قريباً')">
-          <span>إعدادات القرآن</span>
-          <span class="settings-item-chevron">&#10094;</span>
-        </div>
-
-        <!-- إعدادات الأذكار (مربوطة بالنافذة التي أنشأناها) -->
-        <div class="settings-menu-item highlight-row" id="openDhikrSettingsFromMenu">
-          <span>إعدادات الأذكار (الخطوط، الارتجاج، العرض)</span>
-          <span class="settings-item-chevron" style="color: var(--primary-blue);">&#10094;</span>
-        </div>
-
-        <div class="settings-menu-item" onclick="alert('خيارات إضافية قادمة قريباً')">
-          <span>إعدادات أخرى</span>
-          <span class="settings-item-chevron">&#10094;</span>
-        </div>
-
-        <div class="settings-menu-item">
-          <span>اللغات</span>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 13px; color: var(--text-secondary);">العربية</span>
-            <span class="settings-item-chevron">&#10094;</span>
+        
+        <!-- 1. إعدادات الأذان -->
+        <div class="settings-menu-card" onclick="alert('إعدادات الأذان ستتوفر قريباً')">
+          <div class="settings-item-icon bg-icon-emerald">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
           </div>
+          <span class="settings-item-title">إعدادات الأذان</span>
         </div>
 
-        <div class="settings-menu-item" onclick="alert('سجل الملاحظات سيتاح قريباً')">
-          <span>ملاحظات</span>
-          <span class="settings-item-chevron">&#10094;</span>
+        <!-- 2. إشعارات الصلاة -->
+        <div class="settings-menu-card" onclick="alert('إشعارات الصلاة ستتوفر قريباً')">
+          <div class="settings-item-icon bg-icon-amber">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <span class="settings-item-title">إشعارات الصلاة</span>
         </div>
 
-        <!-- قسم حول التطبيق المربوط بالمهندس سلطان الجابري -->
-        <div class="settings-menu-item about-row" id="openAboutScreenBtn">
-          <span>حول الحياة الطيبة</span>
-          <span class="settings-item-chevron">&#10094;</span>
+        <!-- 3. إعدادات القرآن الكريم -->
+        <div class="settings-menu-card" onclick="alert('إعدادات القرآن الكريم ستتوفر قريباً')">
+          <div class="settings-item-icon bg-icon-teal">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <span class="settings-item-title">إعدادات القرآن الكريم</span>
         </div>
+
+        <!-- 4. إعدادات الأذكار (الخطوط، الارتجاج، العرض) -->
+        <div class="settings-menu-card highlight-card" id="openDhikrSettingsFromMenu">
+          <div class="settings-item-icon bg-icon-blue">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"/></svg>
+          </div>
+          <span class="settings-item-title">إعدادات أذكار اليوم والليلة</span>
+        </div>
+
+        <!-- 5. إعدادات أخرى -->
+        <div class="settings-menu-card" onclick="alert('خيارات إضافية قادمة قريباً')">
+          <div class="settings-item-icon bg-icon-indigo">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          </div>
+          <span class="settings-item-title">إعدادات أخرى</span>
+        </div>
+
+        <!-- 6. اللغات -->
+        <div class="settings-menu-card">
+          <div class="settings-card-right-group">
+            <div class="settings-item-icon bg-icon-sky">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <span class="settings-item-title">اللغات</span>
+          </div>
+          <span class="settings-badge-lang">العربية</span>
+        </div>
+
+        <!-- 7. سجل الملاحظات -->
+        <div class="settings-menu-card" onclick="alert('سجل الملاحظات سيتاح قريباً')">
+          <div class="settings-item-icon bg-icon-mint">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <span class="settings-item-title">ملاحظات واقتراحات</span>
+        </div>
+
+        <!-- 8. حول التطبيق -->
+        <div class="settings-menu-card" id="openAboutScreenBtn">
+          <div class="settings-item-icon bg-icon-purple">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <span class="settings-item-title">حول الحياة الطيبة</span>
+        </div>
+
       </div>
     </div>
 
