@@ -1,11 +1,18 @@
-const CACHE_NAME = 'alhayat-cache-v1';
+const CACHE_NAME = 'alhayat-cache-v2';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/app.js',
+  './js/azkar-data.js',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './fonts/amiri.woff2',
+  './fonts/cairo.woff2',
+  './fonts/noto-naskh.woff2',
+  './fonts/ruqaa.woff2',
+  './fonts/scheherazade.woff2',
+  './fonts/tajawal.woff2'
 ];
 
 self.addEventListener('install', (e) => {
