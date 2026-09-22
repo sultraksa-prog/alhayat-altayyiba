@@ -1861,9 +1861,78 @@ ${APP_CONFIG.url}`;
     });
   }
 
-  // تسجيل Service Worker
+  // ==================== تسجيل Service Worker ونظام التحديث الذكي ====================
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+    let refreshing = false;
+
+    // عند استلام أمر التحديث، يعاد تحميل الصفحة مرة واحدة فقط
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
+    navigator.serviceWorker.register('./sw.js').then((registration) => {
+      // 1. مراقبة التحديث التلقائي
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateToast(newWorker);
+          }
+        });
+      });
+
+      // 2. زر فحص التحديث يدوياً من شاشة الإعدادات
+      const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
+      if (checkUpdateBtn) {
+        checkUpdateBtn.addEventListener('click', () => {
+          const titleEl = checkUpdateBtn.querySelector('.settings-item-title');
+          const originalTitle = titleEl ? titleEl.textContent : 'تحديث التطبيق';
+          if (titleEl) titleEl.textContent = 'جاري البحث عن تحديثات... ⏳';
+
+          registration
+            .update()
+            .then(() => {
+              setTimeout(() => {
+                if (titleEl) titleEl.textContent = originalTitle;
+                if (!registration.waiting && !registration.installing) {
+                  alert('أنت تستخدم أحدث إصدار من التطبيق 🌙');
+                } else if (registration.waiting) {
+                  showUpdateToast(registration.waiting);
+                }
+              }, 800);
+            })
+            .catch(() => {
+              if (titleEl) titleEl.textContent = originalTitle;
+              alert('تعذر فحص التحديثات، تأكد من اتصالك بالإنترنت.');
+            });
+        });
+      }
+    }).catch((err) => console.log('SW error:', err));
+  }
+
+  // دالة إظهار إشعار التحديث في أسفل الشاشة
+  function showUpdateToast(newWorker) {
+    const toast = document.getElementById('appUpdateToast');
+    const updateBtn = document.getElementById('applyUpdateBtn');
+    const closeBtn = document.getElementById('closeUpdateToastBtn');
+
+    if (toast && updateBtn) {
+      toast.classList.add('show');
+
+      updateBtn.onclick = () => {
+        updateBtn.textContent = 'جاري التحديث...';
+        newWorker.postMessage({ type: 'SKIP_WAITING' });
+      };
+
+      if (closeBtn) {
+        closeBtn.onclick = () => toast.classList.remove('show');
+      }
+    }
   }
 
 }); // إغلاق الدالة الرئيسية للتطبيق بشكل صحيح
