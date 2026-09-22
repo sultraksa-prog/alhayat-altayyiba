@@ -2605,7 +2605,7 @@ html, body {
   border-radius: 20px;
 }
 
-/* مسرح الخرز المنحني الموزون رياضياً */
+/* مسرح الخرز المنحني وسلسلة الحركة المتصلة */
 .tasbeeh-curved-track-stage {
   width: 100%;
   height: 100%;
@@ -2614,51 +2614,61 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .bead-curved-svg-line {
   position: absolute;
-  top: 15px;
+  top: 0;
   left: 0;
   width: 100%;
-  height: 150px;
+  height: 160px;
   pointer-events: none;
 }
 
-/* مسرح موحد الإحداثيات ليجلس الخرز فوق الخيط تماماً */
-.beads-split-container {
+.beads-continuous-track {
   width: 360px;
   max-width: 100%;
-  height: 150px;
+  height: 160px;
   position: relative;
   margin: 0 auto;
 }
 
+.beads-chain-viewport {
+  position: absolute;
+  inset: 0;
+}
+
+/* خرز المسبحة المقوس بدقة على الخيط */
 .t-curved-bead {
   position: absolute;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
   transform: translate(-50%, -50%);
   pointer-events: none;
-}
-
-/* خرزة العبور الفردية التي تنزلق في الفراغ */
-.traveler-bead {
-  transition: transform 0.22s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
+  transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform, left, top;
 }
 
 .theme-green .t-curved-bead { background: radial-gradient(circle at 35% 30%, #86EFAC 0%, #22C55E 35%, #15803D 70%, #064E3B 100%); }
 .theme-white .t-curved-bead { background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #F1F5F9 45%, #CBD5E1 80%, #64748B 100%); }
 .theme-black .t-curved-bead { background: radial-gradient(circle at 35% 30%, #64748B 0%, #1E293B 45%, #0F172A 80%, #020617 100%); }
 
-.tasbeeh-gesture-hint {
-  font-size: 11px;
+/* شارة النص التوجيهي تحت كرت الإحصائيات */
+.tasbeeh-top-hint-badge {
+  text-align: center;
+  padding: 4px 10px;
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 20px;
+  width: fit-content;
+  margin: 0 auto;
+}
+.tasbeeh-top-hint-badge span {
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--text-muted);
-  margin-top: 4px;
+  color: var(--text-secondary);
 }
 
 /* النمط 2: الزر الرقمي الفاخر */
