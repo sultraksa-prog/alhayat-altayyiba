@@ -94,6 +94,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabAzkar = document.getElementById('tabAzkar');
   const openAzkarTileBtn = document.getElementById('openAzkarTileBtn');
   const openFavoritesBtn = document.getElementById('openFavoritesBtn');
+
+  const screenTasbeeh = document.getElementById('screen-tasbeeh');
+  const openTasbeehTileBtn = document.getElementById('openTasbeehTileBtn');
+  const backToHomeFromTasbeehBtn = document.getElementById('backToHomeFromTasbeehBtn');
+
+  if (openTasbeehTileBtn && screenTasbeeh) {
+    openTasbeehTileBtn.addEventListener('click', () => {
+      showScreen(screenTasbeeh);
+      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
+    });
+  }
+  if (backToHomeFromTasbeehBtn) {
+    backToHomeFromTasbeehBtn.addEventListener('click', () => {
+      showScreen(screenHome);
+    });
+  }
+  
   const openFavTileBtn = document.getElementById('openFavTileBtn');
   const backToHomeBtn = document.getElementById('backToHomeBtn');
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
@@ -2316,4 +2333,383 @@ ${APP_CONFIG.url}`;
       }, 200);
     });
   });
+
+// ==================== محرك المسبحة والتسبيح الإلكتروني المطور ====================
+const TASBEEH_AZKAR_LIST = [
+  'سُبْحَانَ اللَّهِ',
+  'الْحَمْدُ لِلَّهِ',
+  'لَا إِلَهَ إِلَّا اللَّهُ',
+  'اللَّهُ أَكْبَرُ',
+  'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+  'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
+  'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
+  'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ، سُبْحَانَ اللَّهِ الْعَظِيمِ',
+  'لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ',
+  'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ',
+  'يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ',
+  'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ وَرِضَا نَفْسِهِ'
+];
+
+let tasbeehIndex = 0;
+let tasbeehTarget = 33;
+let tasbeehMode = localStorage.getItem('hayat_tasbeeh_mode') || 'beads';
+let tasbeehTheme = localStorage.getItem('hayat_tasbeeh_theme') || 'theme-green';
+let tasbeehSound = localStorage.getItem('hayat_tasbeeh_sound') === 'true';
+let tasbeehVibrate = localStorage.getItem('hayat_tasbeeh_vibrate') !== 'false';
+let tasbeehWakeLock = null;
+
+let tasbeehData = JSON.parse(localStorage.getItem('hayat_tasbeeh_data')) || {
+  counts: Array(12).fill(0),
+  rounds: Array(12).fill(0),
+  total: 0
+};
+
+function saveTasbeehState() {
+  localStorage.setItem('hayat_tasbeeh_data', JSON.stringify(tasbeehData));
+  localStorage.setItem('hayat_tasbeeh_mode', tasbeehMode);
+  localStorage.setItem('hayat_tasbeeh_theme', tasbeehTheme);
+  localStorage.setItem('hayat_tasbeeh_sound', tasbeehSound);
+  localStorage.setItem('hayat_tasbeeh_vibrate', tasbeehVibrate);
+}
+
+// توليد صوت نقرة خشبية حقيقية عبر Web Audio API بدون ملفات خارجية
+function playWoodClickSound() {
+  if (!tasbeehSound) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(620, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.045);
+  } catch (e) {}
+}
+
+// زيادة العداد والتفاعل الحركي
+function incrementTasbeeh() {
+  tasbeehData.counts[tasbeehIndex]++;
+  tasbeehData.total++;
+
+  if (tasbeehVibrate && navigator.vibrate) {
+    navigator.vibrate(28);
+  }
+  playWoodClickSound();
+
+  // إكمال جولة عند بلوغ الهدف
+  if (tasbeehTarget > 0 && tasbeehData.counts[tasbeehIndex] >= tasbeehTarget) {
+    tasbeehData.counts[tasbeehIndex] = 0;
+    tasbeehData.rounds[tasbeehIndex]++;
+    if (navigator.vibrate) navigator.vibrate([70, 40, 90]);
+  }
+
+  // تحريك الخرز لليسار ثم عودته بسلاسة لمحاكاة الانزلاق
+  const cluster = document.getElementById('beadsCluster');
+  if (cluster && tasbeehMode === 'beads') {
+    cluster.style.transform = 'translateX(28px)';
+    setTimeout(() => { cluster.style.transform = 'translateX(0)'; }, 140);
+  }
+
+  saveTasbeehState();
+  updateTasbeehUI();
+}
+
+// تحديث واجهة المسبحة
+function updateTasbeehUI() {
+  const currentCount = tasbeehData.counts[tasbeehIndex];
+  const currentRounds = tasbeehData.rounds[tasbeehIndex];
+  const targetStr = tasbeehTarget > 0 ? tasbeehTarget : '∞';
+
+  const mainTextEl = document.getElementById('tasbeehMainText');
+  const indexDisp = document.getElementById('tasbeehDhikrIndexDisplay');
+  const beadMain = document.getElementById('beadMainCounter');
+  const beadRounds = document.getElementById('beadRoundsCounter');
+  const digiCount = document.getElementById('digitalCountDisplay');
+  const digiRounds = document.getElementById('digitalRoundsDisplay');
+  const totalDisp = document.getElementById('tasbeehTotalDisplay');
+  const roundsDisp = document.getElementById('tasbeehRoundsDisplay');
+
+  if (mainTextEl) mainTextEl.textContent = TASBEEH_AZKAR_LIST[tasbeehIndex];
+  if (indexDisp) indexDisp.textContent = `${tasbeehIndex + 1}/${TASBEEH_AZKAR_LIST.length}`;
+  if (beadMain) beadMain.textContent = `${currentCount}/${targetStr}`;
+  if (beadRounds) beadRounds.textContent = `الجولات: ${currentRounds}`;
+  if (digiCount) digiCount.textContent = `${currentCount}/${targetStr}`;
+  if (digiRounds) digiRounds.textContent = `الجولات: ${currentRounds}`;
+  if (totalDisp) totalDisp.textContent = tasbeehData.total;
+  if (roundsDisp) roundsDisp.textContent = currentRounds;
+
+  // تحديث شريط الأذكار السريعة
+  document.querySelectorAll('.tasbeeh-pill-item').forEach((pill, idx) => {
+    pill.classList.toggle('active', idx === tasbeehIndex);
+  });
+}
+
+function initTasbeehEngine() {
+  // بناء شريط الأذكار السريعة
+  const pillsBar = document.getElementById('tasbeehPillsBar');
+  if (pillsBar && pillsBar.children.length === 0) {
+    TASBEEH_AZKAR_LIST.forEach((text, idx) => {
+      const pill = document.createElement('button');
+      pill.className = `tasbeeh-pill-item ${idx === 0 ? 'active' : ''}`;
+      pill.textContent = text;
+      pill.onclick = () => {
+        tasbeehIndex = idx;
+        updateTasbeehUI();
+      };
+      pillsBar.appendChild(pill);
+    });
+  }
+
+  // رسم خرز المسبحة
+  const cluster = document.getElementById('beadsCluster');
+  if (cluster && cluster.children.length === 0) {
+    for (let i = 0; i < 9; i++) {
+      const bead = document.createElement('div');
+      bead.className = 't-bead';
+      cluster.appendChild(bead);
+    }
+  }
+
+  applyTasbeehThemeAndMode();
+  updateTasbeehUI();
+}
+
+function applyTasbeehThemeAndMode() {
+  const beadsStage = document.getElementById('tasbeehBeadsStage');
+  const buttonStage = document.getElementById('tasbeehButtonStage');
+
+  if (beadsStage && buttonStage) {
+    if (tasbeehMode === 'beads') {
+      beadsStage.style.display = 'flex';
+      buttonStage.style.display = 'none';
+      beadsStage.className = `tasbeeh-mode-beads ${tasbeehTheme}`;
+    } else {
+      beadsStage.style.display = 'none';
+      buttonStage.style.display = 'flex';
+      buttonStage.className = `tasbeeh-mode-button ${tasbeehTheme}`;
+    }
+  }
+}
+
+// ربط أحداث المسبحة (اللمس، الأهداف، والتنقل)
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. الضغط أو السحب للعد
+  const beadsWire = document.getElementById('beadsWireTrack');
+  const digitalBtn = document.getElementById('digitalCenterBtn');
+  if (beadsWire) beadsWire.addEventListener('click', incrementTasbeeh);
+  if (digitalBtn) digitalBtn.addEventListener('click', incrementTasbeeh);
+
+  // 2. التنقل بين الأذكار
+  const prevBtn = document.getElementById('tasbeehPrevDhikrBtn');
+  const nextBtn = document.getElementById('tasbeehNextDhikrBtn');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      tasbeehIndex = (tasbeehIndex - 1 + TASBEEH_AZKAR_LIST.length) % TASBEEH_AZKAR_LIST.length;
+      updateTasbeehUI();
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      tasbeehIndex = (tasbeehIndex + 1) % TASBEEH_AZKAR_LIST.length;
+      updateTasbeehUI();
+    });
+  }
+
+  // 3. اختيار الأهداف
+  document.querySelectorAll('.t-chip[data-target]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.t-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      tasbeehTarget = parseInt(chip.getAttribute('data-target'));
+      updateTasbeehUI();
+    });
+  });
+
+  const customTarget = document.getElementById('customTargetChip');
+  if (customTarget) {
+    customTarget.addEventListener('click', () => {
+      const val = prompt('أدخل العدد المطلوب للهدف:', '50');
+      if (val && !isNaN(val) && val > 0) {
+        document.querySelectorAll('.t-chip').forEach(c => c.classList.remove('active'));
+        customTarget.classList.add('active');
+        tasbeehTarget = parseInt(val);
+        updateTasbeehUI();
+      }
+    });
+  }
+
+  // 4. نافذة التصفير
+  const resetBtn = document.getElementById('tasbeehResetBtn');
+  const resetModal = document.getElementById('tasbeehResetModal');
+  if (resetBtn && resetModal) {
+    resetBtn.addEventListener('click', () => resetModal.classList.add('show'));
+    document.getElementById('cancelResetModalBtn').onclick = () => resetModal.classList.remove('show');
+    document.getElementById('resetCurrentDhikrBtn').onclick = () => {
+      tasbeehData.counts[tasbeehIndex] = 0;
+      tasbeehData.rounds[tasbeehIndex] = 0;
+      saveTasbeehState();
+      updateTasbeehUI();
+      resetModal.classList.remove('show');
+    };
+    document.getElementById('resetAllAzkarBtn').onclick = () => {
+      tasbeehData.counts = Array(12).fill(0);
+      tasbeehData.rounds = Array(12).fill(0);
+      tasbeehData.total = 0;
+      saveTasbeehState();
+      updateTasbeehUI();
+      resetModal.classList.remove('show');
+    };
+  }
+
+  // 5. نافذة اختيار المظهر والأنماط
+  const openThemeBtn = document.getElementById('openTasbeehThemeModalBtn');
+  const themeModal = document.getElementById('tasbeehThemeModal');
+  const closeThemeBtn = document.getElementById('closeTasbeehThemeBtn');
+  const tabModeBeads = document.getElementById('tabModeBeads');
+  const tabModeButton = document.getElementById('tabModeButton');
+  const containerBeads = document.getElementById('themeContainerBeads');
+  const containerButton = document.getElementById('themeContainerButton');
+
+  if (openThemeBtn && themeModal) {
+    openThemeBtn.onclick = () => themeModal.classList.add('show');
+    closeThemeBtn.onclick = () => themeModal.classList.remove('show');
+
+    tabModeBeads.onclick = () => {
+      tabModeBeads.classList.add('active');
+      tabModeButton.classList.remove('active');
+      containerBeads.style.display = 'grid';
+      containerButton.style.display = 'none';
+      tasbeehMode = 'beads';
+      tasbeehTheme = 'theme-green';
+      saveTasbeehState();
+      applyTasbeehThemeAndMode();
+    };
+
+    tabModeButton.onclick = () => {
+      tabModeButton.classList.add('active');
+      tabModeBeads.classList.remove('active');
+      containerButton.style.display = 'grid';
+      containerBeads.style.display = 'none';
+      tasbeehMode = 'button';
+      tasbeehTheme = 'btn-green';
+      saveTasbeehState();
+      applyTasbeehThemeAndMode();
+    };
+
+    document.querySelectorAll('.t-theme-card').forEach(card => {
+      card.onclick = () => {
+        const type = card.getAttribute('data-type');
+        const theme = card.getAttribute('data-theme');
+        tasbeehMode = type;
+        tasbeehTheme = theme;
+
+        document.querySelectorAll(`.t-theme-card[data-type="${type}"]`).forEach(c => {
+          c.classList.remove('active');
+          c.querySelector('.theme-apply-btn').textContent = 'استخدم';
+        });
+
+        card.classList.add('active');
+        card.querySelector('.theme-apply-btn').textContent = 'مستخدم';
+        saveTasbeehState();
+        applyTasbeehThemeAndMode();
+        setTimeout(() => themeModal.classList.remove('show'), 250);
+      };
+    });
+  }
+
+  // 6. القائمة العلوية (الإضاءة، الصوت، الارتجاج)
+  const menuBtn = document.getElementById('tasbeehMenuBtn');
+  const dropMenu = document.getElementById('tasbeehDropdownMenu');
+  if (menuBtn && dropMenu) {
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      dropMenu.classList.toggle('show');
+    };
+    document.addEventListener('click', () => dropMenu.classList.remove('show'));
+
+    document.getElementById('toggleTasbeehSoundBtn').onclick = () => {
+      tasbeehSound = !tasbeehSound;
+      document.getElementById('soundStatusText').textContent = tasbeehSound ? 'الصوت: مفعّل 🔊' : 'الصوت: مكتوم 🔇';
+      saveTasbeehState();
+    };
+
+    document.getElementById('toggleTasbeehVibrateBtn').onclick = () => {
+      tasbeehVibrate = !tasbeehVibrate;
+      document.getElementById('vibrateStatusText').textContent = tasbeehVibrate ? 'الارتجاج: مفعّل' : 'الارتجاج: معطّل';
+      saveTasbeehState();
+    };
+
+    document.getElementById('toggleTasbeehWakeLockBtn').onclick = async () => {
+      if ('wakeLock' in navigator) {
+        try {
+          if (!tasbeehWakeLock) {
+            tasbeehWakeLock = await navigator.wakeLock.request('screen');
+            document.getElementById('wakeLockStatusText').textContent = 'الشاشة: نشطة دائماً';
+          } else {
+            await tasbeehWakeLock.release();
+            tasbeehWakeLock = null;
+            document.getElementById('wakeLockStatusText').textContent = 'إبقاء الإضاءة';
+          }
+        } catch (err) {}
+      } else {
+        alert('ميزة إبقاء الشاشة غير مدعومة في متصفحك الحالي.');
+      }
+    };
+  }
+
+  // 7. ميزة المسبحة العائمة خارج التطبيق (Picture-in-Picture)
+  const pipBtn = document.getElementById('startFloatingWidgetBtn');
+  if (pipBtn) {
+    pipBtn.onclick = async () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 360;
+        canvas.height = 360;
+        const ctx = canvas.getContext('2d');
+
+        function renderCanvasWidget() {
+          ctx.fillStyle = '#064E3B';
+          ctx.beginPath();
+          ctx.roundRect(0, 0, 360, 360, 40);
+          ctx.fill();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 36px "Cairo", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(TASBEEH_AZKAR_LIST[tasbeehIndex], 180, 100);
+
+          ctx.font = 'bold 78px "Cairo", sans-serif';
+          ctx.fillText(tasbeehData.counts[tasbeehIndex], 180, 210);
+
+          ctx.fillStyle = '#A7F3D0';
+          ctx.font = '24px "Cairo", sans-serif';
+          ctx.fillText(`${tasbeehData.counts[tasbeehIndex]} / ${tasbeehTarget}`, 180, 270);
+        }
+
+        renderCanvasWidget();
+        const video = document.createElement('video');
+        video.muted = true;
+        video.srcObject = canvas.captureStream(10);
+        await video.play();
+        await video.requestPictureInPicture();
+
+        // تحديث النافذة العائمة مع كل نقرة
+        const interval = setInterval(() => {
+          if (!document.pictureInPictureElement) {
+            clearInterval(interval);
+            return;
+          }
+          renderCanvasWidget();
+        }, 300);
+      } catch (err) {
+        alert('لتفعيل المسبحة خارج التطبيق، يرجى استخدام متصفح Chrome أو تفعيل أذونات النوافذ العائمة.');
+      }
+    };
+  }
+});
 
