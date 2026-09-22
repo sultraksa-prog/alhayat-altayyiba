@@ -2605,7 +2605,7 @@ html, body {
   border-radius: 20px;
 }
 
-/* مسرح الخرز المنحني */
+/* مسرح الخرز المنحني الموزون رياضياً */
 .tasbeeh-curved-track-stage {
   width: 100%;
   height: 100%;
@@ -2615,49 +2615,38 @@ html, body {
   align-items: center;
   justify-content: center;
 }
+
 .bead-curved-svg-line {
   position: absolute;
   top: 15px;
   left: 0;
   width: 100%;
-  height: 160px;
+  height: 150px;
   pointer-events: none;
 }
 
-/* هيكل الخرز المنقسم: يسار + فراغ خرزة واحدة + يمين */
+/* مسرح موحد الإحداثيات ليجلس الخرز فوق الخيط تماماً */
 .beads-split-container {
-  width: 100%;
+  width: 360px;
+  max-width: 100%;
   height: 150px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
-}
-.beads-left-cluster, .beads-right-cluster {
-  position: relative;
-  width: 130px;
-  height: 100%;
-}
-.bead-traveler-slot {
-  position: relative;
-  width: 75px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0 auto;
 }
 
 .t-curved-bead {
   position: absolute;
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
+
+/* خرزة العبور الفردية التي تنزلق في الفراغ */
 .traveler-bead {
-  position: relative;
-  transition: transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: transform 0.22s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform;
 }
 
@@ -2669,7 +2658,7 @@ html, body {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 /* النمط 2: الزر الرقمي الفاخر */
