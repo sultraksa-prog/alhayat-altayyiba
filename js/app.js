@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen(screenHome, false);
   });
 
-  tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
+  if (tabHome) tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
   
   const tabQiblaBtn = document.getElementById('tabQibla');
   const screenQiblaView = document.getElementById('screen-qibla');
@@ -238,7 +238,7 @@ if (openDhikrSettingsFromMenu) {
 if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
 if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
   
-  tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  if (tabAzkar) tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
   if (tabQibla) {
     tabQibla.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2594,10 +2594,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const beadsTrack = document.getElementById('beadsWireTrack');
   const digitalBtn = document.getElementById('digitalCenterBtn');
 
-  // التقاط السحب باللمس الحقيقي والنقر
+  // التقاط السحب باللمس الحقيقي والنقر (مع منع احتساب عدتين)
   if (beadsTrack) {
     let touchStartX = 0;
     let touchStartY = 0;
+    let lastSwipeTime = 0;
 
     beadsTrack.addEventListener('touchstart', (e) => {
       touchStartX = e.touches[0].clientX;
@@ -2607,13 +2608,20 @@ document.addEventListener('DOMContentLoaded', () => {
     beadsTrack.addEventListener('touchend', (e) => {
       const deltaX = e.changedTouches[0].clientX - touchStartX;
       const deltaY = e.changedTouches[0].clientY - touchStartY;
-      // إذا سحب لليمين بأكثر من 15px أو نقر نقرة عادية
-      if (deltaX > 15 || Math.hypot(deltaX, deltaY) < 12) {
+
+      // إذا كان سحباً أفقياً حقيقياً لليمين
+      if (deltaX > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        lastSwipeTime = Date.now();
         incrementTasbeeh();
       }
     });
 
-    beadsTrack.addEventListener('click', () => incrementTasbeeh());
+    // النقر العادي (سواء بالماوس أو لمسة سريعة بإصبع الجوال)
+    beadsTrack.addEventListener('click', () => {
+      // إذا كانت النقرة ناتجة عن حدث سحب حدث للتو، نتجاهلها لمنع العد المزدوج
+      if (Date.now() - lastSwipeTime < 450) return;
+      incrementTasbeeh();
+    });
   }
 
   if (digitalBtn) {
