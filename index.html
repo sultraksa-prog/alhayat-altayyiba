@@ -634,6 +634,7 @@
 
     <!-- ==================== الشاشة: المسبحة الإلكترونية المطورة ==================== -->
     <div id="screen-tasbeeh" class="screen-view fixed-tasbeeh-screen">
+      <!-- الهيدر الاحترافي -->
       <header class="tasbeeh-lux-header">
         <button type="button" class="t-nav-btn" id="backToHomeFromTasbeehBtn" title="الرجوع للرئيسية">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -641,7 +642,7 @@
 
         <div class="tasbeeh-header-title-box">
           <h2 class="tasbeeh-top-title">المسبحة</h2>
-          <span class="tasbeeh-counter-badge" id="tasbeehDhikrIndexDisplay">1/12</span>
+          <span class="tasbeeh-counter-badge" id="tasbeehDhikrIndexDisplay">1/1</span>
         </div>
 
         <div class="tasbeeh-top-actions">
@@ -675,6 +676,8 @@
       </header>
 
       <div class="tasbeeh-viewport-fixed">
+        
+        <!-- الجزء العلوي: كرت الذكر المتصل بـ "تسابيح وأجور عظيمة" -->
         <div class="tasbeeh-dhikr-banner" id="openDhikrPickerArea" title="انقر لاختيار تسبيحة">
           <div class="dhikr-banner-top">
             <span class="dhikr-category-tag">تسابيح وأجور عظيمة</span>
@@ -683,6 +686,19 @@
           <h3 class="tasbeeh-main-text" id="tasbeehMainText">سُبْحَانَ اللَّهِ</h3>
         </div>
 
+        <!-- الجزء الأوسط: نقل زري "المظهر" و"المسبحة الخارجية" للأعلى -->
+        <div class="tasbeeh-mid-actions-row">
+          <button type="button" class="t-mid-tool-btn" id="openTasbeehThemeModalBtn">
+            <span>🎨 المظهر والنمط</span>
+          </button>
+          
+          <button type="button" class="t-mid-tool-btn t-mid-pip-btn" id="startFloatingWidgetBtn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1"/></svg>
+            <span>المسبحة خارج التطبيق</span>
+          </button>
+        </div>
+
+        <!-- شريط عداد الجولات والهدف والإجمالي -->
         <div class="tasbeeh-status-pill">
           <div class="pill-metric">
             <span class="p-val" id="tasbeehRoundsDisplay">0</span>
@@ -700,17 +716,32 @@
           </div>
         </div>
 
-        <div class="tasbeeh-thumb-interactive-zone" id="tasbeehInteractiveZone">
+        <!-- الجزء السفلي بالكامل: مخصص للمسبحة وفي متناول الإبهام للنقر والسحب -->
+        <div class="tasbeeh-full-bottom-touch-zone" id="tasbeehInteractiveZone">
+          
+          <!-- النمط 1: مسبحة الخرز المقوسة مع الفراغ وانزلاق خرزة واحدة -->
           <div class="tasbeeh-curved-track-stage" id="tasbeehBeadsStage">
-            <svg class="bead-curved-svg-line" viewBox="0 0 360 180" preserveAspectRatio="none">
-              <path d="M -20,165 Q 110,175 220,110 T 380,25" fill="none" stroke="#D1D5DB" stroke-width="4.5" stroke-linecap="round"/>
+            <svg class="bead-curved-svg-line" viewBox="0 0 360 170" preserveAspectRatio="none">
+              <path d="M -10,155 Q 120,165 210,105 T 370,25" fill="none" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
             </svg>
-            <div class="beads-animated-viewport" id="beadsWireTrack">
-              <div class="beads-curved-chain" id="beadsCluster"></div>
+
+            <div class="beads-split-container" id="beadsWireTrack">
+              <!-- تجمع الخرز الأيسر (غير المحسوب) -->
+              <div class="beads-left-cluster" id="beadsLeftCluster"></div>
+
+              <!-- خرزة العبور الفردية التي تنزلق في الفراغ من اليسار إلى اليمين -->
+              <div class="bead-traveler-slot">
+                <div class="t-curved-bead traveler-bead" id="travelerBead"></div>
+              </div>
+
+              <!-- تجمع الخرز الأيمن (المحسوب) -->
+              <div class="beads-right-cluster" id="beadsRightCluster"></div>
             </div>
-            <span class="tasbeeh-gesture-hint">اضغط أو اسحب الخرز لليمين للعدّ</span>
+
+            <span class="tasbeeh-gesture-hint">اضغط في أي مكان بالأسفل أو اسحب الخرز للعدّ</span>
           </div>
 
+          <!-- النمط 2: الزر الرقمي الفاخر -->
           <div class="tasbeeh-digital-button-stage" id="tasbeehButtonStage" style="display: none;">
             <div class="islamic-floral-outer" id="digitalCenterBtn">
               <div class="islamic-button-core">
@@ -718,23 +749,16 @@
                 <span class="digital-target-lbl" id="digitalTargetDisplay">الهدف: 33</span>
               </div>
             </div>
-            <span class="tasbeeh-gesture-hint">اضغط في أي مكان للعدّ</span>
+            <span class="tasbeeh-gesture-hint">اضغط في أي مكان بالأسفل للعدّ</span>
           </div>
+
         </div>
 
-        <div class="tasbeeh-footer-tools">
-          <button type="button" class="t-tool-btn" id="openTasbeehThemeModalBtn" title="المظهر والألوان">
-            <span>🎨 المظهر</span>
-          </button>
-          
-          <button type="button" class="t-tool-btn pip-glow" id="startFloatingWidgetBtn" title="تشغيل كنافذة عائمة">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1"/></svg>
-            <span>المسبحة خارج التطبيق</span>
-          </button>
-        </div>
       </div>
     </div>
 
+    <!-- عنصر فيديو مخفي دائم لدعم الـ PiP على الجوال بدون أخطاء -->
+    <video id="tasbeehPipVideo" muted playsinline style="position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;left:-9999px;bottom:0;"></video>
     <!-- شريط التبويبات السفلي المستعاد -->
     <nav class="bottom-nav">
       <a href="#" class="nav-item active" id="tabHome"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>الرئيسية</span></a>
