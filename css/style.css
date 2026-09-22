@@ -2415,7 +2415,7 @@ html, body {
   display: flex !important;
 }
 
-/* الهيدر الفاخر والأيقونات الدائرية المتقنة */
+/* الهيدر الفاخر */
 .tasbeeh-lux-header {
   display: flex;
   align-items: center;
@@ -2478,24 +2478,24 @@ html, body {
   color: #FFFFFF;
 }
 
-/* الحاوية الثابتة غير القابلة للسحب */
+/* الحاوية الثابتة للمسبحة */
 .tasbeeh-viewport-fixed {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 12px 16px 85px 16px;
+  padding: 10px 16px 75px 16px;
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
+  gap: 10px;
 }
 
 /* كرت الذكر المتصل ببنك الأذكار */
 .tasbeeh-dhikr-banner {
   background: #FFFFFF;
   border: 1.5px solid #E2E8F0;
-  border-radius: 18px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  padding: 12px 14px;
   box-shadow: var(--shadow-card);
   cursor: pointer;
   text-align: center;
@@ -2509,7 +2509,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .dhikr-category-tag {
   font-size: 11px;
@@ -2526,14 +2526,48 @@ html, body {
 }
 .tasbeeh-main-text {
   font-family: 'Amiri', serif;
-  font-size: 23px;
+  font-size: 22px;
   color: var(--text-main);
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0;
 }
 
-/* شريط إحصائيات العداد والأهداف */
+/* شريط الأدوات الأوسط (المظهر + المسبحة الخارجية) */
+.tasbeeh-mid-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.t-mid-tool-btn {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 12px;
+  padding: 9px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  transition: all 0.2s;
+}
+.t-mid-tool-btn:active {
+  background: #F1F5F9;
+  transform: scale(0.97);
+}
+.t-mid-pip-btn {
+  background: #EEF6FC;
+  border-color: #BCD8F0;
+  color: var(--primary-blue);
+}
+
+/* شريط عداد الجولات والهدف والإجمالي */
 .tasbeeh-status-pill {
   display: flex;
   align-items: center;
@@ -2541,60 +2575,37 @@ html, body {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 16px;
-  padding: 8px 14px;
+  padding: 6px 14px;
   box-shadow: var(--shadow-card);
-  margin: 6px 0;
 }
 .pill-metric {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.p-val {
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--text-main);
-}
-.p-lbl {
-  font-size: 10.5px;
-  color: var(--text-secondary);
-  font-weight: 600;
-}
-.pill-divider {
-  width: 1px;
-  height: 26px;
-  background: #E2E8F0;
-}
-.pill-main-num {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  direction: ltr;
-}
-.p-cur {
-  font-size: 32px;
-  font-weight: 900;
-  color: #15803D;
-}
-.p-target {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
+.p-val { font-size: 16px; font-weight: 800; color: var(--text-main); }
+.p-lbl { font-size: 10px; color: var(--text-secondary); font-weight: 600; }
+.pill-divider { width: 1px; height: 24px; background: #E2E8F0; }
+.pill-main-num { display: flex; align-items: baseline; gap: 4px; direction: ltr; }
+.p-cur { font-size: 30px; font-weight: 900; color: #15803D; }
+.p-target { font-size: 15px; font-weight: 700; color: var(--text-muted); }
 
-/* مسرح التفاعل المنخفض في منطقة الإبهام */
-.tasbeeh-thumb-interactive-zone {
+/* النصف السفلي بالكامل: مخصص للنقر والسحب بحرية تامة */
+.tasbeeh-full-bottom-touch-zone {
+  flex: 1;
   width: 100%;
-  height: 230px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   position: relative;
-  touch-action: none;
+  touch-action: pan-y;
+  background: radial-gradient(circle at 50% 60%, rgba(220, 252, 231, 0.2) 0%, transparent 70%);
+  border-radius: 20px;
 }
 
-/* المسار المقوس للخرز */
+/* مسرح الخرز المنحني */
 .tasbeeh-curved-track-stage {
   width: 100%;
   height: 100%;
@@ -2602,51 +2613,63 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
 }
 .bead-curved-svg-line {
   position: absolute;
-  top: 18px;
+  top: 15px;
   left: 0;
   width: 100%;
   height: 160px;
   pointer-events: none;
 }
 
-.beads-animated-viewport {
+/* هيكل الخرز المنقسم: يسار + فراغ خرزة واحدة + يمين */
+.beads-split-container {
   width: 100%;
-  height: 160px;
+  height: 150px;
   position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-.beads-curved-chain {
-  position: absolute;
-  inset: 0;
   display: flex;
   align-items: center;
-  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+  justify-content: space-between;
+  padding: 0 10px;
+}
+.beads-left-cluster, .beads-right-cluster {
+  position: relative;
+  width: 130px;
+  height: 100%;
+}
+.bead-traveler-slot {
+  position: relative;
+  width: 75px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.t-curved-bead {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+.traveler-bead {
+  position: relative;
+  transition: transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform;
 }
 
-/* خرزات ثلاثية الأبعاد واقعية الملمس */
-.t-curved-bead {
-  position: absolute;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  transition: all 0.22s ease-out;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
-}
 .theme-green .t-curved-bead { background: radial-gradient(circle at 35% 30%, #86EFAC 0%, #22C55E 35%, #15803D 70%, #064E3B 100%); }
 .theme-white .t-curved-bead { background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #F1F5F9 45%, #CBD5E1 80%, #64748B 100%); }
 .theme-black .t-curved-bead { background: radial-gradient(circle at 35% 30%, #64748B 0%, #1E293B 45%, #0F172A 80%, #020617 100%); }
 
 .tasbeeh-gesture-hint {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* النمط 2: الزر الرقمي الفاخر */
@@ -2667,13 +2690,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   box-shadow: 0 10px 28px rgba(22, 163, 74, 0.18);
   transition: transform 0.12s;
 }
-.islamic-floral-outer:active {
-  transform: scale(0.94);
-}
+.islamic-floral-outer:active { transform: scale(0.94); }
 .islamic-button-core {
   width: 140px;
   height: 140px;
@@ -2684,61 +2704,103 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 .btn-white .islamic-floral-outer { background: #F8FAFC; border-color: #94A3B8; }
 .btn-white .islamic-button-core { background: linear-gradient(145deg, #FFFFFF, #E2E8F0); color: var(--text-main); }
 .btn-black .islamic-floral-outer { background: #0F172A; border-color: #334155; }
 .btn-black .islamic-button-core { background: linear-gradient(145deg, #1E293B, #09203F); color: #FFFFFF; }
+.digital-tap-num { font-size: 38px; font-weight: 900; line-height: 1; direction: ltr; }
+.digital-target-lbl { font-size: 11.5px; font-weight: 600; opacity: 0.9; margin-top: 2px; }
 
-.digital-tap-num {
-  font-size: 38px;
-  font-weight: 900;
-  line-height: 1;
-  direction: ltr;
-}
-.digital-target-lbl {
-  font-size: 11.5px;
-  font-weight: 600;
-  opacity: 0.9;
-  margin-top: 2px;
-}
-
-/* شريط الأدوات السفلي المدمج */
-.tasbeeh-footer-tools {
+/* ==================== تنسيقات نافذة المظهر وعينات الألوان الفاخرة ==================== */
+.tasbeeh-theme-tabs {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-.t-tool-btn {
-  flex: 1;
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  border-radius: 12px;
-  padding: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
+  gap: 16px;
   justify-content: center;
-  gap: 6px;
+  flex-grow: 1;
+}
+.t-tab-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-muted);
   cursor: pointer;
-  box-shadow: var(--shadow-card);
+  padding: 6px 12px;
+  border-bottom: 3px solid transparent;
   transition: all 0.2s;
 }
-.t-tool-btn:active {
-  transform: scale(0.97);
-  background: #F1F5F9;
-}
-.t-tool-btn.pip-glow {
-  border-color: #BCD8F0;
-  background: #EEF6FC;
-  color: var(--primary-blue);
+.t-tab-btn.active {
+  color: #15803D;
+  border-bottom-color: #15803D;
 }
 
-/* قائمة اختيار الأذكار مع البحث */
+.tasbeeh-themes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px 4px 4px 4px;
+}
+.t-theme-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease;
+}
+.t-theme-card.active {
+  border-color: #15803D;
+  background: #F0FDF4;
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.12);
+}
+.t-theme-sphere {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+}
+.sphere-green { background: radial-gradient(circle at 35% 30%, #86EFAC, #15803D 75%, #052E16); }
+.sphere-white { background: radial-gradient(circle at 35% 30%, #FFFFFF, #CBD5E1 75%, #64748B); }
+.sphere-black { background: radial-gradient(circle at 35% 30%, #64748B, #1E293B 75%, #020617); }
+
+.t-theme-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+.icon-green { background: linear-gradient(135deg, #16A34A, #15803D); }
+.icon-white { background: linear-gradient(135deg, #FFFFFF, #E2E8F0); border: 1.5px solid #CBD5E1; }
+.icon-black { background: linear-gradient(135deg, #1E293B, #09203F); }
+
+.t-theme-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: center;
+}
+.theme-apply-btn {
+  width: 100%;
+  padding: 5px 0;
+  border-radius: 8px;
+  border: none;
+  background: #F1F5F9;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+}
+.t-theme-card.active .theme-apply-btn {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+/* قائمة اختيار التسبيحة والبحث */
 .tasbeeh-picker-list {
   flex: 1;
   overflow-y: auto;
@@ -2808,3 +2870,4 @@ html, body {
   font-size: 14px;
   outline: none;
 }
+
