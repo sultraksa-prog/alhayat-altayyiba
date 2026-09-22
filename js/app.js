@@ -2359,18 +2359,27 @@ function saveTasbeehStats() {
   if (tasbeehActiveDhikrId) localStorage.setItem('hayat_active_tasbeeh_id', tasbeehActiveDhikrId);
 }
 
-// 1. استخراج الأذكار ديناميكياً من قسم "تسابيح وأجور عظيمة" (النظام + إضافات المستخدم)
+// 1. الربط المباشر ببنك الأذكار (تسابيح وأجور عظيمة) مع الحصانة ضد الـ Scope
 function getTasbeehCategoryItems() {
-  if (typeof azkarState === 'undefined' || !azkarState) return [];
-  const category = azkarState.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
-  if (category && category.items) {
+  let allGroups = [];
+  try {
+    allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || [];
+  } catch (e) {}
+
+  if (!allGroups.length && typeof DEFAULT_AZKAR_DATA !== 'undefined') {
+    allGroups = DEFAULT_AZKAR_DATA;
+  }
+
+  const category = allGroups.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
+  if (category && category.items && category.items.length > 0) {
     return category.items;
   }
+
   return [
-    { id: 't_fallback_1', text: 'سُبْحَانَ اللَّهِ' },
-    { id: 't_fallback_2', text: 'الْحَمْدُ لِلَّهِ' },
-    { id: 't_fallback_3', text: 'لَا إِلَهَ إِلَّا اللَّهُ' },
-    { id: 't_fallback_4', text: 'اللَّهُ أَكْبَرُ' }
+    { id: 't_def_1', text: 'سُبْحَانَ اللَّهِ' },
+    { id: 't_def_2', text: 'الْحَمْدُ لِلَّهِ' },
+    { id: 't_def_3', text: 'لَا إِلَهَ إِلَّا اللَّهُ' },
+    { id: 't_def_4', text: 'اللَّهُ أَكْبَرُ' }
   ];
 }
 
@@ -2383,7 +2392,7 @@ function getActiveTasbeehItem() {
   return items[0];
 }
 
-// توليد صوت نقرة خشبية واقعية عبر Web Audio API
+// صوت نقرة خشبية واقعية
 function playWoodClickSound() {
   if (!tasbeehSound) return;
   try {
@@ -2402,7 +2411,7 @@ function playWoodClickSound() {
   } catch (e) {}
 }
 
-// زيادة العداد وتحريك الخرز على القوس المنحني
+// زيادة العداد وتحريك خرزة واحدة عبر الفراغ بسلاسة
 function incrementTasbeeh() {
   const activeItem = getActiveTasbeehItem();
   const id = activeItem.id;
@@ -2425,13 +2434,18 @@ function incrementTasbeeh() {
     if (navigator.vibrate) navigator.vibrate([70, 40, 90]);
   }
 
-  // فيزياء انزلاق الخرز على طول القوس
-  const cluster = document.getElementById('beadsCluster');
-  if (cluster && tasbeehMode === 'beads') {
-    cluster.style.transform = 'translate(36px, -14px)';
+  // حركة الخرزة المنفردة عبر الفراغ من اليسار لليمين
+  const traveler = document.getElementById('travelerBead');
+  if (traveler && tasbeehMode === 'beads') {
+    traveler.style.transform = 'translate(36px, -12px)';
     setTimeout(() => {
-      cluster.style.transform = 'translate(0, 0)';
-    }, 180);
+      traveler.style.transition = 'none';
+      traveler.style.transform = 'translate(-36px, 12px)';
+      setTimeout(() => {
+        traveler.style.transition = 'transform 0.24s cubic-bezier(0.25, 1, 0.5, 1)';
+        traveler.style.transform = 'translate(0, 0)';
+      }, 40);
+    }, 240);
   }
 
   saveTasbeehStats();
@@ -2439,7 +2453,7 @@ function incrementTasbeeh() {
   updateFloatingPiPContent();
 }
 
-// تحديث كافة أرقام المسبحة
+// تحديث الأرقام
 function updateTasbeehUI() {
   const activeItem = getActiveTasbeehItem();
   const id = activeItem.id;
@@ -2469,31 +2483,41 @@ function updateTasbeehUI() {
   if (digiTarget) digiTarget.textContent = `الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : 'مفتوح'}`;
 }
 
-// بناء خرز المسبحة على القوس الطبيعي
+// بناء خرز المسبحة المقوس مع فارغ المنتصف
 function renderCurvedBeads() {
-  const cluster = document.getElementById('beadsCluster');
-  if (!cluster) return;
-  cluster.innerHTML = '';
+  const leftCluster = document.getElementById('beadsLeftCluster');
+  const rightCluster = document.getElementById('beadsRightCluster');
+  if (!leftCluster || !rightCluster) return;
 
-  // 9 خرزات تتوزع على انحناء القوس الصاعد لليمين
-  const beadPositions = [
-    { x: -10, y: 110 },
-    { x: 30,  y: 104 },
-    { x: 70,  y: 92 },
-    { x: 115, y: 76 },
-    { x: 160, y: 58 },
-    { x: 205, y: 40 },
-    { x: 250, y: 24 },
-    { x: 295, y: 12 },
-    { x: 340, y: 2 }
+  leftCluster.innerHTML = '';
+  rightCluster.innerHTML = '';
+
+  // خرزات اليسار (تتحرك صاعدة)
+  const leftPositions = [
+    { x: -10, y: 100 },
+    { x: 30,  y: 92 },
+    { x: 70,  y: 78 }
   ];
-
-  beadPositions.forEach((pos) => {
+  leftPositions.forEach(pos => {
     const bead = document.createElement('div');
     bead.className = 't-curved-bead';
     bead.style.left = `${pos.x}px`;
     bead.style.top = `${pos.y}px`;
-    cluster.appendChild(bead);
+    leftCluster.appendChild(bead);
+  });
+
+  // خرزات اليمين (تتحرك صاعدة لأعلى اليمين)
+  const rightPositions = [
+    { x: 10, y: 44 },
+    { x: 50, y: 28 },
+    { x: 90, y: 12 }
+  ];
+  rightPositions.forEach(pos => {
+    const bead = document.createElement('div');
+    bead.className = 't-curved-bead';
+    bead.style.left = `${pos.x}px`;
+    bead.style.top = `${pos.y}px`;
+    rightCluster.appendChild(bead);
   });
 }
 
@@ -2514,7 +2538,7 @@ function applyTasbeehThemeAndMode() {
   }
 }
 
-// نافذة اختيار التسبيحة والبحث
+// ملء وبحث قائمة أذكار "تسابيح وأجور عظيمة"
 function renderTasbeehPickerList(query = '') {
   const container = document.getElementById('tasbeehPickerListContainer');
   if (!container) return;
@@ -2555,13 +2579,12 @@ function initTasbeehEngine() {
   updateTasbeehUI();
 }
 
-// نظام النوافذ العائمة والمسبحة خارج التطبيق
+// نظام المسبحة العائمة للجوال والكمبيوتر ومزامنة الأرقام
 let pipCanvas = null;
 let pipCtx = null;
-let pipVideo = null;
 
 function updateFloatingPiPContent() {
-  if (!pipCtx || !document.pictureInPictureElement) return;
+  if (!pipCtx) return;
   const activeItem = getActiveTasbeehItem();
   const id = activeItem.id;
   const cur = tasbeehStats.countsMap[id] || 0;
@@ -2589,43 +2612,43 @@ function updateFloatingPiPContent() {
   pipCtx.fillText(`الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : '∞'} | الجولات: ${tasbeehStats.roundsMap[id] || 0}`, 180, 300);
 }
 
-// ربط جميع أحداث وإيماءات اللمس للمسبحة
+// أحداث اللمس والنقر مع حل مشكلة العد المزدوج على الجوال
 document.addEventListener('DOMContentLoaded', () => {
-  const beadsTrack = document.getElementById('beadsWireTrack');
-  const digitalBtn = document.getElementById('digitalCenterBtn');
+  const interactiveZone = document.getElementById('tasbeehInteractiveZone');
 
-  // التقاط السحب باللمس الحقيقي والنقر (مع منع احتساب عدتين)
-  if (beadsTrack) {
+  if (interactiveZone) {
     let touchStartX = 0;
     let touchStartY = 0;
+    let isSwiping = false;
     let lastSwipeTime = 0;
 
-    beadsTrack.addEventListener('touchstart', (e) => {
+    interactiveZone.addEventListener('touchstart', (e) => {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
+      isSwiping = false;
     }, { passive: true });
 
-    beadsTrack.addEventListener('touchend', (e) => {
-      const deltaX = e.changedTouches[0].clientX - touchStartX;
-      const deltaY = e.changedTouches[0].clientY - touchStartY;
+    interactiveZone.addEventListener('touchmove', (e) => {
+      const deltaX = e.touches[0].clientX - touchStartX;
+      const deltaY = e.touches[0].clientY - touchStartY;
+      if (deltaX > 22 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        isSwiping = true;
+      }
+    }, { passive: true });
 
-      // إذا كان سحباً أفقياً حقيقياً لليمين
-      if (deltaX > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    interactiveZone.addEventListener('touchend', (e) => {
+      if (isSwiping) {
         lastSwipeTime = Date.now();
         incrementTasbeeh();
       }
     });
 
-    // النقر العادي (سواء بالماوس أو لمسة سريعة بإصبع الجوال)
-    beadsTrack.addEventListener('click', () => {
-      // إذا كانت النقرة ناتجة عن حدث سحب حدث للتو، نتجاهلها لمنع العد المزدوج
+    // النقر بالكامل (سواء ماوس أو نقرة لمس سريعة بالجوال)
+    interactiveZone.addEventListener('click', () => {
+      // منع العد المزدوج إذا نتج النقر عن انتهاء سحب الإصبع
       if (Date.now() - lastSwipeTime < 450) return;
       incrementTasbeeh();
     });
-  }
-
-  if (digitalBtn) {
-    digitalBtn.addEventListener('click', () => incrementTasbeeh());
   }
 
   // فتح نافذة اختيار التسبيحة
@@ -2702,7 +2725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // نافذة اختيار المظهر
+  // نافذة اختيار المظهر والأنماط
   const openThemeBtn = document.getElementById('openTasbeehThemeModalBtn');
   const themeModal = document.getElementById('tasbeehThemeModal');
   const closeThemeBtn = document.getElementById('closeTasbeehThemeBtn');
@@ -2796,66 +2819,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 6. تشغيل المسبحة خارج التطبيق كنافذة عائمة تفاعلية مع أزرار التحكم
+  // 6. تشغيل المسبحة خارج التطبيق كنافذة عائمة مع دعم الأندرويد والكمبيوتر
   const pipBtn = document.getElementById('startFloatingWidgetBtn');
   if (pipBtn) {
     pipBtn.onclick = async () => {
       try {
-        // التحقق من صلاحية ودعم النافذة العائمة
-        if (!document.pictureInPictureEnabled && !('documentPictureInPicture' in window)) {
-          alert('متصفحك لا يدعم خاصية النوافذ العائمة، يرجى تفعيلها من إعدادات المتصفح.');
-          return;
-        }
+        const video = document.getElementById('tasbeehPipVideo');
+        if (!video) return;
 
-        // أسلوب 1: دعم Document PiP (نافذة عائمة بأزرار نقر تفاعلية كاملة)
-        if ('documentPictureInPicture' in window) {
-          const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 320, height: 260 });
-          pipWindow.document.body.innerHTML = `
-            <style>
-              body { margin:0; background:#064E3B; color:#fff; font-family:'Cairo',sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; user-select:none; direction:rtl; }
-              .d-text { font-size:18px; color:#A7F3D0; margin-bottom:8px; text-align:center; font-weight:700; }
-              .d-count { font-size:56px; font-weight:900; color:#FBBF24; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:50%; width:110px; height:110px; display:flex; align-items:center; justify-content:center; }
-              .d-sub { font-size:12px; margin-top:8px; opacity:0.85; }
-            </style>
-            <div class="d-text" id="pipDhikrText">${getActiveTasbeehItem().text}</div>
-            <div class="d-count" id="pipTapBtn">${tasbeehStats.countsMap[getActiveTasbeehItem().id] || 0}</div>
-            <div class="d-sub">انقر على الرقم للعدّ</div>
-          `;
-
-          pipWindow.document.getElementById('pipTapBtn').onclick = () => {
-            incrementTasbeeh();
-            pipWindow.document.getElementById('pipTapBtn').textContent = tasbeehStats.countsMap[getActiveTasbeehItem().id] || 0;
-          };
-          return;
-        }
-
-        // أسلوب 2: Canvas Video PiP القياسي لجميع هواتف أندرويد مع أزرار الوسائط
         if (!pipCanvas) {
           pipCanvas = document.createElement('canvas');
           pipCanvas.width = 360;
           pipCanvas.height = 360;
           pipCtx = pipCanvas.getContext('2d');
-          pipVideo = document.createElement('video');
-          pipVideo.muted = true;
-          pipVideo.srcObject = pipCanvas.captureStream(15);
         }
 
         updateFloatingPiPContent();
-        await pipVideo.play();
-        await pipVideo.requestPictureInPicture();
 
-        // ربط أزرار التحكم بالنظام للعد المباشر من خارج التطبيق
+        if (!video.srcObject) {
+          video.srcObject = pipCanvas.captureStream(12);
+        }
+
+        await video.play();
+        await video.requestPictureInPicture();
+
+        // ربط أزرار وسائط النظام بالأندرويد للعد المباشر من الإشعار والنافذة
         if ('mediaSession' in navigator) {
           navigator.mediaSession.metadata = new MediaMetadata({
             title: getActiveTasbeehItem().text,
-            artist: 'المسبحة الإلكترونية - الحياة الطيبة'
+            artist: 'المسبحة الإلكترونية • الحياة الطيبة'
           });
           navigator.mediaSession.setActionHandler('nexttrack', () => incrementTasbeeh());
           navigator.mediaSession.setActionHandler('play', () => incrementTasbeeh());
           navigator.mediaSession.setActionHandler('pause', () => incrementTasbeeh());
         }
       } catch (err) {
-        alert('تعذر فتح النافذة العائمة، يرجى منح إذن (الظهور أمام التطبيقات الأخرى) للمتصفح من إعدادات الجوال.');
+        alert('يرجى التأكد من تشغيل الموقع عبر متصفح Chrome ومنح إذن النوافذ العائمة للجوال.');
       }
     };
   }
