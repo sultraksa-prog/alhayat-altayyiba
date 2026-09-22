@@ -1865,7 +1865,6 @@ ${APP_CONFIG.url}`;
   if ('serviceWorker' in navigator) {
     let refreshing = false;
     
-    // عند تفعيل السيرفر ووركر الجديد، نحدث الصفحة مرة واحدة فقط لتطبيق التغييرات
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
@@ -1874,8 +1873,6 @@ ${APP_CONFIG.url}`;
     });
 
     navigator.serviceWorker.register('./sw.js').then(registration => {
-      
-      // 1. اكتشاف وجود تحديث جديد تلقائياً في الخلفية
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         newWorker.addEventListener('statechange', () => {
@@ -1885,7 +1882,6 @@ ${APP_CONFIG.url}`;
         });
       });
 
-      // 2. تفعيل زر (تحديث التطبيق) اليدوي في شاشة الإعدادات
       const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
       if (checkUpdateBtn) {
         checkUpdateBtn.addEventListener('click', () => {
@@ -1896,7 +1892,6 @@ ${APP_CONFIG.url}`;
           registration.update().then(() => {
             setTimeout(() => {
               btnSpan.textContent = originalText;
-              // إذا لم يكن هناك تحديث في الانتظار أو قيد التثبيت
               if (!registration.waiting && !registration.installing) {
                 alert('أنت تستخدم أحدث إصدار من التطبيق 🌙');
               } else if (registration.waiting) {
@@ -1912,7 +1907,6 @@ ${APP_CONFIG.url}`;
     }).catch(err => console.log('SW error:', err));
   }
 
-  // دالة إظهار إشعار التحديث في أسفل الشاشة
   function showUpdateToast(newWorker) {
     const toast = document.getElementById('appUpdateToast');
     const updateBtn = document.getElementById('applyUpdateBtn');
@@ -1920,17 +1914,12 @@ ${APP_CONFIG.url}`;
     
     if (toast && updateBtn) {
       toast.classList.add('show');
-      
       updateBtn.addEventListener('click', () => {
         updateBtn.textContent = 'جاري التحديث...';
-        // إرسال رسالة لتخطي الانتظار وتفعيل التحديث فوراً
         newWorker.postMessage({ type: 'SKIP_WAITING' });
       });
-
       if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          toast.classList.remove('show');
-        });
+        closeBtn.addEventListener('click', () => toast.classList.remove('show'));
       }
     }
   }
