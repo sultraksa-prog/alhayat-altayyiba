@@ -634,7 +634,6 @@
 
     <!-- ==================== الشاشة: المسبحة الإلكترونية المطورة ==================== -->
     <div id="screen-tasbeeh" class="screen-view fixed-tasbeeh-screen">
-      <!-- الهيدر الاحترافي الجديد -->
       <header class="tasbeeh-lux-header">
         <button type="button" class="t-nav-btn" id="backToHomeFromTasbeehBtn" title="الرجوع للرئيسية">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -646,22 +645,18 @@
         </div>
 
         <div class="tasbeeh-top-actions">
-          <!-- زر تصفير العداد -->
           <button type="button" class="t-icon-circle-action" id="tasbeehResetBtn" title="إعادة ضبط">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           </button>
           
-          <!-- زر تحديد الهدف (أيقونة الهدف) -->
           <button type="button" class="t-icon-circle-action" id="openTargetModalBtn" title="تحديد الهدف">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
           </button>
 
-          <!-- زر خيارات إضافية -->
           <button type="button" class="t-icon-circle-action" id="tasbeehMenuBtn" title="خيارات">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
 
-          <!-- قائمة الخيارات العلوية المنسدلة -->
           <div class="dropdown-menu" id="tasbeehDropdownMenu" style="width: 195px; top: 46px; left: 0;">
             <div class="dropdown-item" id="toggleTasbeehWakeLockBtn">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
@@ -679,11 +674,8 @@
         </div>
       </header>
 
-      <!-- محتوى المسبحة الثابت غير القابل للتمرير -->
       <div class="tasbeeh-viewport-fixed">
-        
-        <!-- كرت الذكر الحالي المرتبط ببنك الأذكار -->
-        <div class="tasbeeh-dhikr-banner" id="openDhikrPickerArea" title="انقر لتغيير أو اختيار تسبيحة">
+        <div class="tasbeeh-dhikr-banner" id="openDhikrPickerArea" title="انقر لاختيار تسبيحة">
           <div class="dhikr-banner-top">
             <span class="dhikr-category-tag">تسابيح وأجور عظيمة</span>
             <span class="dhikr-change-hint">🔍 اختر تسبيحة</span>
@@ -691,7 +683,6 @@
           <h3 class="tasbeeh-main-text" id="tasbeehMainText">سُبْحَانَ اللَّهِ</h3>
         </div>
 
-        <!-- معلومات العداد والأهداف المدمجة -->
         <div class="tasbeeh-status-pill">
           <div class="pill-metric">
             <span class="p-val" id="tasbeehRoundsDisplay">0</span>
@@ -709,12 +700,8 @@
           </div>
         </div>
 
-        <!-- منطقة التفاعل السفلية في متناول الإبهام -->
         <div class="tasbeeh-thumb-interactive-zone" id="tasbeehInteractiveZone">
-          
-          <!-- النمط 1: الخرز على حبل منحنٍ واقعي -->
           <div class="tasbeeh-curved-track-stage" id="tasbeehBeadsStage">
-            <!-- مسار الحبل المقوس بالـ SVG -->
             <svg class="bead-curved-svg-line" viewBox="0 0 360 180" preserveAspectRatio="none">
               <path d="M -20,165 Q 110,175 220,110 T 380,25" fill="none" stroke="#D1D5DB" stroke-width="4.5" stroke-linecap="round"/>
             </svg>
@@ -724,7 +711,6 @@
             <span class="tasbeeh-gesture-hint">اضغط أو اسحب الخرز لليمين للعدّ</span>
           </div>
 
-          <!-- النمط 2: الزر الرقمي الفاخر -->
           <div class="tasbeeh-digital-button-stage" id="tasbeehButtonStage" style="display: none;">
             <div class="islamic-floral-outer" id="digitalCenterBtn">
               <div class="islamic-button-core">
@@ -734,10 +720,8 @@
             </div>
             <span class="tasbeeh-gesture-hint">اضغط في أي مكان للعدّ</span>
           </div>
-
         </div>
 
-        <!-- الأزرار السفلية: المظهر والنافذة العائمة -->
         <div class="tasbeeh-footer-tools">
           <button type="button" class="t-tool-btn" id="openTasbeehThemeModalBtn" title="المظهر والألوان">
             <span>🎨 المظهر</span>
@@ -748,11 +732,18 @@
             <span>المسبحة خارج التطبيق</span>
           </button>
         </div>
-
       </div>
     </div>
 
-    <!-- 1. مودال اختيار التسبيحة من "تسابيح وأجور عظيمة" مع البحث -->
+    <!-- شريط التبويبات السفلي المستعاد -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item active" id="tabHome"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>الرئيسية</span></a>
+      <a href="#" class="nav-item" id="tabAzkar"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg><span>أذكار المسلم</span></a>
+      <a href="#" class="nav-item" id="tabQibla"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><polygon points="12 8 15 15 12 13 9 15" fill="currentColor"/></svg><span>القبلة</span></a>
+      <a href="#" class="nav-item" id="tabGeneralSettings"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>الإعدادات</span></a>
+    </nav>
+
+    <!-- مودال اختيار التسبيحة من "تسابيح وأجور عظيمة" -->
     <div class="bottom-sheet-backdrop" id="tasbeehDhikrPickerModal">
       <div class="bottom-sheet" style="max-height: 85vh; display: flex; flex-direction: column;">
         <div class="sheet-drag-handle"></div>
@@ -767,11 +758,11 @@
       </div>
     </div>
 
-    <!-- 2. مودال تحديد الهدف الذكي (33 / 99 / 100 / مخصص) -->
+    <!-- مودال تحديد الهدف الذكي -->
     <div class="custom-modal-backdrop" id="tasbeehTargetModal">
       <div class="custom-modal-card text-center" style="max-width: 320px;">
         <h3 class="modal-card-title" style="margin-bottom: 6px;">تحديد الهدف</h3>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">اختر عدد التسبيحات لإتمام الجولة:</p>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">اختر عدد التسبيحات للجولة:</p>
         <div class="target-selection-grid">
           <button type="button" class="t-target-btn active" data-val="33">٣٣</button>
           <button type="button" class="t-target-btn" data-val="99">٩٩</button>
@@ -788,7 +779,7 @@
       </div>
     </div>
 
-    <!-- 3. مودال تأكيد التصفير -->
+    <!-- مودال تأكيد التصفير -->
     <div class="custom-modal-backdrop" id="tasbeehResetModal">
       <div class="custom-modal-card text-center" style="max-width: 320px;">
         <h3 class="modal-card-title" style="margin-bottom: 8px;">ملاحظة</h3>
@@ -803,7 +794,7 @@
       </div>
     </div>
 
-    <!-- 4. مودال اختيار المظهر والأنماط -->
+    <!-- مودال اختيار المظهر والأنماط -->
     <div class="bottom-sheet-backdrop" id="tasbeehThemeModal">
       <div class="bottom-sheet" style="padding-bottom: 24px;">
         <div class="sheet-drag-handle"></div>
