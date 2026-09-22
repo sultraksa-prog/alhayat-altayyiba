@@ -677,7 +677,7 @@
 
       <div class="tasbeeh-viewport-fixed">
         
-        <!-- الجزء العلوي: كرت الذكر المتصل بـ "تسابيح وأجور عظيمة" -->
+        <!-- كرت الذكر المتصل ببنك الأذكار -->
         <div class="tasbeeh-dhikr-banner" id="openDhikrPickerArea" title="انقر لاختيار تسبيحة">
           <div class="dhikr-banner-top">
             <span class="dhikr-category-tag">تسابيح وأجور عظيمة</span>
@@ -686,7 +686,7 @@
           <h3 class="tasbeeh-main-text" id="tasbeehMainText">سُبْحَانَ اللَّهِ</h3>
         </div>
 
-        <!-- الجزء الأوسط: نقل زري "المظهر" و"المسبحة الخارجية" للأعلى -->
+        <!-- شريط زري المظهر والمسبحة خارج التطبيق -->
         <div class="tasbeeh-mid-actions-row">
           <button type="button" class="t-mid-tool-btn" id="openTasbeehThemeModalBtn">
             <span>🎨 المظهر والنمط</span>
@@ -716,29 +716,24 @@
           </div>
         </div>
 
-        <!-- الجزء السفلي بالكامل: مخصص للمسبحة وفي متناول الإبهام للنقر والسحب -->
+        <!-- النص التوجيهي الجديد في موقعه الصحيح فوق المسبحة -->
+        <div class="tasbeeh-top-hint-badge">
+          <span>اضغط في أي مكان بالأسفل أو اسحب الخرز للعدّ</span>
+        </div>
+
+        <!-- النصف السفلي بالكامل: منطقة تفاعلية حرة مريحة للإبهام -->
         <div class="tasbeeh-full-bottom-touch-zone" id="tasbeehInteractiveZone">
           
-          <!-- النمط 1: مسبحة الخرز المقوسة مع الفراغ وانزلاق خرزة واحدة -->
+          <!-- النمط 1: مسبحة الخرز الانسيابية ذات الحركة التتابعية المتصلة -->
           <div class="tasbeeh-curved-track-stage" id="tasbeehBeadsStage">
-            <svg class="bead-curved-svg-line" viewBox="0 0 360 170" preserveAspectRatio="none">
-              <path d="M -10,155 Q 120,165 210,105 T 370,25" fill="none" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+            <svg class="bead-curved-svg-line" viewBox="0 0 360 160" preserveAspectRatio="none">
+              <path d="M -30,122 Q 130,118 220,60 T 380,5" fill="none" stroke="#CBD5E1" stroke-width="4.5" stroke-linecap="round"/>
             </svg>
 
-            <div class="beads-split-container" id="beadsWireTrack">
-              <!-- تجمع الخرز الأيسر (غير المحسوب) -->
-              <div class="beads-left-cluster" id="beadsLeftCluster"></div>
-
-              <!-- خرزة العبور الفردية التي تنزلق في الفراغ من اليسار إلى اليمين -->
-              <div class="bead-traveler-slot">
-                <div class="t-curved-bead traveler-bead" id="travelerBead"></div>
-              </div>
-
-              <!-- تجمع الخرز الأيمن (المحسوب) -->
-              <div class="beads-right-cluster" id="beadsRightCluster"></div>
+            <!-- حاوية سلسلة الخرز المتحركة على مسار القوس -->
+            <div class="beads-continuous-track" id="beadsWireTrack">
+              <div class="beads-chain-viewport" id="beadsCluster"></div>
             </div>
-
-            <span class="tasbeeh-gesture-hint">اضغط في أي مكان بالأسفل أو اسحب الخرز للعدّ</span>
           </div>
 
           <!-- النمط 2: الزر الرقمي الفاخر -->
@@ -749,16 +744,13 @@
                 <span class="digital-target-lbl" id="digitalTargetDisplay">الهدف: 33</span>
               </div>
             </div>
-            <span class="tasbeeh-gesture-hint">اضغط في أي مكان بالأسفل للعدّ</span>
           </div>
 
         </div>
 
       </div>
     </div>
-
-    <!-- عنصر فيديو مخفي دائم لدعم الـ PiP على الجوال بدون أخطاء -->
-    <video id="tasbeehPipVideo" muted playsinline style="position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;left:-9999px;bottom:0;"></video>
+    
     <!-- شريط التبويبات السفلي المستعاد -->
     <nav class="bottom-nav">
       <a href="#" class="nav-item active" id="tabHome"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>الرئيسية</span></a>
