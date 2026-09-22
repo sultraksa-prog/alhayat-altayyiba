@@ -2359,7 +2359,19 @@ function saveTasbeehStats() {
   if (tasbeehActiveDhikrId) localStorage.setItem('hayat_active_tasbeeh_id', tasbeehActiveDhikrId);
 }
 
-// 1. الربط المباشر ببنك الأذكار (تسابيح وأجور عظيمة) مع الحصانة ضد الـ Scope
+// دالة تجريد النصوص من التشكيل والحركات للبحث السريع
+function normalizeArabicText(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '') // إزالة الفتحة، الضمة، الكسرة، الشدة، التنوين، السكون، والمد
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .trim()
+    .toLowerCase();
+}
+
+// 1. الربط المباشر مع أذكار "تسابيح وأجور عظيمة"
 function getTasbeehCategoryItems() {
   let allGroups = [];
   try {
@@ -2411,7 +2423,7 @@ function playWoodClickSound() {
   } catch (e) {}
 }
 
-// زيادة العداد وتحريك خرزة واحدة عبر الفراغ بسلاسة
+// زيادة العداد وتحريك خرزة واحدة عبر الفراغ
 function incrementTasbeeh() {
   const activeItem = getActiveTasbeehItem();
   const id = activeItem.id;
@@ -2434,18 +2446,18 @@ function incrementTasbeeh() {
     if (navigator.vibrate) navigator.vibrate([70, 40, 90]);
   }
 
-  // حركة الخرزة المنفردة عبر الفراغ من اليسار لليمين
+  // انزلاق الخرزة عبر الفراغ من اليسار لليمين على طول زاوية الخيط
   const traveler = document.getElementById('travelerBead');
   if (traveler && tasbeehMode === 'beads') {
-    traveler.style.transform = 'translate(36px, -12px)';
+    traveler.style.transform = 'translate(68px, -24px)';
     setTimeout(() => {
       traveler.style.transition = 'none';
-      traveler.style.transform = 'translate(-36px, 12px)';
+      traveler.style.transform = 'translate(-40px, 14px)';
       setTimeout(() => {
-        traveler.style.transition = 'transform 0.24s cubic-bezier(0.25, 1, 0.5, 1)';
+        traveler.style.transition = 'transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
         traveler.style.transform = 'translate(0, 0)';
-      }, 40);
-    }, 240);
+      }, 35);
+    }, 220);
   }
 
   saveTasbeehStats();
@@ -2453,7 +2465,7 @@ function incrementTasbeeh() {
   updateFloatingPiPContent();
 }
 
-// تحديث الأرقام
+// تحديث الأرقام والواجهة
 function updateTasbeehUI() {
   const activeItem = getActiveTasbeehItem();
   const id = activeItem.id;
@@ -2483,22 +2495,24 @@ function updateTasbeehUI() {
   if (digiTarget) digiTarget.textContent = `الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : 'مفتوح'}`;
 }
 
-// بناء خرز المسبحة المقوس مع فارغ المنتصف
+// بناء خرز المسبحة المقوس الموزون تماماً فوق الخيط
 function renderCurvedBeads() {
   const leftCluster = document.getElementById('beadsLeftCluster');
   const rightCluster = document.getElementById('beadsRightCluster');
+  const traveler = document.getElementById('travelerBead');
   if (!leftCluster || !rightCluster) return;
 
   leftCluster.innerHTML = '';
   rightCluster.innerHTML = '';
 
-  // خرزات اليسار (تتحرك صاعدة)
-  const leftPositions = [
-    { x: -10, y: 100 },
-    { x: 30,  y: 92 },
-    { x: 70,  y: 78 }
+  // الخيط يبدأ من (0, 86) وينحني صاعداً إلى (360, 42)
+  // 1. خرزات اليسار (تجلس فوق الخيط بالضبط)
+  const leftBeads = [
+    { x: 26, y: 84 },
+    { x: 68, y: 80 },
+    { x: 110, y: 75 }
   ];
-  leftPositions.forEach(pos => {
+  leftBeads.forEach(pos => {
     const bead = document.createElement('div');
     bead.className = 't-curved-bead';
     bead.style.left = `${pos.x}px`;
@@ -2506,13 +2520,19 @@ function renderCurvedBeads() {
     leftCluster.appendChild(bead);
   });
 
-  // خرزات اليمين (تتحرك صاعدة لأعلى اليمين)
-  const rightPositions = [
-    { x: 10, y: 44 },
-    { x: 50, y: 28 },
-    { x: 90, y: 12 }
+  // 2. خرزة العبور في منتصف الخيط بالضبط
+  if (traveler) {
+    traveler.style.left = '152px';
+    traveler.style.top = '70px';
+  }
+
+  // 3. خرزات اليمين بعد الفراغ (تجلس فوق الخيط بالضبط وتصعد لليمين)
+  const rightBeads = [
+    { x: 235, y: 56 },
+    { x: 277, y: 50 },
+    { x: 319, y: 44 }
   ];
-  rightPositions.forEach(pos => {
+  rightBeads.forEach(pos => {
     const bead = document.createElement('div');
     bead.className = 't-curved-bead';
     bead.style.left = `${pos.x}px`;
@@ -2538,19 +2558,23 @@ function applyTasbeehThemeAndMode() {
   }
 }
 
-// ملء وبحث قائمة أذكار "تسابيح وأجور عظيمة"
+// ملء وبحث الأذكار مع تجريد الحركات والتنوين والتشكيل
 function renderTasbeehPickerList(query = '') {
   const container = document.getElementById('tasbeehPickerListContainer');
   if (!container) return;
   container.innerHTML = '';
 
   const items = getTasbeehCategoryItems();
-  const cleanQ = query.trim().toLowerCase();
+  const cleanQ = normalizeArabicText(query);
 
-  const filtered = items.filter(it => !cleanQ || (it.text && it.text.toLowerCase().includes(cleanQ)));
+  const filtered = items.filter(it => {
+    if (!cleanQ) return true;
+    const itemCleanText = normalizeArabicText(it.text);
+    return itemCleanText.includes(cleanQ);
+  });
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد تسابيحة مطابقة</div>`;
+    container.innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-muted); font-size:14px;">لا توجد تسبيحة مطابقة</div>`;
     return;
   }
 
@@ -2579,7 +2603,7 @@ function initTasbeehEngine() {
   updateTasbeehUI();
 }
 
-// نظام المسبحة العائمة للجوال والكمبيوتر ومزامنة الأرقام
+// تحديث النافذة العائمة مع توضيح زر النقر عليها
 let pipCanvas = null;
 let pipCtx = null;
 
@@ -2595,24 +2619,28 @@ function updateFloatingPiPContent() {
   pipCtx.fill();
 
   pipCtx.fillStyle = '#A7F3D0';
-  pipCtx.font = 'bold 22px "Cairo", sans-serif';
+  pipCtx.font = 'bold 20px "Cairo", sans-serif';
   pipCtx.textAlign = 'center';
-  pipCtx.fillText('الحياة الطيبة • المسبحة', 180, 50);
+  pipCtx.fillText('الحياة الطيبة • المسبحة', 180, 48);
 
   pipCtx.fillStyle = '#FFFFFF';
-  pipCtx.font = 'bold 26px "Amiri", serif';
-  pipCtx.fillText(activeItem.text.slice(0, 24), 180, 115);
+  pipCtx.font = 'bold 24px "Amiri", serif';
+  pipCtx.fillText(activeItem.text.slice(0, 24), 180, 105);
 
   pipCtx.fillStyle = '#FBBF24';
-  pipCtx.font = 'bold 92px "Cairo", sans-serif';
-  pipCtx.fillText(cur, 180, 230);
+  pipCtx.font = 'bold 88px "Cairo", sans-serif';
+  pipCtx.fillText(cur, 180, 215);
 
   pipCtx.fillStyle = '#D1FAE5';
-  pipCtx.font = 'bold 22px "Cairo", sans-serif';
-  pipCtx.fillText(`الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : '∞'} | الجولات: ${tasbeehStats.roundsMap[id] || 0}`, 180, 300);
+  pipCtx.font = 'bold 20px "Cairo", sans-serif';
+  pipCtx.fillText(`الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : '∞'} | الجولات: ${tasbeehStats.roundsMap[id] || 0}`, 180, 275);
+
+  pipCtx.fillStyle = '#6EE7B7';
+  pipCtx.font = '16px "Cairo", sans-serif';
+  pipCtx.fillText('اضغط زر ▶️ أو ⏭️ في النافذة للعدّ', 180, 325);
 }
 
-// أحداث اللمس والنقر مع حل مشكلة العد المزدوج على الجوال
+// أحداث اللمس والنقر والتفاعل
 document.addEventListener('DOMContentLoaded', () => {
   const interactiveZone = document.getElementById('tasbeehInteractiveZone');
 
@@ -2631,21 +2659,19 @@ document.addEventListener('DOMContentLoaded', () => {
     interactiveZone.addEventListener('touchmove', (e) => {
       const deltaX = e.touches[0].clientX - touchStartX;
       const deltaY = e.touches[0].clientY - touchStartY;
-      if (deltaX > 22 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
         isSwiping = true;
       }
     }, { passive: true });
 
-    interactiveZone.addEventListener('touchend', (e) => {
+    interactiveZone.addEventListener('touchend', () => {
       if (isSwiping) {
         lastSwipeTime = Date.now();
         incrementTasbeeh();
       }
     });
 
-    // النقر بالكامل (سواء ماوس أو نقرة لمس سريعة بالجوال)
     interactiveZone.addEventListener('click', () => {
-      // منع العد المزدوج إذا نتج النقر عن انتهاء سحب الإصبع
       if (Date.now() - lastSwipeTime < 450) return;
       incrementTasbeeh();
     });
@@ -2819,7 +2845,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 6. تشغيل المسبحة خارج التطبيق كنافذة عائمة مع دعم الأندرويد والكمبيوتر
+  // 6. تشغيل المسبحة العائمة مع أزرار التحكم بالوسائط
   const pipBtn = document.getElementById('startFloatingWidgetBtn');
   if (pipBtn) {
     pipBtn.onclick = async () => {
@@ -2843,7 +2869,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await video.play();
         await video.requestPictureInPicture();
 
-        // ربط أزرار وسائط النظام بالأندرويد للعد المباشر من الإشعار والنافذة
         if ('mediaSession' in navigator) {
           navigator.mediaSession.metadata = new MediaMetadata({
             title: getActiveTasbeehItem().text,
@@ -2854,8 +2879,9 @@ document.addEventListener('DOMContentLoaded', () => {
           navigator.mediaSession.setActionHandler('pause', () => incrementTasbeeh());
         }
       } catch (err) {
-        alert('يرجى التأكد من تشغيل الموقع عبر متصفح Chrome ومنح إذن النوافذ العائمة للجوال.');
+        alert('يرجى التأكد من استخدام متصفح Chrome ومنح إذن النوافذ المنبثقة للجوال.');
       }
     };
   }
 });
+
