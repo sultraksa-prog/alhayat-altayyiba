@@ -2359,11 +2359,11 @@ function saveTasbeehStats() {
   if (tasbeehActiveDhikrId) localStorage.setItem('hayat_active_tasbeeh_id', tasbeehActiveDhikrId);
 }
 
-// دالة تجريد النصوص من التشكيل والحركات للبحث السريع
+// دالة تجريد النصوص من التشكيل والحركات للبحث السلس والسريع
 function normalizeArabicText(text) {
   if (!text) return '';
   return text
-    .replace(/[\u064B-\u065F\u0670\u0640]/g, '') // إزالة الفتحة، الضمة، الكسرة، الشدة، التنوين، السكون، والمد
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
     .replace(/[أإآٱ]/g, 'ا')
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
@@ -2404,7 +2404,6 @@ function getActiveTasbeehItem() {
   return items[0];
 }
 
-// صوت نقرة خشبية واقعية
 function playWoodClickSound() {
   if (!tasbeehSound) return;
   try {
@@ -2423,7 +2422,28 @@ function playWoodClickSound() {
   } catch (e) {}
 }
 
-// زيادة العداد وتحريك خرزة واحدة عبر الفراغ
+// إحداثيات النقاط الرياضية العشر على طول الخيط المنحني بدقة
+const BEAD_SLOT_COORDS = [
+  { x: -25, y: 122 }, // النقطة 0: تدخل من أقصى اليسار
+  { x: 22,  y: 114 }, // النقطة 1: يسار 1
+  { x: 64,  y: 104 }, // النقطة 2: يسار 2
+  { x: 106, y: 92 },  // النقطة 3: حافة اليسار قبل الفراغ
+  { x: 154, y: 78 },  // النقطة 4: منتصف الفراغ (مسافة خرزة ونصف)
+  { x: 202, y: 64 },  // النقطة 5: حافة اليمين بعد الفراغ
+  { x: 244, y: 50 },  // النقطة 6: يمين 2
+  { x: 286, y: 36 },  // النقطة 7: يمين 3
+  { x: 328, y: 22 },  // النقطة 8: يمين 4
+  { x: 375, y: 6 }    // النقطة 9: تخرج لأقصى اليمين
+];
+
+// الحالة الحركية لمواقع الخرزات النشطة على الخيط
+// اليسار به 3 خرزات في الخانات (1، 2، 3)
+// ثم فراغ في الخانة 4
+// اليمين به 4 خرزات في الخانات (5، 6، 7، 8)
+let currentBeadSlots = [1, 2, 3, 5, 6, 7, 8];
+let isBeadAnimating = false;
+
+// زيادة العداد وتحريك السلسلة كاملة
 function incrementTasbeeh() {
   const activeItem = getActiveTasbeehItem();
   const id = activeItem.id;
@@ -2439,30 +2459,49 @@ function incrementTasbeeh() {
   }
   playWoodClickSound();
 
-  // إكمال الجولة عند بلوغ الهدف
   if (tasbeehTarget > 0 && tasbeehStats.countsMap[id] >= tasbeehTarget) {
     tasbeehStats.countsMap[id] = 0;
     tasbeehStats.roundsMap[id]++;
     if (navigator.vibrate) navigator.vibrate([70, 40, 90]);
   }
 
-  // انزلاق الخرزة عبر الفراغ من اليسار لليمين على طول زاوية الخيط
-  const traveler = document.getElementById('travelerBead');
-  if (traveler && tasbeehMode === 'beads') {
-    traveler.style.transform = 'translate(68px, -24px)';
-    setTimeout(() => {
-      traveler.style.transition = 'none';
-      traveler.style.transform = 'translate(-40px, 14px)';
-      setTimeout(() => {
-        traveler.style.transition = 'transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
-        traveler.style.transform = 'translate(0, 0)';
-      }, 35);
-    }, 220);
-  }
+  // فيزياء انزلاق الخرزة وتتابع السلسلة الواقعي
+  animateBeadChainStep();
 
   saveTasbeehStats();
   updateTasbeehUI();
   updateFloatingPiPContent();
+}
+
+// دالة محاكاة انتقال الخرزة وسحب السلسلة التتابعي
+function animateBeadChainStep() {
+  if (tasbeehMode !== 'beads' || isBeadAnimating) return;
+  isBeadAnimating = true;
+
+  const cluster = document.getElementById('beadsCluster');
+  if (!cluster) { isBeadAnimating = false; return; }
+
+  const beadEls = cluster.querySelectorAll('.t-curved-bead');
+  if (beadEls.length < 7) { renderCurvedBeads(); isBeadAnimating = false; return; }
+
+  // 1. خرزة اليسار الأمامية (beadEls[2]) تقفز عبر الفراغ لتلتحم باليمين
+  // 2. خرزات اليسار (0، 1) تتقدم للأمام خطوة لتعويض مكانها
+  // 3. خرزات اليمين تتزحزح خطوة للأمام
+  const targetSlots = [2, 3, 5, 6, 7, 8, 9];
+
+  beadEls.forEach((el, i) => {
+    const slotIdx = targetSlots[i];
+    const pos = BEAD_SLOT_COORDS[slotIdx];
+    el.style.left = `${pos.x}px`;
+    el.style.top = `${pos.y}px`;
+    if (i === 6) el.style.opacity = '0'; // الخرزة الأخيرة تخرج بنعومة
+  });
+
+  // بعد انتهاء الحركة (220ms)، نعيد رسم السلسلة مستقرة فوراً للعدة التالية
+  setTimeout(() => {
+    renderCurvedBeads();
+    isBeadAnimating = false;
+  }, 225);
 }
 
 // تحديث الأرقام والواجهة
@@ -2495,49 +2534,23 @@ function updateTasbeehUI() {
   if (digiTarget) digiTarget.textContent = `الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : 'مفتوح'}`;
 }
 
-// بناء خرز المسبحة المقوس الموزون تماماً فوق الخيط
+// رسم الخرزات السبع الأساسية بدقة متناهية فوق الخيط
 function renderCurvedBeads() {
-  const leftCluster = document.getElementById('beadsLeftCluster');
-  const rightCluster = document.getElementById('beadsRightCluster');
-  const traveler = document.getElementById('travelerBead');
-  if (!leftCluster || !rightCluster) return;
+  const cluster = document.getElementById('beadsCluster');
+  if (!cluster) return;
+  cluster.innerHTML = '';
 
-  leftCluster.innerHTML = '';
-  rightCluster.innerHTML = '';
+  // الخانات الطبيعية: 3 خرزات على اليسار (1, 2, 3) + فراغ (4) + 4 خرزات على اليمين (5, 6, 7, 8)
+  const defaultSlots = [1, 2, 3, 5, 6, 7, 8];
 
-  // الخيط يبدأ من (0, 86) وينحني صاعداً إلى (360, 42)
-  // 1. خرزات اليسار (تجلس فوق الخيط بالضبط)
-  const leftBeads = [
-    { x: 26, y: 84 },
-    { x: 68, y: 80 },
-    { x: 110, y: 75 }
-  ];
-  leftBeads.forEach(pos => {
+  defaultSlots.forEach((slotIdx) => {
+    const pos = BEAD_SLOT_COORDS[slotIdx];
     const bead = document.createElement('div');
     bead.className = 't-curved-bead';
     bead.style.left = `${pos.x}px`;
     bead.style.top = `${pos.y}px`;
-    leftCluster.appendChild(bead);
-  });
-
-  // 2. خرزة العبور في منتصف الخيط بالضبط
-  if (traveler) {
-    traveler.style.left = '152px';
-    traveler.style.top = '70px';
-  }
-
-  // 3. خرزات اليمين بعد الفراغ (تجلس فوق الخيط بالضبط وتصعد لليمين)
-  const rightBeads = [
-    { x: 235, y: 56 },
-    { x: 277, y: 50 },
-    { x: 319, y: 44 }
-  ];
-  rightBeads.forEach(pos => {
-    const bead = document.createElement('div');
-    bead.className = 't-curved-bead';
-    bead.style.left = `${pos.x}px`;
-    bead.style.top = `${pos.y}px`;
-    rightCluster.appendChild(bead);
+    bead.style.opacity = '1';
+    cluster.appendChild(bead);
   });
 }
 
@@ -2558,7 +2571,7 @@ function applyTasbeehThemeAndMode() {
   }
 }
 
-// ملء وبحث الأذكار مع تجريد الحركات والتنوين والتشكيل
+// ملء وبحث الأذكار بتجريد الحركات
 function renderTasbeehPickerList(query = '') {
   const container = document.getElementById('tasbeehPickerListContainer');
   if (!container) return;
@@ -2603,7 +2616,7 @@ function initTasbeehEngine() {
   updateTasbeehUI();
 }
 
-// تحديث النافذة العائمة مع توضيح زر النقر عليها
+// تحديث النافذة العائمة
 let pipCanvas = null;
 let pipCtx = null;
 
@@ -2640,7 +2653,7 @@ function updateFloatingPiPContent() {
   pipCtx.fillText('اضغط زر ▶️ أو ⏭️ في النافذة للعدّ', 180, 325);
 }
 
-// أحداث اللمس والنقر والتفاعل
+// أحداث اللمس والنقر مع منع العد المزدوج على الجوال
 document.addEventListener('DOMContentLoaded', () => {
   const interactiveZone = document.getElementById('tasbeehInteractiveZone');
 
@@ -2671,6 +2684,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // النقر بالكامل (سواء ماوس أو لمسة سريعة بالجوال)
     interactiveZone.addEventListener('click', () => {
       if (Date.now() - lastSwipeTime < 450) return;
       incrementTasbeeh();
@@ -2845,7 +2859,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 6. تشغيل المسبحة العائمة مع أزرار التحكم بالوسائط
+  // تشغيل المسبحة خارج التطبيق
   const pipBtn = document.getElementById('startFloatingWidgetBtn');
   if (pipBtn) {
     pipBtn.onclick = async () => {
