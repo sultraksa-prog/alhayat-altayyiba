@@ -35,7 +35,33 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // لا نتدخل في طلبات الـ API الخارجية ليتم التعامل معها من داخل التطبيق
+  if (e.request.url.includes('api.aladhan.com') || e.request.url.includes('api.bigdatacloud.net') || e.request.url.includes('nominatim.openstreetmap.org')) {
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then((res) => res || fetch(e.request))
+    caches.match(e.request).then((cachedResponse) => {
+      // استراتيجية (Stale-While-Revalidate): نُرجع الكاش فوراً للسرعة، ونحدثه في الخلفية
+      const fetchPromise = fetch(e.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, networkResponse.clone());
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        // خطأ الشبكة (أوفلاين) يتم تجاهله بصمت والاعتماد على الكاش
+      });
+
+      return cachedResponse || fetchPromise;
+    })
   );
+});
+
+// الاستماع لرسالة التحديث الفوري من التطبيق
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
