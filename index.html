@@ -222,7 +222,7 @@
           <div class="tool-icon-box bg-soft-amber">⭐</div>
           <span class="tool-title">المفضلة</span>
         </div>
-        <div class="tool-card"><div class="tool-icon-box bg-soft-teal">📿</div><span class="tool-title">التسبيح</span></div>
+        <div class="tool-card" id="openTasbeehTileBtn"><div class="tool-icon-box bg-soft-teal">📿</div><span class="tool-title">التسبيح</span></div>
         <div class="tool-card"><div class="tool-icon-box bg-soft-sky">🗓️</div><span class="tool-title">التقويم</span></div>
         <div class="tool-card"><div class="tool-icon-box bg-soft-mint">💌</div><span class="tool-title">الأدعية</span></div>
         <div class="tool-card"><div class="tool-icon-box bg-soft-amber">✨</div><span class="tool-title">لله الحسنى</span></div>
@@ -630,6 +630,192 @@
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+    </div>
+
+    <!-- ==================== الشاشة: المسبحة الإلكترونية المطورة ==================== -->
+    <div id="screen-tasbeeh" class="screen-view">
+      <header class="section-nav-header">
+        <button class="nav-back-btn" id="backToHomeFromTasbeehBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="tasbeeh-header-center">
+          <h2 class="section-page-title" style="margin: 0;">المسبحة</h2>
+          <span class="tasbeeh-page-counter" id="tasbeehDhikrIndexDisplay">1/12</span>
+        </div>
+        <div class="reader-header-actions">
+          <button class="header-icon-btn" id="tasbeehResetBtn" title="إعادة ضبط">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
+          <button class="header-icon-btn" id="tasbeehMenuBtn" title="خيارات">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+
+          <!-- قائمة الخيارات العلوية للمسبحة -->
+          <div class="dropdown-menu" id="tasbeehDropdownMenu" style="width: 190px;">
+            <div class="dropdown-item" id="toggleTasbeehWakeLockBtn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+              <span id="wakeLockStatusText">إبقاء الإضاءة</span>
+            </div>
+            <div class="dropdown-item" id="toggleTasbeehSoundBtn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <span id="soundStatusText">تشغيل الصوت</span>
+            </div>
+            <div class="dropdown-item" id="toggleTasbeehVibrateBtn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              <span id="vibrateStatusText">الارتجاج: مفعّل</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="tasbeeh-body-container">
+        <!-- شريط الأذكار السريعة بالأعلى -->
+        <div class="tasbeeh-pills-bar" id="tasbeehPillsBar"></div>
+
+        <!-- كرت الذكر الحالي -->
+        <div class="tasbeeh-dhikr-card" id="tasbeehDhikrCardArea">
+          <button class="dhikr-swipe-arrow left" id="tasbeehPrevDhikrBtn">‹</button>
+          <div class="dhikr-card-inner">
+            <h3 class="tasbeeh-main-text" id="tasbeehMainText">سُبْحَانَ اللَّهِ</h3>
+          </div>
+          <button class="dhikr-swipe-arrow right" id="tasbeehNextDhikrBtn">›</button>
+        </div>
+
+        <!-- مساحة العداد والتفاعل -->
+        <div class="tasbeeh-stage-wrapper">
+          
+          <!-- النمط 1: الخرز (المسبحة) -->
+          <div class="tasbeeh-mode-beads" id="tasbeehBeadsStage">
+            <div class="tasbeeh-counts-summary">
+              <div class="t-main-count" id="beadMainCounter">0/33</div>
+              <div class="t-rounds-count" id="beadRoundsCounter">الجولات: 0</div>
+            </div>
+            <div class="beads-wire-track" id="beadsWireTrack">
+              <div class="beads-string-line"></div>
+              <div class="beads-bead-cluster" id="beadsCluster"></div>
+            </div>
+            <div class="t-tap-hint">إضغط أو اسحب للعدّ</div>
+          </div>
+
+          <!-- النمط 2: الزر الرقمي (الأيقونة) -->
+          <div class="tasbeeh-mode-button" id="tasbeehButtonStage" style="display: none;">
+            <div class="digital-ornate-frame" id="digitalOrnateFrame">
+              <div class="digital-center-button" id="digitalCenterBtn">
+                <div class="digital-count-large" id="digitalCountDisplay">0/33</div>
+                <div class="digital-rounds-label" id="digitalRoundsDisplay">الجولات: 0</div>
+              </div>
+            </div>
+            <div class="t-tap-hint">اضغط على الزر للعدّ</div>
+          </div>
+
+        </div>
+
+        <!-- معلومات الدورات والإجمالي السفلية -->
+        <div class="tasbeeh-metrics-row">
+          <div class="t-metric-box">
+            <span class="t-metric-num" id="tasbeehTotalDisplay">0</span>
+            <span class="t-metric-label">الإجمالي</span>
+          </div>
+          <div class="t-metric-separator"></div>
+          <div class="t-metric-box">
+            <span class="t-metric-num" id="tasbeehRoundsDisplay">0</span>
+            <span class="t-metric-label">الدورات</span>
+          </div>
+        </div>
+
+        <!-- شريط تحديد الهدف -->
+        <div class="tasbeeh-target-section">
+          <span class="t-target-title">الهدف</span>
+          <div class="t-target-chips">
+            <button type="button" class="t-chip active" data-target="33">٣٣</button>
+            <button type="button" class="t-chip" data-target="99">٩٩</button>
+            <button type="button" class="t-chip" data-target="100">١٠٠</button>
+            <button type="button" class="t-chip" id="customTargetChip">مخصص</button>
+          </div>
+        </div>
+
+        <!-- زر تشغيل المسبحة العائمة خارج التطبيق -->
+        <button type="button" class="floating-pip-btn" id="startFloatingWidgetBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1"/></svg>
+          <span>المسبحة خارج التطبيق (نافذة عائمة)</span>
+        </button>
+
+        <!-- أزرار التحكم السفلية (المظهر) -->
+        <div class="tasbeeh-bottom-bar-actions">
+          <button class="t-action-circle-btn" id="openTasbeehThemeModalBtn" title="المظهر والألوان">
+            🎨
+          </button>
+          <div style="flex-grow: 1;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال تأكيد تصفير المسبحة -->
+    <div class="custom-modal-backdrop" id="tasbeehResetModal">
+      <div class="custom-modal-card text-center" style="max-width: 320px;">
+        <h3 class="modal-card-title" style="margin-bottom: 8px;">ملاحظة</h3>
+        <p class="celebration-text" style="margin-bottom: 20px;">هل أنت متأكد من إعادة ضبط العداد؟</p>
+        <div class="tasbeeh-modal-actions-col">
+          <button type="button" class="modal-btn-link text-emerald" id="resetCurrentDhikrBtn">إعادة تعيين العداد الحالي</button>
+          <hr class="setting-divider">
+          <button type="button" class="modal-btn-link text-emerald" id="resetAllAzkarBtn">إعادة تعيين جميع العدادات</button>
+          <hr class="setting-divider">
+          <button type="button" class="modal-btn-link text-muted" id="cancelResetModalBtn">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال اختيار مظهر المسبحة (خرز / زر) -->
+    <div class="bottom-sheet-backdrop" id="tasbeehThemeModal">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <button type="button" class="modal-btn-link" id="closeTasbeehThemeBtn" style="font-size: 18px;">✕</button>
+          <div class="tasbeeh-theme-tabs">
+            <button type="button" class="t-tab-btn active" id="tabModeBeads">مسبحة</button>
+            <button type="button" class="t-tab-btn" id="tabModeButton">الزر</button>
+          </div>
+          <div style="width: 20px;"></div>
+        </div>
+
+        <!-- 1. خيارات نمط الخرز -->
+        <div id="themeContainerBeads" class="tasbeeh-themes-grid">
+          <div class="t-theme-card active" data-type="beads" data-theme="theme-green">
+            <div class="t-theme-sphere sphere-green"></div>
+            <span class="t-theme-title">مسبحة خضراء</span>
+            <button type="button" class="theme-apply-btn">مستخدم</button>
+          </div>
+          <div class="t-theme-card" data-type="beads" data-theme="theme-white">
+            <div class="t-theme-sphere sphere-white"></div>
+            <span class="t-theme-title">مسبحة بيضاء</span>
+            <button type="button" class="theme-apply-btn">استخدم</button>
+          </div>
+          <div class="t-theme-card" data-type="beads" data-theme="theme-black">
+            <div class="t-theme-sphere sphere-black"></div>
+            <span class="t-theme-title">مسبحة سوداء</span>
+            <button type="button" class="theme-apply-btn">استخدم</button>
+          </div>
+        </div>
+
+        <!-- 2. خيارات نمط الزر الرقمي -->
+        <div id="themeContainerButton" class="tasbeeh-themes-grid" style="display: none;">
+          <div class="t-theme-card active" data-type="button" data-theme="btn-green">
+            <div class="t-theme-icon-circle icon-green"></div>
+            <span class="t-theme-title">أيقونة خضراء</span>
+            <button type="button" class="theme-apply-btn">مستخدم</button>
+          </div>
+          <div class="t-theme-card" data-type="button" data-theme="btn-white">
+            <div class="t-theme-icon-circle icon-white"></div>
+            <span class="t-theme-title">أيقونة بيضاء</span>
+            <button type="button" class="theme-apply-btn">استخدم</button>
+          </div>
+          <div class="t-theme-card" data-type="button" data-theme="btn-black">
+            <div class="t-theme-icon-circle icon-black"></div>
+            <span class="t-theme-title">أيقونة سوداء</span>
+            <button type="button" class="theme-apply-btn">استخدم</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- شريط التبويبات السفلي -->
