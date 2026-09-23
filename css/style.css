@@ -2608,30 +2608,32 @@ html, body {
 /* مسرح الخرز المنحني وسلسلة الحركة المتصلة */
 .tasbeeh-curved-track-stage {
   width: 100%;
-  height: 100%;
+  height: 140px;
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bead-curved-svg-line {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 140px;
   pointer-events: none;
+  z-index: 1; /* الخيط خلف الخرز في مكان الخرز، ومكشوف في الفراغ */
 }
 
 .beads-continuous-track {
   width: 360px;
-  max-width: 100%;
-  height: 160px;
+  height: 140px;
   position: relative;
   margin: 0 auto;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .beads-chain-viewport {
@@ -2639,18 +2641,33 @@ html, body {
   inset: 0;
 }
 
-/* خرز المسبحة المقوس بدقة على الخيط */
+/* خرز المسبحة المنظوم في منتصف الخيط */
 .t-curved-bead {
   position: absolute;
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
   transform: translate(-50%, -50%);
   pointer-events: none;
   transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
   will-change: transform, left, top;
 }
+
+/* إيحاء ثقب الخرزة الذي يمر منه الخيط على الجانبين */
+.t-curved-bead::before,
+.t-curved-bead::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 6px;
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+.t-curved-bead::before { left: -1px; }
+.t-curved-bead::after { right: -1px; }
 
 .theme-green .t-curved-bead { background: radial-gradient(circle at 35% 30%, #86EFAC 0%, #22C55E 35%, #15803D 70%, #064E3B 100%); }
 .theme-white .t-curved-bead { background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #F1F5F9 45%, #CBD5E1 80%, #64748B 100%); }
