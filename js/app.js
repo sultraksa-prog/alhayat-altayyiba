@@ -2758,7 +2758,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // فتح نافذة إضافة ذكر الأصلية الفاخرة (بدون استخدام prompt)
+  // فتح نافذة إضافة ذكر الأصلية الفاخرة
   if (openAddDhikrBtn) {
     openAddDhikrBtn.onclick = () => {
       const modal = document.getElementById('dhikrEditModal');
@@ -2771,7 +2771,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modal) {
         if (title) title.textContent = 'إضافة تسبيحة جديدة';
         if (pre) pre.value = '';
-        if (txt) txt.value = '';
+        if (txt) { txt.value = ''; setTimeout(() => txt.focus(), 150); }
         if (note) note.value = '';
         if (cnt) cnt.value = '33';
 
@@ -2781,49 +2781,96 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // ربط زر الحفظ الأصلي لنافذة الأذكار لتحديث المسبحة فوراً
-  const originalSaveBtn = document.getElementById('saveDhikrBtn');
-  if (originalSaveBtn) {
-    originalSaveBtn.addEventListener('click', () => {
-      if (window.isAddingFromTasbeehScreen) {
-        const text = document.getElementById('inputText').value.trim();
-        const count = parseInt(document.getElementById('inputCount').value) || 33;
-        const pre = document.getElementById('inputPreText').value.trim();
-        const note = document.getElementById('inputNote').value.trim();
+  // معالجة زر الحفظ الأصلي بدقة متناهية وإلغاء أي تضارب
+  const saveBtn = document.getElementById('saveDhikrBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', (e) => {
+      if (!window.isAddingFromTasbeehScreen) return;
 
-        if (!text) return;
+      // منع استدعاء أي كود قديم قد يعطل الحفظ
+      e.stopImmediatePropagation();
+      e.preventDefault();
 
-        let allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
-        let targetCat = allGroups.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
+      const txtInput = document.getElementById('inputText');
+      const cntInput = document.getElementById('inputCount');
+      const preInput = document.getElementById('inputPreText');
+      const noteInput = document.getElementById('inputNote');
 
-        if (!targetCat) {
-          targetCat = { id: 'user_cat_tasbeeh', name: 'تسابيح وأجور عظيمة', isCustom: true, items: [] };
-          allGroups.push(targetCat);
-        }
+      const text = txtInput ? txtInput.value.trim() : '';
+      const count = cntInput ? (parseInt(cntInput.value) || 33) : 33;
+      const pre = preInput ? preInput.value.trim() : '';
+      const note = noteInput ? noteInput.value.trim() : '';
 
-        const newItem = {
-          id: 'user_item_' + Date.now(),
-          pre: pre,
-          text: text,
-          fullNote: note || 'أذكار وتسابيح مضافة بواسطة المستخدم',
-          count: count,
-          currentCount: count,
-          alert: ''
-        };
-
-        targetCat.items.push(newItem);
-        localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
-
-        tasbeehActiveDhikrId = newItem.id;
-        tasbeehTarget = count;
-        saveTasbeehStats();
-        updateTasbeehUI();
-
-        const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
-        if (pickerModal) pickerModal.classList.remove('show');
-        window.isAddingFromTasbeehScreen = false;
+      if (!text) {
+        alert('يرجى كتابة نص الذكر أو التسبيحة أولاً!');
+        return;
       }
+
+      // 1. جلب وتحديث الأذكار في LocalStorage
+      let allGroups = [];
+      try {
+        allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || [];
+      } catch (err) {}
+      if (!allGroups.length && typeof DEFAULT_AZKAR_DATA !== 'undefined') {
+        allGroups = JSON.parse(JSON.stringify(DEFAULT_AZKAR_DATA));
+      }
+
+      let targetCat = allGroups.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
+      if (!targetCat) {
+        targetCat = { id: 'user_cat_tasbeeh', name: 'تسابيح وأجور عظيمة', isCustom: true, items: [] };
+        allGroups.push(targetCat);
+      }
+      if (!targetCat.items) targetCat.items = [];
+
+      // 2. إنشاء التسبيحة الجديدة
+      const newItem = {
+        id: 'user_item_' + Date.now(),
+        pre: pre,
+        text: text,
+        fullNote: note || 'تسبيحة مضافة من شاشة المسبحة',
+        count: count,
+        currentCount: count,
+        alert: ''
+      };
+
+      targetCat.items.push(newItem);
+      localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
+
+      // 3. مزامنة الذكر في الذاكرة الحية للأذكار إن وجدت
+      if (typeof azkarState !== 'undefined' && Array.isArray(azkarState)) {
+        const liveCat = azkarState.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
+        if (liveCat && liveCat.items) liveCat.items.push(newItem);
+      }
+
+      // 4. تعيين التسبيحة فوراً في المسبحة وضبط الهدف على عددها
+      tasbeehActiveDhikrId = newItem.id;
+      tasbeehTarget = count;
+      if (!tasbeehStats.countsMap) tasbeehStats.countsMap = {};
+      if (!tasbeehStats.roundsMap) tasbeehStats.roundsMap = {};
+      tasbeehStats.countsMap[newItem.id] = 0;
+      tasbeehStats.roundsMap[newItem.id] = 0;
+
+      saveTasbeehStats();
+      updateTasbeehUI();
+
+      // 5. إغلاق النوافذ المنبثقة
+      const editModal = document.getElementById('dhikrEditModal');
+      const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
+      if (editModal) editModal.classList.remove('show');
+      if (pickerModal) pickerModal.classList.remove('show');
+
+      window.isAddingFromTasbeehScreen = false;
     }, true);
+  }
+
+  // إعادة ضبط الحالة عند الإلغاء
+  const cancelDhikrBtn = document.getElementById('cancelDhikrBtn');
+  if (cancelDhikrBtn) {
+    cancelDhikrBtn.addEventListener('click', () => {
+      window.isAddingFromTasbeehScreen = false;
+      const title = document.getElementById('dhikrModalTitle');
+      if (title) title.textContent = 'إضافة ذكر جديد';
+    });
   }
 
   // نافذة تحديد الهدف
