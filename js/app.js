@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentVersion = localStorage.getItem(SAVED_VERSION_KEY);
 
   let azkarState = [];
-  window.azkarState = azkarState; // إتاحة الحالة الحية للمزامنة الفورية
   if (currentVersion !== AZKAR_DATA_VERSION) {
     const oldData = JSON.parse(localStorage.getItem('hayat_azkar_data') || '[]');
     // استخراج أذكار ومجموعات المستخدم الخاصة فقط (المعزولة ببادئة user_)
@@ -100,16 +99,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const openTasbeehTileBtn = document.getElementById('openTasbeehTileBtn');
   const backToHomeFromTasbeehBtn = document.getElementById('backToHomeFromTasbeehBtn');
 
+  if (openTasbeehTileBtn && screenTasbeeh) {
+    openTasbeehTileBtn.addEventListener('click', () => {
+      showScreen(screenTasbeeh);
+      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
+    });
+  }
+  if (backToHomeFromTasbeehBtn) {
+    backToHomeFromTasbeehBtn.addEventListener('click', () => {
+      showScreen(screenHome);
+    });
+  }
+  
   const openFavTileBtn = document.getElementById('openFavTileBtn');
   const backToHomeBtn = document.getElementById('backToHomeBtn');
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
-  let pendingNavigationScreen = null;
+  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
+  // تسجيل الشاشة الرئيسية كنقطة بداية
+  if (!history.state) {
+    history.replaceState({ screenId: 'screen-home' }, '');
+  }
 
-  // دالة التبديل بين الشاشات الموحدة
   function showScreen(screen, pushToHistory = true) {
-    if (!screen) return;
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
@@ -120,24 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
     screen.classList.add('active');
     window.scrollTo(0, 0);
 
-    // إخفاء شريط التبويبات في المسبحة فقط وإظهاره فوراً في باقي الشاشات
-    const bottomNavEl = document.querySelector('.bottom-nav');
-    if (bottomNavEl) {
-      if (screen.id === 'screen-tasbeeh') {
-        bottomNavEl.classList.add('nav-hidden');
-      } else {
-        bottomNavEl.classList.remove('nav-hidden');
-      }
-    }
-
-    // تنشيط التبويب المطابق
     document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
     const tabQiblaEl = document.getElementById('tabQibla');
 
     if (screen === screenHome) {
-      if (tabHome) tabHome.classList.add('active');
+      tabHome.classList.add('active');
     } else if (screen === screenAzkarCategories || screen === screenAzkarFavorites || screen === screenAzkarReader) {
-      if (tabAzkar) tabAzkar.classList.add('active');
+      tabAzkar.classList.add('active');
     } else if (screen.id === 'screen-qibla') {
       if (tabQiblaEl) tabQiblaEl.classList.add('active');
     } else if (screen === screenGeneralSettings || screen === screenAboutApp) {
@@ -145,55 +147,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // إظهار الشريط فوراً عند تشغيل الصفحة
-  const initialNav = document.querySelector('.bottom-nav');
-  if (initialNav) initialNav.classList.remove('nav-hidden');
-
-  // فحص أمان مغادرة الأذكار
-  function attemptNavigateFromTabs(targetScreen, callback = null) {
-    const activeScreen = document.querySelector('.screen-view.active');
-    if (activeScreen === screenAzkarReader) {
-      const category = (window.azkarState || azkarState).find(c => c.id === currentActiveCategoryId);
-      if (category && category.items && category.items.length > 0) {
-        const isAllDone = category.items.every(it => it.currentCount === 0);
-        if (!isAllDone && dhikrSettings.confirmExit) {
-          pendingNavigationScreen = { screen: targetScreen, cb: callback };
-          const exitModal = document.getElementById('exitConfirmModal');
-          if (exitModal) exitModal.classList.add('show');
-          return;
-        }
-      }
-    }
-
-    showScreen(targetScreen);
-    if (callback) callback();
-  }
-
-  // إدارة الرجوع وسحب الحافة (History API)
-  if (!history.state) {
-    history.replaceState({ screenId: 'screen-home' }, '');
-  }
-
+  // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
   window.addEventListener('popstate', () => {
     const activeScreen = document.querySelector('.screen-view.active');
 
+    // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، السحب يغلقها أولاً دون مغادرة الشاشة
     const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
     if (openModal) {
       openModal.classList.remove('show');
+      // الحفاظ على تاريخ الشاشة حتى لا يستهلك السحب خطوة الشاشة
       history.pushState({ screenId: activeScreen ? activeScreen.id : 'screen-home' }, '');
       return;
     }
 
-    if (!activeScreen || activeScreen === screenHome) return;
+    // 2. إذا كان المستخدم في الشاشة الرئيسية، اتركه يخرج بشكل طبيعي
+    if (!activeScreen || activeScreen === screenHome) {
+      return;
+    }
 
+    // 3. إذا كان المستخدم في شاشة قراءة الأذكار
     if (activeScreen === screenAzkarReader) {
-      const category = (window.azkarState || azkarState).find(c => c.id === currentActiveCategoryId);
+      const category = azkarState.find(c => c.id === currentActiveCategoryId);
       if (category && category.items && category.items.length > 0) {
         const isAllDone = category.items.every(it => it.currentCount === 0);
+        // إذا لم يكمل وخيار تأكيد الخروج مفعل
         if (!isAllDone && dhikrSettings.confirmExit) {
           history.pushState({ screenId: 'screen-azkar-reader' }, '');
-          const exitModal = document.getElementById('exitConfirmModal');
-          if (exitModal) exitModal.classList.add('show');
+          document.getElementById('exitConfirmModal').classList.add('show');
           return;
         }
       }
@@ -202,30 +182,32 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // 4. إذا كان في شاشة المفضلة، السحب يعيده إلى شاشة مجموعات الأذكار
     if (activeScreen === screenAzkarFavorites) {
       showScreen(screenAzkarCategories, false);
       renderAzkarCategories();
       return;
     }
 
-    if (activeScreen === screenAzkarCategories || activeScreen.id === 'screen-tasbeeh' || activeScreen.id === 'screen-qibla' || activeScreen === screenGeneralSettings) {
+    // 5. إذا كان في شاشة مجموعات الأذكار، السحب يعيده إلى الشاشة الرئيسية
+    if (activeScreen === screenAzkarCategories) {
       showScreen(screenHome, false);
       return;
     }
 
+    // افتراضياً
     showScreen(screenHome, false);
   });
 
-  // أحداث التبويبات السفلية الأربعة
-  if (tabHome) tabHome.addEventListener('click', (e) => { e.preventDefault(); attemptNavigateFromTabs(screenHome); });
-  if (tabAzkar) tabAzkar.addEventListener('click', (e) => { e.preventDefault(); attemptNavigateFromTabs(screenAzkarCategories, () => renderAzkarCategories()); });
-
+  if (tabHome) tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
+  
   const tabQiblaBtn = document.getElementById('tabQibla');
   const screenQiblaView = document.getElementById('screen-qibla');
   if (tabQiblaBtn && screenQiblaView) {
     tabQiblaBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      attemptNavigateFromTabs(screenQiblaView, () => { if (typeof initQiblaCompass === 'function') initQiblaCompass(); });
+      showScreen(screenQiblaView);
+      if (typeof initQiblaCompass === 'function') initQiblaCompass();
     });
   }
 
@@ -237,79 +219,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
-  if (tabGeneralSettings) tabGeneralSettings.addEventListener('click', (e) => { e.preventDefault(); attemptNavigateFromTabs(screenGeneralSettings); });
-  if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
+  // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
+  
+  // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
+if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+if (tabGeneralSettings) tabGeneralSettings.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenGeneralSettings); });
+if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
 
-  if (openDhikrSettingsFromMenu) {
-    openDhikrSettingsFromMenu.addEventListener('click', () => {
-      syncSettingsUI();
-      azkarSettingsModal.classList.add('show');
+// فتح إعدادات الأذكار من داخل الإعدادات العامة
+if (openDhikrSettingsFromMenu) {
+  openDhikrSettingsFromMenu.addEventListener('click', () => {
+    syncSettingsUI();
+    azkarSettingsModal.classList.add('show');
+  });
+}
+
+// فتح شاشة حول التطبيق
+if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
+if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+  
+  if (tabAzkar) tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  if (tabQibla) {
+    tabQibla.addEventListener('click', (e) => {
+      e.preventDefault();
+      showScreen(screenQibla);
+      initQiblaCompass();
     });
   }
-
-  if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
-  if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
-
-  // أحداث مربعات الشاشة الرئيسية (Tiles)
-  if (openAzkarTileBtn) {
-    openAzkarTileBtn.addEventListener('click', () => {
-      showScreen(screenAzkarCategories);
-      renderAzkarCategories();
-    });
-  }
-
-  if (openFavoritesBtn) {
-    openFavoritesBtn.addEventListener('click', () => {
-      showScreen(screenAzkarFavorites);
-      renderFavorites();
-    });
-  }
-
-  if (openFavTileBtn) {
-    openFavTileBtn.addEventListener('click', () => {
-      showScreen(screenAzkarFavorites);
-      renderFavorites();
-    });
-  }
-
-  if (openTasbeehTileBtn && screenTasbeeh) {
-    openTasbeehTileBtn.addEventListener('click', () => {
-      showScreen(screenTasbeeh);
-      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
-    });
-  }
-
-  if (backToHomeFromTasbeehBtn) {
-    backToHomeFromTasbeehBtn.addEventListener('click', () => {
+  if (backToHomeFromQiblaBtn) {
+    backToHomeFromQiblaBtn.addEventListener('click', () => {
+      stopQiblaCompass();
       showScreen(screenHome);
     });
   }
-
-  if (backToHomeBtn) backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
-
-  if (backToCategoriesBtn) {
-    backToCategoriesBtn.addEventListener('click', () => {
-      const category = (window.azkarState || azkarState).find(c => c.id === currentActiveCategoryId);
-      if (category && category.items && category.items.length > 0) {
-        const isAllDone = category.items.every(it => it.currentCount === 0);
-        if (!isAllDone && dhikrSettings.confirmExit) {
-          const exitModal = document.getElementById('exitConfirmModal');
-          if (exitModal) exitModal.classList.add('show');
-          return;
-        }
-      }
-      showScreen(screenAzkarCategories);
-      renderAzkarCategories();
-    });
+  openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
+  openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
+  if (openFavTileBtn) {
+  openFavTileBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
+}
+  backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
+  backToCategoriesBtn.addEventListener('click', () => {
+  const category = azkarState.find(c => c.id === currentActiveCategoryId);
+  if (category && category.items && category.items.length > 0) {
+    const isAllDone = category.items.every(it => it.currentCount === 0);
+    // إذا لم يكمل الأذكار بعد، نظهر له نافذة تأكيد الخروج
+    // إذا لم يكمل القراءة وخيار تأكيد الخروج مفعل
+    if (!isAllDone && dhikrSettings.confirmExit) {
+      document.getElementById('exitConfirmModal').classList.add('show');
+      return;
+    }
   }
-
-  if (backToCategoriesFromFavBtn) {
-    backToCategoriesFromFavBtn.addEventListener('click', () => {
-      showScreen(screenAzkarCategories);
-      renderAzkarCategories();
-    });
-  }
+  // إذا كانت مكتملة بالفعل، يرجع مباشرة دون إزعاج
+  showScreen(screenAzkarCategories);
+  renderAzkarCategories();
+});
+  backToCategoriesFromFavBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
 
   // ==================== 4. بناء شبكة مجموعات الأذكار ====================
   const azkarGroupsContainer = document.getElementById('azkarGroupsContainer');
@@ -1026,14 +990,8 @@ document.getElementById('continueReadingBtn').addEventListener('click', () => {
 
 document.getElementById('confirmExitBtn').addEventListener('click', () => {
   document.getElementById('exitConfirmModal').classList.remove('show');
-  if (pendingNavigationScreen) {
-    showScreen(pendingNavigationScreen.screen);
-    if (pendingNavigationScreen.cb) pendingNavigationScreen.cb();
-    pendingNavigationScreen = null;
-  } else {
-    showScreen(screenAzkarCategories);
-    renderAzkarCategories();
-  }
+  showScreen(screenAzkarCategories);
+  renderAzkarCategories();
 });
 
   // العداد التنازلي والمشاركة
@@ -2848,14 +2806,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 1. الإغلاق الفوري لكافة النوافذ المنبثقة أولاً قبل أي عملية
-      const editModal = document.getElementById('dhikrEditModal');
-      const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
-      if (editModal) editModal.classList.remove('show');
-      if (pickerModal) pickerModal.classList.remove('show');
-      window.isAddingFromTasbeehScreen = false;
-
-      // 2. الحفظ في LocalStorage وقسم تسابيح وأجور عظيمة
+      // 1. الحفظ في LocalStorage
       let allGroups = [];
       try {
         allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || [];
@@ -2884,13 +2835,12 @@ document.addEventListener('DOMContentLoaded', () => {
       targetCat.items.push(newItem);
       localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
 
-      // مزامنة فورية في الذاكرة الحية
       if (typeof azkarState !== 'undefined' && Array.isArray(azkarState)) {
         const liveCat = azkarState.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
         if (liveCat && liveCat.items) liveCat.items.push(newItem);
       }
 
-      // 3. تنزيل الذكر الجديد فوراً في كرت المسبحة وضبط العداد والهدف
+      // 2. تحديث وتنزيل الذكر الجديد فوراً في كرت المسبحة وضبط الهدف
       tasbeehActiveDhikrId = newItem.id;
       tasbeehTarget = count;
       if (!tasbeehStats.countsMap) tasbeehStats.countsMap = {};
@@ -2898,6 +2848,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tasbeehStats.countsMap[newItem.id] = 0;
       tasbeehStats.roundsMap[newItem.id] = 0;
 
+      // تحديث مباشر لعناصر الواجهة بالاسم الجديد
       const mainTextEl = document.getElementById('tasbeehMainText');
       if (mainTextEl) mainTextEl.textContent = text;
 
@@ -2915,6 +2866,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       saveTasbeehStats();
       updateTasbeehUI();
+
+      // 3. إغلاق النوافذ المنبثقة بشكل قاطع وفوري
+      const editModal = document.getElementById('dhikrEditModal');
+      const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
+      
+      if (editModal) {
+        editModal.classList.remove('show');
+        editModal.style.display = 'none';
+        setTimeout(() => { editModal.style.display = ''; }, 300);
+      }
+      if (pickerModal) {
+        pickerModal.classList.remove('show');
+      }
+
+      window.isAddingFromTasbeehScreen = false;
     }, true);
   }
 
@@ -2926,10 +2892,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const title = document.getElementById('dhikrModalTitle');
       if (title) title.textContent = 'إضافة ذكر جديد';
       const editModal = document.getElementById('dhikrEditModal');
-      if (editModal) editModal.classList.remove('show');
+      if (editModal) {
+        editModal.classList.remove('show');
+        editModal.style.display = 'none';
+        setTimeout(() => { editModal.style.display = ''; }, 300);
+      }
     });
   }
-  
   // نافذة تحديد الهدف
   const openTargetBtn = document.getElementById('openTargetModalBtn');
   const targetModal = document.getElementById('tasbeehTargetModal');
