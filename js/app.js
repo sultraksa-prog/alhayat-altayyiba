@@ -2775,19 +2775,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (note) note.value = '';
         if (cnt) cnt.value = '33';
 
-        window.isAddingFromTasbeehScreen = true;
+        modal.style.display = '';
         modal.classList.add('show');
+        window.isAddingFromTasbeehScreen = true;
       }
     };
   }
 
-  // معالجة زر الحفظ الأصلي بدقة متناهية وإلغاء أي تضارب
+  // معالجة زر الحفظ وإغلاق النوافذ فوراً وتحديث كرت المسبحة
   const saveBtn = document.getElementById('saveDhikrBtn');
   if (saveBtn) {
     saveBtn.addEventListener('click', (e) => {
       if (!window.isAddingFromTasbeehScreen) return;
 
-      // منع استدعاء أي كود قديم قد يعطل الحفظ
       e.stopImmediatePropagation();
       e.preventDefault();
 
@@ -2806,7 +2806,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 1. جلب وتحديث الأذكار في LocalStorage
+      // 1. الحفظ في LocalStorage
       let allGroups = [];
       try {
         allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || [];
@@ -2822,7 +2822,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (!targetCat.items) targetCat.items = [];
 
-      // 2. إنشاء التسبيحة الجديدة
       const newItem = {
         id: 'user_item_' + Date.now(),
         pre: pre,
@@ -2836,13 +2835,12 @@ document.addEventListener('DOMContentLoaded', () => {
       targetCat.items.push(newItem);
       localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
 
-      // 3. مزامنة الذكر في الذاكرة الحية للأذكار إن وجدت
       if (typeof azkarState !== 'undefined' && Array.isArray(azkarState)) {
         const liveCat = azkarState.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
         if (liveCat && liveCat.items) liveCat.items.push(newItem);
       }
 
-      // 4. تعيين التسبيحة فوراً في المسبحة وضبط الهدف على عددها
+      // 2. تحديث وتنزيل الذكر الجديد فوراً في كرت المسبحة وضبط الهدف
       tasbeehActiveDhikrId = newItem.id;
       tasbeehTarget = count;
       if (!tasbeehStats.countsMap) tasbeehStats.countsMap = {};
@@ -2850,14 +2848,37 @@ document.addEventListener('DOMContentLoaded', () => {
       tasbeehStats.countsMap[newItem.id] = 0;
       tasbeehStats.roundsMap[newItem.id] = 0;
 
+      // تحديث مباشر لعناصر الواجهة بالاسم الجديد
+      const mainTextEl = document.getElementById('tasbeehMainText');
+      if (mainTextEl) mainTextEl.textContent = text;
+
+      const curDispEl = document.getElementById('tasbeehCurrentDisplay');
+      if (curDispEl) curDispEl.textContent = '0';
+
+      const targetDispEl = document.getElementById('tasbeehTargetDisplay');
+      if (targetDispEl) targetDispEl.textContent = `/ ${count}`;
+
+      const digiCountEl = document.getElementById('digitalCountDisplay');
+      if (digiCountEl) digiCountEl.textContent = '0';
+
+      const digiTargetEl = document.getElementById('digitalTargetDisplay');
+      if (digiTargetEl) digiTargetEl.textContent = `الهدف: ${count}`;
+
       saveTasbeehStats();
       updateTasbeehUI();
 
-      // 5. إغلاق النوافذ المنبثقة
+      // 3. إغلاق النوافذ المنبثقة بشكل قاطع وفوري
       const editModal = document.getElementById('dhikrEditModal');
       const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
-      if (editModal) editModal.classList.remove('show');
-      if (pickerModal) pickerModal.classList.remove('show');
+      
+      if (editModal) {
+        editModal.classList.remove('show');
+        editModal.style.display = 'none';
+        setTimeout(() => { editModal.style.display = ''; }, 300);
+      }
+      if (pickerModal) {
+        pickerModal.classList.remove('show');
+      }
 
       window.isAddingFromTasbeehScreen = false;
     }, true);
@@ -2870,9 +2891,14 @@ document.addEventListener('DOMContentLoaded', () => {
       window.isAddingFromTasbeehScreen = false;
       const title = document.getElementById('dhikrModalTitle');
       if (title) title.textContent = 'إضافة ذكر جديد';
+      const editModal = document.getElementById('dhikrEditModal');
+      if (editModal) {
+        editModal.classList.remove('show');
+        editModal.style.display = 'none';
+        setTimeout(() => { editModal.style.display = ''; }, 300);
+      }
     });
   }
-
   // نافذة تحديد الهدف
   const openTargetBtn = document.getElementById('openTargetModalBtn');
   const targetModal = document.getElementById('tasbeehTargetModal');
