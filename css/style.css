@@ -2327,6 +2327,7 @@ html, body {
   flex-direction: column;
   gap: 14px;
   opacity: 0;
+  pointer-events: none; /* يمنع حجب الأزرار عندما يكون مخفياً */
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid #1D5D9B;
 }
@@ -2334,6 +2335,7 @@ html, body {
 .update-toast-banner.show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
+  pointer-events: auto; /* يتفاعل مع اللمس فقط عند ظهوره */
 }
 
 .update-toast-content {
