@@ -2359,7 +2359,7 @@ function saveTasbeehStats() {
   if (tasbeehActiveDhikrId) localStorage.setItem('hayat_active_tasbeeh_id', tasbeehActiveDhikrId);
 }
 
-// دالة تجريد النصوص من التشكيل والحركات للبحث السلس والسريع
+// دالة تجريد النصوص من التشكيل والحركات للبحث السلس
 function normalizeArabicText(text) {
   if (!text) return '';
   return text
@@ -2371,7 +2371,6 @@ function normalizeArabicText(text) {
     .toLowerCase();
 }
 
-// 1. الربط المباشر مع أذكار "تسابيح وأجور عظيمة"
 function getTasbeehCategory() {
   let allGroups = [];
   try {
@@ -2426,7 +2425,7 @@ function playWoodClickSound() {
   } catch (e) {}
 }
 
-// إطلاق تأثير +1 المتطايرة الناعمة في مكان النقر
+// إطلاق تأثير +1 بارتفاع 5 سم (165 بكسل) فوق موضع لمس الإبهام
 function showFloatingPlusOne(x, y) {
   const container = document.getElementById('floatingPlusContainer');
   if (!container) return;
@@ -2437,7 +2436,10 @@ function showFloatingPlusOne(x, y) {
 
   const rect = container.getBoundingClientRect();
   const posX = x ? (x - rect.left) : (rect.width / 2);
-  const posY = y ? (y - rect.top) : (rect.height / 2);
+  
+  // رفع موضع الظهور بمسافة مريحة (~5 سم) فوق موضع اللمس مباشرة
+  const offsetAboveFinger = 165;
+  const posY = y ? Math.max(35, (y - rect.top) - offsetAboveFinger) : (rect.height * 0.28);
 
   plusEl.style.left = `${posX}px`;
   plusEl.style.top = `${posY}px`;
@@ -2449,7 +2451,6 @@ function showFloatingPlusOne(x, y) {
   });
 }
 
-// دالة حساب النقاط فوق القوس المنحني
 function getWirePoint(fraction) {
   const path = document.getElementById('tasbeehWirePath');
   if (!path) return { x: 180, y: 80 };
@@ -2477,7 +2478,7 @@ function incrementTasbeeh(event) {
   }
   playWoodClickSound();
 
-  // إطلاق حركة +1
+  // إطلاق +1 فوق موضع النقر بـ 5 سم
   if (event && event.clientX) {
     showFloatingPlusOne(event.clientX, event.clientY);
   } else {
@@ -2604,7 +2605,7 @@ function applyTasbeehThemeAndMode() {
   }
 }
 
-// 2. البحث والنزول التلقائي للعدد المقترن بالذكر
+// ملء قائمة الأذكار مع النزول التلقائي للعدد
 function renderTasbeehPickerList(query = '') {
   const container = document.getElementById('tasbeehPickerListContainer');
   if (!container) return;
@@ -2635,7 +2636,6 @@ function renderTasbeehPickerList(query = '') {
     `;
     row.onclick = () => {
       tasbeehActiveDhikrId = it.id;
-      // النزول التلقائي للعدد المقترن بالذكر
       if (it.count && it.count > 0) {
         tasbeehTarget = it.count;
       }
@@ -2668,7 +2668,6 @@ function updateFloatingPiPContent() {
   const id = activeItem.id;
   const cur = tasbeehStats.countsMap[id] || 0;
 
-  // تحديث نافذة سطح المكتب المستقلة إن وجدت
   if (activeDesktopPipWindow && !activeDesktopPipWindow.closed) {
     const countEl = activeDesktopPipWindow.document.getElementById('pipTapBtn');
     if (countEl) countEl.textContent = cur;
@@ -2703,7 +2702,7 @@ function updateFloatingPiPContent() {
   pipCtx.fillText('اضغط زر ▶️ أو ⏭️ في النافذة للعدّ', 180, 325);
 }
 
-// أحداث اللمس والنقر
+// أحداث اللمس والنقر والتفاعل
 document.addEventListener('DOMContentLoaded', () => {
   const interactiveZone = document.getElementById('tasbeehInteractiveZone');
 
@@ -2759,45 +2758,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // إضافة ذكر مخصص جديد من داخل شاشة المسبحة مباشرة
+  // فتح نافذة إضافة ذكر الأصلية الفاخرة (بدون استخدام prompt)
   if (openAddDhikrBtn) {
     openAddDhikrBtn.onclick = () => {
-      const text = prompt('اكتب نص الذكر أو التسبيحة الجديدة:');
-      if (!text || !text.trim()) return;
+      const modal = document.getElementById('dhikrEditModal');
+      const title = document.getElementById('dhikrModalTitle');
+      const pre = document.getElementById('inputPreText');
+      const txt = document.getElementById('inputText');
+      const note = document.getElementById('inputNote');
+      const cnt = document.getElementById('inputCount');
 
-      const countVal = prompt('العدد المطلوب للذكر (الافتراضي 33):', '33');
-      const count = parseInt(countVal) || 33;
+      if (modal) {
+        if (title) title.textContent = 'إضافة تسبيحة جديدة';
+        if (pre) pre.value = '';
+        if (txt) txt.value = '';
+        if (note) note.value = '';
+        if (cnt) cnt.value = '33';
 
-      let allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
-      let targetCat = allGroups.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
-
-      if (!targetCat) {
-        targetCat = { id: 'user_cat_tasbeeh', name: 'تسابيح وأجور عظيمة', isCustom: true, items: [] };
-        allGroups.push(targetCat);
+        window.isAddingFromTasbeehScreen = true;
+        modal.classList.add('show');
       }
-
-      const newItem = {
-        id: 'user_item_' + Date.now(),
-        pre: '',
-        text: text.trim(),
-        fullNote: 'أذكار وتسابيح مضافة بواسطة المستخدم',
-        count: count,
-        currentCount: count,
-        alert: ''
-      };
-
-      targetCat.items.push(newItem);
-      localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
-
-      // اختياره وتحديث المسبحة به فوراً
-      tasbeehActiveDhikrId = newItem.id;
-      tasbeehTarget = count;
-      saveTasbeehStats();
-      updateTasbeehUI();
-
-      if (dhikrPickerModal) dhikrPickerModal.classList.remove('show');
-      alert('تمت إضافة الذكر الجديد بنجاح إلى المسبحة وشاشة الأذكار! 🌸');
     };
+  }
+
+  // ربط زر الحفظ الأصلي لنافذة الأذكار لتحديث المسبحة فوراً
+  const originalSaveBtn = document.getElementById('saveDhikrBtn');
+  if (originalSaveBtn) {
+    originalSaveBtn.addEventListener('click', () => {
+      if (window.isAddingFromTasbeehScreen) {
+        const text = document.getElementById('inputText').value.trim();
+        const count = parseInt(document.getElementById('inputCount').value) || 33;
+        const pre = document.getElementById('inputPreText').value.trim();
+        const note = document.getElementById('inputNote').value.trim();
+
+        if (!text) return;
+
+        let allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
+        let targetCat = allGroups.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
+
+        if (!targetCat) {
+          targetCat = { id: 'user_cat_tasbeeh', name: 'تسابيح وأجور عظيمة', isCustom: true, items: [] };
+          allGroups.push(targetCat);
+        }
+
+        const newItem = {
+          id: 'user_item_' + Date.now(),
+          pre: pre,
+          text: text,
+          fullNote: note || 'أذكار وتسابيح مضافة بواسطة المستخدم',
+          count: count,
+          currentCount: count,
+          alert: ''
+        };
+
+        targetCat.items.push(newItem);
+        localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
+
+        tasbeehActiveDhikrId = newItem.id;
+        tasbeehTarget = count;
+        saveTasbeehStats();
+        updateTasbeehUI();
+
+        const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
+        if (pickerModal) pickerModal.classList.remove('show');
+        window.isAddingFromTasbeehScreen = false;
+      }
+    }, true);
   }
 
   // نافذة تحديد الهدف
@@ -2950,7 +2976,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 4. تشغيل المسبحة خارج التطبيق مع فحص الصلاحيات ودعم متصفح الكمبيوتر والجوال وتطبيقات الأندرويد
+  // تشغيل المسبحة خارج التطبيق
   const pipBtn = document.getElementById('startFloatingWidgetBtn');
   const pipPermissionModal = document.getElementById('tasbeehPipPermissionModal');
   const closePipPermBtn = document.getElementById('closePipPermissionBtn');
@@ -2963,7 +2989,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pipBtn.onclick = async () => {
       const activeItem = getActiveTasbeehItem();
 
-      // أ) جسر تطبيقات الأندرويد الأصيلة (عند تحويل الموقع لتطبيق APK مستقبلاً)
+      // أ) بيئة الأندرويد الأصيلة عند تجميع الـ APK
       if (window.AndroidBridge && typeof window.AndroidBridge.showFloatingTasbeeh === 'function') {
         const hasPermission = window.AndroidBridge.hasOverlayPermission ? window.AndroidBridge.hasOverlayPermission() : true;
         if (!hasPermission) {
@@ -2974,7 +3000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // ب) متصفح الكمبيوتر (Desktop Chrome / Edge): فتح نافذة عائمة حقيقية قابلة للنقر التفاعلي المباشر
+      // ب) متصفح الكمبيوتر: نافذة حقيقية تفاعلية
       if ('documentPictureInPicture' in window) {
         try {
           activeDesktopPipWindow = await window.documentPictureInPicture.requestWindow({ width: 340, height: 260 });
@@ -3000,7 +3026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // ج) متصفحات الهواتف الجوالة (Mobile Chrome Video PiP):
+      // ج) متصفح الجوال
       try {
         const video = document.getElementById('tasbeehPipVideo');
         if (!video || !document.pictureInPictureEnabled) {
@@ -3024,7 +3050,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await video.play();
         await video.requestPictureInPicture();
 
-        // ربط أزرار وسائط الأندرويد بالعد الفوري
         if ('mediaSession' in navigator) {
           navigator.mediaSession.metadata = new MediaMetadata({
             title: activeItem.text,
@@ -3035,7 +3060,6 @@ document.addEventListener('DOMContentLoaded', () => {
           navigator.mediaSession.setActionHandler('pause', () => incrementTasbeeh());
         }
       } catch (err) {
-        // في حال رفض الإذن بالجوال تظهر نافذة التوجيه
         if (pipPermissionModal) pipPermissionModal.classList.add('show');
       }
     };
