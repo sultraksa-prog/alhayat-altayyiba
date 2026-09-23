@@ -1879,10 +1879,30 @@ ${APP_CONFIG.url}`;
   }
 
   // ==================== تسجيل Service Worker ونظام التحديث الذكي ====================
+  const CURRENT_APP_VERSION = 'v1.0.1';
+
+  // 1. فحص هل تم تحديث التطبيق للتو لعرض رسالة التهنئة برقم الإصدار الجديد
+  const updatedVersion = localStorage.getItem('hayat_just_updated_version');
+  if (updatedVersion) {
+    localStorage.removeItem('hayat_just_updated_version');
+    setTimeout(() => {
+      const modal = document.getElementById('upToDateModal');
+      const icon = document.getElementById('modalStatusIcon');
+      const title = document.getElementById('modalStatusTitle');
+      const text = document.getElementById('modalStatusText');
+      if (modal && title && text) {
+        if (icon) icon.textContent = '✨';
+        title.textContent = 'تم التحديث بنجاح';
+        text.innerHTML = `تم تحديث التطبيق بنجاح إلى الإصدار (<strong>${updatedVersion}</strong>).<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+        modal.classList.add('show');
+      }
+    }, 500);
+  }
+
   if ('serviceWorker' in navigator) {
     let refreshing = false;
 
-    // عند استلام أمر التحديث، يعاد تحميل الصفحة مرة واحدة فقط
+    // عند تفعيل التحديث، يعاد تحميل الصفحة مرة واحدة لتطبيق الملفات الجديدة
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
@@ -1891,20 +1911,28 @@ ${APP_CONFIG.url}`;
     });
 
     navigator.serviceWorker.register('./sw.js').then((registration) => {
-      // 1. مراقبة التحديث التلقائي
+      // مراقبة التحديث التلقائي في الخلفية
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // إظهار النافذة المنبثقة الثابتة
             showUpdateToast(newWorker);
           }
         });
       });
 
-      // 2. زر فحص التحديث يدوياً من شاشة الإعدادات
+      // زر فحص التحديث يدوياً من شاشة الإعدادات
       const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
+      const upToDateModal = document.getElementById('upToDateModal');
+      const closeUpToDateBtn = document.getElementById('closeUpToDateBtn');
+
+      if (closeUpToDateBtn && upToDateModal) {
+        closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
+      }
+
       if (checkUpdateBtn) {
         checkUpdateBtn.addEventListener('click', () => {
           const titleEl = checkUpdateBtn.querySelector('.settings-item-title');
@@ -1916,23 +1944,36 @@ ${APP_CONFIG.url}`;
             .then(() => {
               setTimeout(() => {
                 if (titleEl) titleEl.textContent = originalTitle;
-                if (!registration.waiting && !registration.installing) {
-                  alert('أنت تستخدم أحدث إصدار من التطبيق 🌙');
-                } else if (registration.waiting) {
+
+                // الحالة الأولى: يوجد تحديث معلق قيد الانتظار
+                if (registration.waiting) {
                   showUpdateToast(registration.waiting);
+                } 
+                // الحالة الثانية: لا يوجد أي تحديث جديد (أنت على آخر إصدار)
+                else if (!registration.installing) {
+                  const icon = document.getElementById('modalStatusIcon');
+                  const title = document.getElementById('modalStatusTitle');
+                  const text = document.getElementById('modalStatusText');
+
+                  if (icon) icon.textContent = '✓';
+                  if (title) title.textContent = 'أنت على أحدث إصدار';
+                  if (text) {
+                    text.innerHTML = `أنت تستخدم أحدث إصدار بالفعل، ولا يوجد أي تحديث جديد حالياً.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+                  }
+                  if (upToDateModal) upToDateModal.classList.add('show');
                 }
-              }, 800);
+              }, 850);
             })
             .catch(() => {
               if (titleEl) titleEl.textContent = originalTitle;
-              alert('تعذر فحص التحديثات، تأكد من اتصالك بالإنترنت.');
+              alert('تعذر فحص التحديثات، يرجى التأكد من اتصالك بالإنترنت.');
             });
         });
       }
     }).catch((err) => console.log('SW error:', err));
   }
 
-  // دالة إظهار إشعار التحديث في أسفل الشاشة
+  // دالة إظهار إشعار التحديث الثابت (لا يختفي إلا بنقر المستخدم)
   function showUpdateToast(newWorker) {
     const toast = document.getElementById('appUpdateToast');
     const updateBtn = document.getElementById('applyUpdateBtn');
@@ -1941,13 +1982,18 @@ ${APP_CONFIG.url}`;
     if (toast && updateBtn) {
       toast.classList.add('show');
 
+      // عند النقر على تحديث الآن: حفظ رقم الإصدار الجديد وتفعيل التحديث
       updateBtn.onclick = () => {
         updateBtn.textContent = 'جاري التحديث...';
+        localStorage.setItem('hayat_just_updated_version', CURRENT_APP_VERSION);
         newWorker.postMessage({ type: 'SKIP_WAITING' });
       };
 
+      // عند النقر على لاحقاً: إغلاق النافذة دون جلب أي شيء
       if (closeBtn) {
-        closeBtn.onclick = () => toast.classList.remove('show');
+        closeBtn.onclick = () => {
+          toast.classList.remove('show');
+        };
       }
     }
   }
