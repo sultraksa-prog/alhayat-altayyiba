@@ -100,31 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const openTasbeehTileBtn = document.getElementById('openTasbeehTileBtn');
   const backToHomeFromTasbeehBtn = document.getElementById('backToHomeFromTasbeehBtn');
 
-  if (openTasbeehTileBtn && screenTasbeeh) {
-    openTasbeehTileBtn.addEventListener('click', () => {
-      showScreen(screenTasbeeh);
-      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
-    });
-  }
-  if (backToHomeFromTasbeehBtn) {
-    backToHomeFromTasbeehBtn.addEventListener('click', () => {
-      showScreen(screenHome);
-    });
-  }
-  
   const openFavTileBtn = document.getElementById('openFavTileBtn');
   const backToHomeBtn = document.getElementById('backToHomeBtn');
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
-  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
-  // تسجيل الشاشة الرئيسية كنقطة بداية
-  if (!history.state) {
-    history.replaceState({ screenId: 'screen-home' }, '');
-  }
-
   let pendingNavigationScreen = null;
 
+  // دالة التبديل بين الشاشات الموحدة
   function showScreen(screen, pushToHistory = true) {
     if (!screen) return;
     const activeScreen = document.querySelector('.screen-view.active');
@@ -137,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     screen.classList.add('active');
     window.scrollTo(0, 0);
 
-    // إخفاء شريط التبويبات السفلي داخل المسبحة فقط، وإظهاره فوراً في باقي الشاشات
+    // إخفاء شريط التبويبات في المسبحة فقط وإظهاره فوراً في باقي الشاشات
     const bottomNavEl = document.querySelector('.bottom-nav');
     if (bottomNavEl) {
       if (screen.id === 'screen-tasbeeh') {
@@ -147,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // تنشيط أيقونة التبويب المطابق
+    // تنشيط التبويب المطابق
     document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
     const tabQiblaEl = document.getElementById('tabQibla');
 
@@ -162,11 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // التأكد من إظهار شريط التبويبات فور إقلاع التطبيق في الرئيسية
+  // إظهار الشريط فوراً عند تشغيل الصفحة
   const initialNav = document.querySelector('.bottom-nav');
   if (initialNav) initialNav.classList.remove('nav-hidden');
 
-  // فحص أمان القراءة قبل مغادرة شاشة الأذكار
+  // فحص أمان مغادرة الأذكار
   function attemptNavigateFromTabs(targetScreen, callback = null) {
     const activeScreen = document.querySelector('.screen-view.active');
     if (activeScreen === screenAzkarReader) {
@@ -186,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (callback) callback();
   }
 
-  // 1. نظام سحب حافة الشاشة للرجوع (History API)
+  // إدارة الرجوع وسحب الحافة (History API)
   if (!history.state) {
     history.replaceState({ screenId: 'screen-home' }, '');
   }
@@ -194,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('popstate', () => {
     const activeScreen = document.querySelector('.screen-view.active');
 
-    // إغلاق أي نافذة منبثقة أولاً إن وجدت
     const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
     if (openModal) {
       openModal.classList.remove('show');
@@ -234,29 +216,16 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen(screenHome, false);
   });
 
-  // 2. أحداث التبويبات السفلية الأربعة
-  if (tabHome) {
-    tabHome.addEventListener('click', (e) => {
-      e.preventDefault();
-      attemptNavigateFromTabs(screenHome);
-    });
-  }
-
-  if (tabAzkar) {
-    tabAzkar.addEventListener('click', (e) => {
-      e.preventDefault();
-      attemptNavigateFromTabs(screenAzkarCategories, () => renderAzkarCategories());
-    });
-  }
+  // أحداث التبويبات السفلية الأربعة
+  if (tabHome) tabHome.addEventListener('click', (e) => { e.preventDefault(); attemptNavigateFromTabs(screenHome); });
+  if (tabAzkar) tabAzkar.addEventListener('click', (e) => { e.preventDefault(); attemptNavigateFromTabs(screenAzkarCategories, () => renderAzkarCategories()); });
 
   const tabQiblaBtn = document.getElementById('tabQibla');
   const screenQiblaView = document.getElementById('screen-qibla');
   if (tabQiblaBtn && screenQiblaView) {
     tabQiblaBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      attemptNavigateFromTabs(screenQiblaView, () => {
-        if (typeof initQiblaCompass === 'function') initQiblaCompass();
-      });
+      attemptNavigateFromTabs(screenQiblaView, () => { if (typeof initQiblaCompass === 'function') initQiblaCompass(); });
     });
   }
 
@@ -269,12 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
-  if (tabGeneralSettings) {
-    tabGeneralSettings.addEventListener('click', (e) => {
-      e.preventDefault();
-      attemptNavigateFromTabs(screenGeneralSettings);
-    });
-  }
+  if (tabGeneralSettings) tabGeneralSettings.addEventListener('click', (e) => { e.preventDefault(); attemptNavigateFromTabs(screenGeneralSettings); });
   if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
 
   if (openDhikrSettingsFromMenu) {
@@ -287,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
   if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
 
-  // 3. أحداث مربعات الرئيسية (Tiles) وأزرار الرجوع المستعادة بالكامل
+  // أحداث مربعات الشاشة الرئيسية (Tiles)
   if (openAzkarTileBtn) {
     openAzkarTileBtn.addEventListener('click', () => {
       showScreen(screenAzkarCategories);
@@ -309,19 +273,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const screenTasbeehEl = document.getElementById('screen-tasbeeh');
-  const openTasbeehTileBtnEl = document.getElementById('openTasbeehTileBtn');
-  const backToHomeFromTasbeehBtnEl = document.getElementById('backToHomeFromTasbeehBtn');
-
-  if (openTasbeehTileBtnEl && screenTasbeehEl) {
-    openTasbeehTileBtnEl.addEventListener('click', () => {
-      showScreen(screenTasbeehEl);
+  if (openTasbeehTileBtn && screenTasbeeh) {
+    openTasbeehTileBtn.addEventListener('click', () => {
+      showScreen(screenTasbeeh);
       if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
     });
   }
 
-  if (backToHomeFromTasbeehBtnEl) {
-    backToHomeFromTasbeehBtnEl.addEventListener('click', () => {
+  if (backToHomeFromTasbeehBtn) {
+    backToHomeFromTasbeehBtn.addEventListener('click', () => {
       showScreen(screenHome);
     });
   }
@@ -2888,7 +2848,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 1. الحفظ في LocalStorage
+      // 1. الإغلاق الفوري لكافة النوافذ المنبثقة أولاً قبل أي عملية
+      const editModal = document.getElementById('dhikrEditModal');
+      const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
+      if (editModal) editModal.classList.remove('show');
+      if (pickerModal) pickerModal.classList.remove('show');
+      window.isAddingFromTasbeehScreen = false;
+
+      // 2. الحفظ في LocalStorage وقسم تسابيح وأجور عظيمة
       let allGroups = [];
       try {
         allGroups = JSON.parse(localStorage.getItem('hayat_azkar_data')) || [];
@@ -2917,12 +2884,13 @@ document.addEventListener('DOMContentLoaded', () => {
       targetCat.items.push(newItem);
       localStorage.setItem('hayat_azkar_data', JSON.stringify(allGroups));
 
+      // مزامنة فورية في الذاكرة الحية
       if (typeof azkarState !== 'undefined' && Array.isArray(azkarState)) {
         const liveCat = azkarState.find(c => c.name && c.name.includes('تسابيح وأجور عظيمة'));
         if (liveCat && liveCat.items) liveCat.items.push(newItem);
       }
 
-      // 2. تحديث وتنزيل الذكر الجديد فوراً في كرت المسبحة وضبط الهدف
+      // 3. تنزيل الذكر الجديد فوراً في كرت المسبحة وضبط العداد والهدف
       tasbeehActiveDhikrId = newItem.id;
       tasbeehTarget = count;
       if (!tasbeehStats.countsMap) tasbeehStats.countsMap = {};
@@ -2930,7 +2898,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tasbeehStats.countsMap[newItem.id] = 0;
       tasbeehStats.roundsMap[newItem.id] = 0;
 
-      // تحديث مباشر لعناصر الواجهة بالاسم الجديد
       const mainTextEl = document.getElementById('tasbeehMainText');
       if (mainTextEl) mainTextEl.textContent = text;
 
@@ -2948,21 +2915,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       saveTasbeehStats();
       updateTasbeehUI();
-
-      // 3. إغلاق النوافذ المنبثقة بشكل قاطع وفوري
-      const editModal = document.getElementById('dhikrEditModal');
-      const pickerModal = document.getElementById('tasbeehDhikrPickerModal');
-      
-      if (editModal) {
-        editModal.classList.remove('show');
-        editModal.style.display = 'none';
-        setTimeout(() => { editModal.style.display = ''; }, 300);
-      }
-      if (pickerModal) {
-        pickerModal.classList.remove('show');
-      }
-
-      window.isAddingFromTasbeehScreen = false;
     }, true);
   }
 
@@ -2974,13 +2926,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const title = document.getElementById('dhikrModalTitle');
       if (title) title.textContent = 'إضافة ذكر جديد';
       const editModal = document.getElementById('dhikrEditModal');
-      if (editModal) {
-        editModal.classList.remove('show');
-        editModal.style.display = 'none';
-        setTimeout(() => { editModal.style.display = ''; }, 300);
-      }
+      if (editModal) editModal.classList.remove('show');
     });
   }
+  
   // نافذة تحديد الهدف
   const openTargetBtn = document.getElementById('openTargetModalBtn');
   const targetModal = document.getElementById('tasbeehTargetModal');
