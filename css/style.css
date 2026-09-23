@@ -2887,3 +2887,57 @@ html, body {
   outline: none;
 }
 
+/* زر إضافة ذكر جديد في نافذة التسابيح */
+.t-add-dhikr-btn {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px dashed #16A34A;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.t-add-dhikr-btn:active {
+  background: #16A34A;
+  color: #FFFFFF;
+  transform: scale(0.94);
+}
+
+/* حاوية وأنيميشن +1 المتطايرة مع كل تسبيحة */
+.floating-plus-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 15;
+}
+
+.floating-plus-badge {
+  position: absolute;
+  font-family: 'Cairo', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #F59E0B;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
+  animation: floatUpFade 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes floatUpFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  35% {
+    opacity: 1;
+    transform: translate(-50%, -24px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -58px) scale(0.95);
+  }
+}
