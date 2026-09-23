@@ -2422,25 +2422,31 @@ function playWoodClickSound() {
   } catch (e) {}
 }
 
-// إحداثيات النقاط الرياضية العشر على طول الخيط المنحني بدقة
-const BEAD_SLOT_COORDS = [
-  { x: -25, y: 122 }, // النقطة 0: تدخل من أقصى اليسار
-  { x: 22,  y: 114 }, // النقطة 1: يسار 1
-  { x: 64,  y: 104 }, // النقطة 2: يسار 2
-  { x: 106, y: 92 },  // النقطة 3: حافة اليسار قبل الفراغ
-  { x: 154, y: 78 },  // النقطة 4: منتصف الفراغ (مسافة خرزة ونصف)
-  { x: 202, y: 64 },  // النقطة 5: حافة اليمين بعد الفراغ
-  { x: 244, y: 50 },  // النقطة 6: يمين 2
-  { x: 286, y: 36 },  // النقطة 7: يمين 3
-  { x: 328, y: 22 },  // النقطة 8: يمين 4
-  { x: 375, y: 6 }    // النقطة 9: تخرج لأقصى اليمين
+// استخراج إحداثيات أي نقطة فوق الخيط المنحني بدقة رياضية مطلقة
+function getWirePoint(fraction) {
+  const path = document.getElementById('tasbeehWirePath');
+  if (!path) return { x: 180, y: 80 };
+  const total = path.getTotalLength();
+  const target = Math.max(0, Math.min(total, fraction * total));
+  return path.getPointAtLength(target);
+}
+
+// نسب الخانات على طول الخيط المنحني:
+// خانات اليسار: [0.15, 0.26, 0.37] (3 خرزات)
+// فراغ بمقدار خرزة ونصف: من 0.37 إلى 0.55
+// خانات اليمين: [0.55, 0.66, 0.77, 0.88] (4 خرزات)
+const BEAD_SLOT_FRACTIONS = [
+  0.04, // خانة 0: تدخل من أقصى اليسار
+  0.15, // خانة 1: يسار 1
+  0.26, // خانة 2: يسار 2
+  0.37, // خانة 3: حافة اليسار قبل الفراغ
+  0.55, // خانة 4: حافة اليمين بعد الفراغ
+  0.66, // خانة 5: يمين 2
+  0.77, // خانة 6: يمين 3
+  0.88, // خانة 7: يمين 4
+  0.99  // خانة 8: تخرج لأقصى اليمين
 ];
 
-// الحالة الحركية لمواقع الخرزات النشطة على الخيط
-// اليسار به 3 خرزات في الخانات (1، 2، 3)
-// ثم فراغ في الخانة 4
-// اليمين به 4 خرزات في الخانات (5، 6، 7، 8)
-let currentBeadSlots = [1, 2, 3, 5, 6, 7, 8];
 let isBeadAnimating = false;
 
 // زيادة العداد وتحريك السلسلة كاملة
@@ -2473,7 +2479,7 @@ function incrementTasbeeh() {
   updateFloatingPiPContent();
 }
 
-// دالة محاكاة انتقال الخرزة وسحب السلسلة التتابعي
+// محاكاة سحب الخرزة وانزلاق السلسلة كاملة على طول القوس
 function animateBeadChainStep() {
   if (tasbeehMode !== 'beads' || isBeadAnimating) return;
   isBeadAnimating = true;
@@ -2484,20 +2490,35 @@ function animateBeadChainStep() {
   const beadEls = cluster.querySelectorAll('.t-curved-bead');
   if (beadEls.length < 7) { renderCurvedBeads(); isBeadAnimating = false; return; }
 
-  // 1. خرزة اليسار الأمامية (beadEls[2]) تقفز عبر الفراغ لتلتحم باليمين
-  // 2. خرزات اليسار (0، 1) تتقدم للأمام خطوة لتعويض مكانها
-  // 3. خرزات اليمين تتزحزح خطوة للأمام
-  const targetSlots = [2, 3, 5, 6, 7, 8, 9];
+  // حركة الخرز: كل خرزة تتقدم للخانة التالية على نفس القوس بالضبط
+  // الخرزة 2 (حافة الفراغ) تقفز عبر الفراغ للخانة 4
+  const nextTargetSlots = [2, 3, 4, 5, 6, 7, 8];
 
   beadEls.forEach((el, i) => {
-    const slotIdx = targetSlots[i];
-    const pos = BEAD_SLOT_COORDS[slotIdx];
-    el.style.left = `${pos.x}px`;
-    el.style.top = `${pos.y}px`;
+    const slotIdx = nextTargetSlots[i];
+    const pt = getWirePoint(BEAD_SLOT_FRACTIONS[slotIdx]);
+    el.style.left = `${pt.x}px`;
+    el.style.top = `${pt.y}px`;
     if (i === 6) el.style.opacity = '0'; // الخرزة الأخيرة تخرج بنعومة
   });
 
-  // بعد انتهاء الحركة (220ms)، نعيد رسم السلسلة مستقرة فوراً للعدة التالية
+  // إضافة خرزة بديلة تدخل من أقصى اليسار لتعويض السلسلة
+  const newBeadPos = getWirePoint(BEAD_SLOT_FRACTIONS[0]);
+  const newBead = document.createElement('div');
+  newBead.className = 't-curved-bead';
+  newBead.style.left = `${newBeadPos.x}px`;
+  newBead.style.top = `${newBeadPos.y}px`;
+  newBead.style.opacity = '0';
+  cluster.insertBefore(newBead, cluster.firstChild);
+
+  setTimeout(() => {
+    const enterPos = getWirePoint(BEAD_SLOT_FRACTIONS[1]);
+    newBead.style.left = `${enterPos.x}px`;
+    newBead.style.top = `${enterPos.y}px`;
+    newBead.style.opacity = '1';
+  }, 20);
+
+  // إعادة ضبط السلسلة مستقرة بعد انتهاء الحركة (220ms) للعدة القادمة
   setTimeout(() => {
     renderCurvedBeads();
     isBeadAnimating = false;
@@ -2534,21 +2555,21 @@ function updateTasbeehUI() {
   if (digiTarget) digiTarget.textContent = `الهدف: ${tasbeehTarget > 0 ? tasbeehTarget : 'مفتوح'}`;
 }
 
-// رسم الخرزات السبع الأساسية بدقة متناهية فوق الخيط
+// رسم الخرزات السبع الأساسية في منتصف الخيط تماماً
 function renderCurvedBeads() {
   const cluster = document.getElementById('beadsCluster');
   if (!cluster) return;
   cluster.innerHTML = '';
 
-  // الخانات الطبيعية: 3 خرزات على اليسار (1, 2, 3) + فراغ (4) + 4 خرزات على اليمين (5, 6, 7, 8)
-  const defaultSlots = [1, 2, 3, 5, 6, 7, 8];
+  // الخانات الأساسية: 3 خرزات على اليسار (1، 2، 3) + 4 على اليمين (4، 5، 6، 7)
+  const defaultSlots = [1, 2, 3, 4, 5, 6, 7];
 
   defaultSlots.forEach((slotIdx) => {
-    const pos = BEAD_SLOT_COORDS[slotIdx];
+    const pt = getWirePoint(BEAD_SLOT_FRACTIONS[slotIdx]);
     const bead = document.createElement('div');
     bead.className = 't-curved-bead';
-    bead.style.left = `${pos.x}px`;
-    bead.style.top = `${pos.y}px`;
+    bead.style.left = `${pt.x}px`;
+    bead.style.top = `${pt.y}px`;
     bead.style.opacity = '1';
     cluster.appendChild(bead);
   });
