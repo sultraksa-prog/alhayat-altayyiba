@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingNavigationScreen = null;
 
   function showScreen(screen, pushToHistory = true) {
+    if (!screen) return;
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
@@ -136,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     screen.classList.add('active');
     window.scrollTo(0, 0);
 
-    // إخفاء شريط التبويبات السفلي تلقائياً داخل شاشة المسبحة وإظهاره في باقي الشاشات
+    // إخفاء شريط التبويبات السفلي داخل المسبحة فقط، وإظهاره فوراً في باقي الشاشات
     const bottomNavEl = document.querySelector('.bottom-nav');
     if (bottomNavEl) {
       if (screen.id === 'screen-tasbeeh') {
@@ -146,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // تنشيط أيقونة التبويب المطابق
     document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
     const tabQiblaEl = document.getElementById('tabQibla');
 
@@ -160,7 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // دالة الفحص الأمني قبل مغادرة شاشة قراءة الأذكار عبر أي تبويب سفلي
+  // التأكد من إظهار شريط التبويبات فور إقلاع التطبيق في الرئيسية
+  const initialNav = document.querySelector('.bottom-nav');
+  if (initialNav) initialNav.classList.remove('nav-hidden');
+
+  // فحص أمان القراءة قبل مغادرة شاشة الأذكار
   function attemptNavigateFromTabs(targetScreen, callback = null) {
     const activeScreen = document.querySelector('.screen-view.active');
     if (activeScreen === screenAzkarReader) {
@@ -180,11 +186,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (callback) callback();
   }
 
-  // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
+  // 1. نظام سحب حافة الشاشة للرجوع (History API)
+  if (!history.state) {
+    history.replaceState({ screenId: 'screen-home' }, '');
+  }
+
   window.addEventListener('popstate', () => {
     const activeScreen = document.querySelector('.screen-view.active');
 
-    // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، السحب يغلقها أولاً دون مغادرة الشاشة
+    // إغلاق أي نافذة منبثقة أولاً إن وجدت
     const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
     if (openModal) {
       openModal.classList.remove('show');
@@ -192,12 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 2. إذا كان المستخدم في الشاشة الرئيسية، اتركه يخرج بشكل طبيعي
-    if (!activeScreen || activeScreen === screenHome) {
-      return;
-    }
+    if (!activeScreen || activeScreen === screenHome) return;
 
-    // 3. إذا كان المستخدم في شاشة قراءة الأذكار
     if (activeScreen === screenAzkarReader) {
       const category = (window.azkarState || azkarState).find(c => c.id === currentActiveCategoryId);
       if (category && category.items && category.items.length > 0) {
@@ -214,30 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 4. إذا كان في شاشة المفضلة، السحب يعيده إلى شاشة مجموعات الأذكار
     if (activeScreen === screenAzkarFavorites) {
       showScreen(screenAzkarCategories, false);
       renderAzkarCategories();
       return;
     }
 
-    // 5. إذا كان في شاشة مجموعات الأذكار، السحب يعيده إلى الشاشة الرئيسية
-    if (activeScreen === screenAzkarCategories) {
+    if (activeScreen === screenAzkarCategories || activeScreen.id === 'screen-tasbeeh' || activeScreen.id === 'screen-qibla' || activeScreen === screenGeneralSettings) {
       showScreen(screenHome, false);
       return;
     }
 
-    // 6. إذا كان في شاشة المسبحة، السحب يعيده إلى الشاشة الرئيسية
-    if (activeScreen && activeScreen.id === 'screen-tasbeeh') {
-      showScreen(screenHome, false);
-      return;
-    }
-
-    // افتراضياً
     showScreen(screenHome, false);
   });
 
-  // 1. تبويب الرئيسية
+  // 2. أحداث التبويبات السفلية الأربعة
   if (tabHome) {
     tabHome.addEventListener('click', (e) => {
       e.preventDefault();
@@ -245,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. تبويب أذكار المسلم
   if (tabAzkar) {
     tabAzkar.addEventListener('click', (e) => {
       e.preventDefault();
@@ -253,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. تبويب القبلة مع الحماية الأمنية
   const tabQiblaBtn = document.getElementById('tabQibla');
   const screenQiblaView = document.getElementById('screen-qibla');
   if (tabQiblaBtn && screenQiblaView) {
@@ -273,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4. تبويب وشاشة الإعدادات العامة مع الحماية الأمنية
   if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
   if (tabGeneralSettings) {
     tabGeneralSettings.addEventListener('click', (e) => {
@@ -283,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
 
-  // فتح إعدادات الأذكار من داخل الإعدادات العامة
   if (openDhikrSettingsFromMenu) {
     openDhikrSettingsFromMenu.addEventListener('click', () => {
       syncSettingsUI();
@@ -291,44 +284,72 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // فتح شاشة حول التطبيق
   if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
   if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
-  if (tabQibla) {
-    tabQibla.addEventListener('click', (e) => {
-      e.preventDefault();
-      showScreen(screenQibla);
-      initQiblaCompass();
+
+  // 3. أحداث مربعات الرئيسية (Tiles) وأزرار الرجوع المستعادة بالكامل
+  if (openAzkarTileBtn) {
+    openAzkarTileBtn.addEventListener('click', () => {
+      showScreen(screenAzkarCategories);
+      renderAzkarCategories();
     });
   }
-  if (backToHomeFromQiblaBtn) {
-    backToHomeFromQiblaBtn.addEventListener('click', () => {
-      stopQiblaCompass();
+
+  if (openFavoritesBtn) {
+    openFavoritesBtn.addEventListener('click', () => {
+      showScreen(screenAzkarFavorites);
+      renderFavorites();
+    });
+  }
+
+  if (openFavTileBtn) {
+    openFavTileBtn.addEventListener('click', () => {
+      showScreen(screenAzkarFavorites);
+      renderFavorites();
+    });
+  }
+
+  const screenTasbeehEl = document.getElementById('screen-tasbeeh');
+  const openTasbeehTileBtnEl = document.getElementById('openTasbeehTileBtn');
+  const backToHomeFromTasbeehBtnEl = document.getElementById('backToHomeFromTasbeehBtn');
+
+  if (openTasbeehTileBtnEl && screenTasbeehEl) {
+    openTasbeehTileBtnEl.addEventListener('click', () => {
+      showScreen(screenTasbeehEl);
+      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
+    });
+  }
+
+  if (backToHomeFromTasbeehBtnEl) {
+    backToHomeFromTasbeehBtnEl.addEventListener('click', () => {
       showScreen(screenHome);
     });
   }
-  openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
-  openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
-  if (openFavTileBtn) {
-  openFavTileBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
-}
-  backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
-  backToCategoriesBtn.addEventListener('click', () => {
-  const category = azkarState.find(c => c.id === currentActiveCategoryId);
-  if (category && category.items && category.items.length > 0) {
-    const isAllDone = category.items.every(it => it.currentCount === 0);
-    // إذا لم يكمل الأذكار بعد، نظهر له نافذة تأكيد الخروج
-    // إذا لم يكمل القراءة وخيار تأكيد الخروج مفعل
-    if (!isAllDone && dhikrSettings.confirmExit) {
-      document.getElementById('exitConfirmModal').classList.add('show');
-      return;
-    }
+
+  if (backToHomeBtn) backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
+
+  if (backToCategoriesBtn) {
+    backToCategoriesBtn.addEventListener('click', () => {
+      const category = (window.azkarState || azkarState).find(c => c.id === currentActiveCategoryId);
+      if (category && category.items && category.items.length > 0) {
+        const isAllDone = category.items.every(it => it.currentCount === 0);
+        if (!isAllDone && dhikrSettings.confirmExit) {
+          const exitModal = document.getElementById('exitConfirmModal');
+          if (exitModal) exitModal.classList.add('show');
+          return;
+        }
+      }
+      showScreen(screenAzkarCategories);
+      renderAzkarCategories();
+    });
   }
-  // إذا كانت مكتملة بالفعل، يرجع مباشرة دون إزعاج
-  showScreen(screenAzkarCategories);
-  renderAzkarCategories();
-});
-  backToCategoriesFromFavBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
+
+  if (backToCategoriesFromFavBtn) {
+    backToCategoriesFromFavBtn.addEventListener('click', () => {
+      showScreen(screenAzkarCategories);
+      renderAzkarCategories();
+    });
+  }
 
   // ==================== 4. بناء شبكة مجموعات الأذكار ====================
   const azkarGroupsContainer = document.getElementById('azkarGroupsContainer');
