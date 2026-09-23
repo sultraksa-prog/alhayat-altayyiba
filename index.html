@@ -721,8 +721,11 @@
           <span>اضغط في أي مكان بالأسفل أو اسحب الخرز للعدّ</span>
         </div>
 
-        <!-- النصف السفلي بالكامل: منطقة تفاعلية حرة مريحة للإبهام -->
+        <!-- النصف السفلي بالكامل: مخصص للمسبحة وفي متناول الإبهام للنقر والسحب -->
         <div class="tasbeeh-full-bottom-touch-zone" id="tasbeehInteractiveZone">
+          
+          <!-- حاوية تأثير +1 المتطايرة مع كل عدة -->
+          <div class="floating-plus-container" id="floatingPlusContainer"></div>
           
           <!-- النمط 1: مسبحة الخرز الانسيابية ذات الحركة التتابعية المتصلة -->
           <div class="tasbeeh-curved-track-stage" id="tasbeehBeadsStage">
@@ -764,8 +767,12 @@
     <div class="bottom-sheet-backdrop" id="tasbeehDhikrPickerModal">
       <div class="bottom-sheet" style="max-height: 85vh; display: flex; flex-direction: column;">
         <div class="sheet-drag-handle"></div>
-        <div class="sheet-header">
-          <h3 class="sheet-title" style="margin: 0;">تسابيح وأجور عظيمة</h3>
+        <div class="sheet-header" style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 class="sheet-title" style="margin: 0;">تسابيح وأجور عظيمة</h3>
+            <!-- زر إضافة ذكر جديد السريع -->
+            <button type="button" class="t-add-dhikr-btn" id="openAddTasbeehDhikrBtn">+ ذكر جديد</button>
+          </div>
           <button type="button" class="modal-btn-link" id="closeDhikrPickerBtn" style="font-size: 18px;">✕</button>
         </div>
         <div class="search-input-box" style="margin: 10px 0 6px 0;">
@@ -1226,6 +1233,20 @@
       </div>
     </div>
 
+<!-- نافذة إرشاد تفعيل صلاحية الظهور فوق التطبيقات -->
+    <div class="custom-modal-backdrop" id="tasbeehPipPermissionModal">
+      <div class="custom-modal-card text-center" style="max-width: 320px;">
+        <div style="font-size: 38px; margin-bottom: 8px;">🪟</div>
+        <h3 class="modal-card-title" style="margin-bottom: 6px;">صلاحية النافذة العائمة</h3>
+        <p class="celebration-text" style="font-size: 13px; line-height: 1.6; margin-bottom: 18px;">
+          لتشغيل المسبحة أثناء تصفح التطبيقات الأخرى، يرجى السماح لمتصفح Chrome بصلاحية <strong>(صورة داخل صورة / الظهور فوق التطبيقات)</strong> من إعدادات الجوال.
+        </p>
+        <div class="modal-actions-row" style="justify-content: center;">
+          <button type="button" class="modal-btn-primary" id="closePipPermissionBtn" style="padding: 9px 32px;">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
+  
   <script src="js/azkar-data.js"></script>
   <script src="js/app.js"></script>
 </body>
