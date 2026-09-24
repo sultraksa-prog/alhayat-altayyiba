@@ -81,6 +81,7 @@
 html {
   width: 100%;
   background-color: var(--bg-app);
+  overscroll-behavior-y: contain; /* إيقاف سحب المتصفح التحديثي نهائياً */
 }
 
 body {
@@ -89,6 +90,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-app);
+  overscroll-behavior-y: contain; /* منع سحب التحديث مع الحفاظ التام على انسيابية التمرير */
   -webkit-overflow-scrolling: touch;
 }
 
