@@ -1911,25 +1911,31 @@ ${APP_CONFIG.url}`;
   }
 
   // ==================== تسجيل Service Worker ونظام التحديث الذكي ====================
-  const CURRENT_APP_VERSION = `v${APP_CONFIG.version}`;
   const UPDATE_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // عداد 7 أيام بالملي ثانية
 
-  // 1. فحص هل تم تحديث التطبيق للتو لعرض رسالة التهنئة برقم الإصدار الجديد
-  const updatedVersion = localStorage.getItem('hayat_just_updated_version');
-  if (updatedVersion) {
+  // 1. فحص هل تم تحديث التطبيق للتو: قراءة رقم الإصدار الجديد مباشرة من APP_CONFIG.version
+  const justUpdatedFlag = localStorage.getItem('hayat_just_updated_flag') || localStorage.getItem('hayat_just_updated_version');
+  if (justUpdatedFlag) {
+    localStorage.removeItem('hayat_just_updated_flag');
     localStorage.removeItem('hayat_just_updated_version');
+
     setTimeout(() => {
       const modal = document.getElementById('upToDateModal');
       const icon = document.getElementById('modalStatusIcon');
       const title = document.getElementById('modalStatusTitle');
       const text = document.getElementById('modalStatusText');
+
       if (modal && title && text) {
         if (icon) icon.textContent = '✨';
         title.textContent = 'تم التحديث بنجاح';
-        text.innerHTML = `تم تحديث التطبيق بنجاح إلى الإصدار (<strong>${updatedVersion}</strong>).<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+        
+        // قراءة رقم الإصدار الجديد الحقيقي من الكود الفعلي الذي يعمل الآن
+        const newVersionText = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) ? `v${APP_CONFIG.version}` : 'الجديد';
+        text.innerHTML = `تم تحديث التطبيق بنجاح إلى الإصدار (<strong>${newVersionText}</strong>).<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+        
         modal.classList.add('show');
       }
-    }, 500);
+    }, 600);
   }
 
   if ('serviceWorker' in navigator) {
@@ -1962,10 +1968,8 @@ ${APP_CONFIG.url}`;
         const lastCheck = parseInt(localStorage.getItem('hayat_last_update_check_time') || '0', 10);
         const now = Date.now();
 
-        // إذا مرّت 7 أيام والجهاز متصل بالإنترنت
         if (navigator.onLine && (now - lastCheck >= UPDATE_CHECK_INTERVAL_MS)) {
           registration.update().then(() => {
-            // تسجيل وقت الفحص الناجح لتصفير عداد الـ 7 أيام
             localStorage.setItem('hayat_last_update_check_time', now.toString());
           }).catch(() => {});
         }
@@ -1994,13 +1998,11 @@ ${APP_CONFIG.url}`;
         openWifiSettingsBtn.onclick = () => {
           if (offlineModal) offlineModal.classList.remove('show');
 
-          // أ) جسر تطبيق أندرويد الأصيل APK مستقبلاً
           if (window.AndroidBridge && typeof window.AndroidBridge.openWifiSettings === 'function') {
             window.AndroidBridge.openWifiSettings();
             return;
           }
 
-          // ب) استدعاء صفحة إعدادات الواي فاي في هاتف الأندرويد مباشرة
           try {
             window.location.href = "intent:#Intent;action=android.settings.WIFI_SETTINGS;end";
           } catch (e) {}
@@ -2009,7 +2011,6 @@ ${APP_CONFIG.url}`;
 
       if (checkUpdateBtn) {
         checkUpdateBtn.addEventListener('click', () => {
-          // فحص الاتصال بالإنترنت أولاً
           if (!navigator.onLine) {
             if (offlineModal) offlineModal.classList.add('show');
             return;
@@ -2038,7 +2039,8 @@ ${APP_CONFIG.url}`;
                   if (icon) icon.textContent = '✓';
                   if (title) title.textContent = 'أنت على أحدث إصدار';
                   if (text) {
-                    text.innerHTML = `أنت تستخدم أحدث إصدار بالفعل، ولا يوجد أي تحديث جديد حالياً.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+                    const currentVerDisplay = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) ? `v${APP_CONFIG.version}` : '';
+                    text.innerHTML = `أنت تستخدم أحدث إصدار بالفعل (<strong>${currentVerDisplay}</strong>)، ولا يوجد أي تحديث جديد حالياً.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
                   }
                   if (upToDateModal) upToDateModal.classList.add('show');
                 }
@@ -2046,7 +2048,6 @@ ${APP_CONFIG.url}`;
             })
             .catch(() => {
               if (titleEl) titleEl.textContent = originalTitle;
-              // في حال فشل الاتصال تظهر نافذة انقطاع الإنترنت الفاخرة
               if (offlineModal) offlineModal.classList.add('show');
             });
         });
@@ -2063,10 +2064,10 @@ ${APP_CONFIG.url}`;
     if (toast && updateBtn) {
       toast.classList.add('show');
 
-      // عند النقر على تحديث الآن: حفظ رقم الإصدار وتفعيل التحديث
+      // عند النقر على تحديث الآن: نضع علامة حدوث التحديث لتستقبلها النسخة الجديدة
       updateBtn.onclick = () => {
         updateBtn.textContent = 'جاري التحديث...';
-        localStorage.setItem('hayat_just_updated_version', CURRENT_APP_VERSION);
+        localStorage.setItem('hayat_just_updated_flag', 'true');
         newWorker.postMessage({ type: 'SKIP_WAITING' });
       };
 
