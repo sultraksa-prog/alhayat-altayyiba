@@ -26,19 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let azkarState = [];
   if (currentVersion !== AZKAR_DATA_VERSION) {
     const oldData = JSON.parse(localStorage.getItem('hayat_azkar_data') || '[]');
-    // استخراج أذكار ومجموعات المستخدم الخاصة فقط (المعزولة ببادئة user_)
     const customUserGroups = oldData.filter(g => g.id.startsWith('user_cat_'));
-    
-    // دمج أذكار النظام الأصلية مع الحفاظ على أذكار المستخدم
     azkarState = [...DEFAULT_AZKAR_DATA, ...customUserGroups];
     localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
     localStorage.setItem(SAVED_VERSION_KEY, AZKAR_DATA_VERSION);
   } else {
     azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
   }
+  window.azkarState = azkarState; // ربط دائم للذاكرة الحية
 
   function saveAzkarState() {
     localStorage.setItem('hayat_azkar_data', JSON.stringify(azkarState));
+    window.azkarState = azkarState;
   }
 
   // ==================== 2. نظام المفضلة (مع الخمسة الافتراضية) ====================
@@ -280,28 +279,34 @@ if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('cli
   let currentActiveCategoryId = null;
 
   function renderAzkarCategories(filterQuery = '') {
-  azkarGroupsContainer.innerHTML = '';
-  const query = filterQuery.trim().toLowerCase();
+    // قراءة أحدث بيانات من LocalStorage فوراً لمزامنة أي إضافات تمت من المسبحة
+    try {
+      azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
+      window.azkarState = azkarState;
+    } catch (e) {}
 
-  const filteredGroups = azkarState.filter(group => {
-    if (!query) return true;
-    return group.name.toLowerCase().includes(query);
-  });
+    azkarGroupsContainer.innerHTML = '';
+    const query = filterQuery.trim().toLowerCase();
 
-  if (filteredGroups.length === 0) {
-    azkarGroupsContainer.innerHTML = `
-      <div style="grid-column: span 2; text-align: center; padding: 40px 20px; color: var(--text-muted);">
-        <p style="font-size: 15px;">لا توجد أذكار تطابق: "${filterQuery}"</p>
-      </div>
-    `;
-    return;
+    const filteredGroups = azkarState.filter(group => {
+      if (!query) return true;
+      return group.name.toLowerCase().includes(query);
+    });
+
+    if (filteredGroups.length === 0) {
+      azkarGroupsContainer.innerHTML = `
+        <div style="grid-column: span 2; text-align: center; padding: 40px 20px; color: var(--text-muted);">
+          <p style="font-size: 15px;">لا توجد أذكار تطابق: "${filterQuery}"</p>
+        </div>
+      `;
+      return;
+    }
+
+    filteredGroups.forEach(group => {
+      const card = createCategoryCard(group);
+      azkarGroupsContainer.appendChild(card);
+    });
   }
-
-  filteredGroups.forEach(group => {
-    const card = createCategoryCard(group);
-    azkarGroupsContainer.appendChild(card);
-  });
-}
 
 // أحداث فتح وإغلاق والبحث المباشر
 const toggleCategorySearchBtn = document.getElementById('toggleCategorySearchBtn');
@@ -551,26 +556,31 @@ if (clearCategorySearchBtn) {
   let isReorderMode = false;
 
   function openCategoryReader(categoryId, resetCounters = false) {
-  currentActiveCategoryId = categoryId;
-  const category = azkarState.find(c => c.id === categoryId);
-  if (!category) return;
+    // مزامنة فورية مع LocalStorage لضمان ظهور الذكر المضاف حديثاً داخل بطاقات القسم
+    try {
+      azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
+      window.azkarState = azkarState;
+    } catch (e) {}
 
-  // إذا طُلب التصفير، يتم تصفير العدادات وحفظها فوراً من داخل نطاق البيانات
-  if (resetCounters && category.items) {
-    category.items.forEach(it => {
-      it.currentCount = it.count;
-    });
-    saveAzkarState();
-    renderAzkarCategories();
+    currentActiveCategoryId = categoryId;
+    const category = azkarState.find(c => c.id === categoryId);
+    if (!category) return;
+
+    if (resetCounters && category.items) {
+      category.items.forEach(it => {
+        it.currentCount = it.count;
+      });
+      saveAzkarState();
+      renderAzkarCategories();
+    }
+
+    readerCategoryTitle.textContent = category.name;
+    isEditMode = false;
+    isReorderMode = false;
+    renderDhikrCards();
+    showScreen(screenAzkarReader);
   }
-
-  readerCategoryTitle.textContent = category.name;
-  isEditMode = false;
-  isReorderMode = false;
-  renderDhikrCards();
-  showScreen(screenAzkarReader);
-}
-window.openCategoryReader = openCategoryReader;
+  window.openCategoryReader = openCategoryReader;
 
   function renderDhikrCards() {
     dhikrCardsContainer.innerHTML = '';
