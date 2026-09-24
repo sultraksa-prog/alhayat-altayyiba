@@ -734,6 +734,12 @@
           <!-- شبكة الأيام المتفاعلة (تتغير تلقائياً حسب الشهر والمنظور) -->
           <div class="cal-days-grid" id="calDaysGrid"></div>
 
+          <!-- دليل دلالات ألوان الأيام -->
+          <div class="cal-legend-bar">
+            <span class="legend-item"><span class="legend-dot dot-event"></span>مناسبة</span>
+            <span class="legend-item"><span class="legend-dot dot-fasting"></span>صيام مستحب</span>
+          </div>
+
           <!-- مقبض توسيع وتصغير التقويم (بين أسبوع وشهر كامل) -->
           <div class="cal-collapse-handle" id="calCollapseToggleBtn" title="تبديل العرض بين أسبوع وشهر كامل">
             <div class="cal-drag-bar"></div>
@@ -765,9 +771,26 @@
             </div>
           </div>
 
-          <!-- محتوى تبويب 2: قائمة الأعياد والمناسبات الإسلامية والوطنية -->
+          <!-- محتوى تبويب 2: المناسبات الدينية والاجتماعية -->
           <div class="cal-tab-content" id="contentCalEvents" style="display: none;">
+            <div class="cal-sec-header">
+              <span class="cal-sec-bar"></span>
+              <h4>مناسبات هذا الشهر</h4>
+            </div>
+
             <div class="cal-events-list" id="calEventsListContainer"></div>
+
+            <!-- كرت المناسبة القادمة الفاخر في الأسفل -->
+            <div class="cal-next-event-card" id="calNextEventCard">
+              <div class="next-event-right">
+                <span class="next-event-icon">📅</span>
+                <div class="next-event-text">
+                  <span class="next-event-label">المناسبة القادمة</span>
+                  <h4 class="next-event-title" id="nextEventTitleDisplay">--</h4>
+                </div>
+              </div>
+              <div class="next-event-badge" id="nextEventCountdownDisplay">-- يوماً</div>
+            </div>
 
             <div class="cal-year-nav-row">
               <button type="button" class="cal-year-btn" id="prevCalYearBtn">‹ السنة السابقة</button>
