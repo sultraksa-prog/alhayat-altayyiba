@@ -188,27 +188,30 @@
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 18px;
-  padding: 12px 8px 6px 8px;
+  padding: 12px 10px 8px 10px;
   box-shadow: var(--shadow-card);
   position: relative;
 }
 
+/* شريط أيام الأسبوع العصري ذو الخلفية الهادئة */
 .cal-weekdays-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  padding-bottom: 8px;
-  border-bottom: 1px solid #F1F5F9;
+  font-size: 12px;
+  font-weight: 800;
+  color: #15803D;
+  background: #ECFDF5;
+  border-radius: 12px;
+  padding: 8px 0;
+  margin-bottom: 6px;
 }
 
 .cal-days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
-  padding-top: 8px;
+  padding-top: 4px;
   transition: all 0.3s ease;
 }
 
@@ -222,6 +225,7 @@
   cursor: pointer;
   position: relative;
   transition: all 0.15s;
+  padding-bottom: 6px;
 }
 
 .cal-day-cell:active { transform: scale(0.92); }
@@ -237,36 +241,75 @@
   font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
+  margin-top: 1px;
 }
 
-/* اليوم المختار واليوم الحالي */
+/* حاوية نقاط التنبيه أسفل أرقام اليوم */
+.cal-cell-dots-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 5px;
+  margin-top: 2px;
+}
+
+.cell-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+.cell-dot.dot-event { background-color: #059669; } /* أخضر للمناسبات */
+.cell-dot.dot-fasting { background-color: #D97706; } /* ذهبي للصيام المستحب */
+
+/* اليوم المختار */
 .cal-day-cell.selected {
-  background: #16A34A;
+  background: #15803D;
 }
 .cal-day-cell.selected .cal-day-primary,
 .cal-day-cell.selected .cal-day-secondary {
   color: #FFFFFF !important;
 }
+.cal-day-cell.selected .cell-dot {
+  background-color: #FEF08A;
+}
 
 .cal-day-cell.other-month {
-  opacity: 0.35;
+  opacity: 0.3;
 }
 
-/* نقطة المناسبة الإسلامية */
-.cal-event-dot {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #F59E0B;
+/* دليل دلالات الألوان تحت التقويم */
+.cal-legend-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 8px 0 4px 0;
+  border-top: 1px solid #F1F5F9;
+  margin-top: 6px;
 }
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.legend-dot.dot-event { background-color: #059669; }
+.legend-dot.dot-fasting { background-color: #D97706; }
 
 .cal-collapse-handle {
   display: flex;
   justify-content: center;
-  padding: 8px 0 2px 0;
+  padding: 4px 0 2px 0;
   cursor: pointer;
 }
 .cal-drag-bar {
@@ -281,16 +324,16 @@
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 18px;
-  padding: 12px;
+  padding: 14px;
   box-shadow: var(--shadow-card);
 }
 
 .cal-tabs-header {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   border-bottom: 1px solid #F1F5F9;
-  padding-bottom: 6px;
-  margin-bottom: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
 }
 
 .cal-tab-btn {
@@ -305,7 +348,7 @@
 }
 
 .cal-tab-btn.active {
-  color: #16A34A;
+  color: #15803D;
 }
 .cal-tab-btn.active::after {
   content: '';
@@ -314,8 +357,28 @@
   right: 0;
   width: 100%;
   height: 3px;
-  background: #16A34A;
+  background: #15803D;
+  border-radius: 3px;
+}
+
+/* عنوان قسم مناسبات الشهر */
+.cal-sec-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cal-sec-bar {
+  width: 3.5px;
+  height: 16px;
+  background: #D97706;
   border-radius: 2px;
+}
+.cal-sec-header h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
 }
 
 /* قائمة مواقيت اليوم المختار */
@@ -329,8 +392,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
   background: #F8FAFC;
 }
 
@@ -340,7 +403,7 @@
   color: var(--text-main);
 }
 .cal-prayer-time {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--primary-blue);
   direction: ltr;
@@ -351,10 +414,10 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  margin-top: 12px;
-  padding: 10px;
+  margin-top: 14px;
+  padding: 12px;
   background: #F1F5F9;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 .dual-date-box {
   display: flex;
@@ -362,16 +425,16 @@
   align-items: center;
   gap: 2px;
 }
-.d-label { font-size: 10.5px; color: var(--text-secondary); font-weight: 600; }
-.d-val { font-size: 13px; color: var(--text-main); font-weight: 800; }
-.dual-date-divider { width: 1px; height: 26px; background: #CBD5E1; }
+.d-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+.d-val { font-size: 13.5px; color: var(--text-main); font-weight: 800; }
+.dual-date-divider { width: 1px; height: 28px; background: #CBD5E1; }
 
-/* قائمة المناسبات الإسلامية والوطنية */
+/* قائمة المناسبات */
 .cal-events-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 340px;
+  max-height: 250px;
   overflow-y: auto;
 }
 
@@ -379,7 +442,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-radius: 12px;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
@@ -399,7 +462,7 @@
 .event-countdown-badge {
   font-size: 11px;
   font-weight: 800;
-  padding: 3px 10px;
+  padding: 3px 12px;
   border-radius: 20px;
   background: #EEF6FC;
   color: var(--primary-blue);
@@ -410,6 +473,51 @@
 }
 .event-countdown-badge.today {
   background: #DCFCE7;
+  color: #15803D;
+}
+
+/* كرت المناسبة القادمة الفاخر في الأسفل */
+.cal-next-event-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+
+.next-event-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.next-event-icon {
+  font-size: 20px;
+  background: #DCFCE7;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+.next-event-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: block;
+}
+.next-event-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #15803D;
+  margin: 0;
+}
+.next-event-badge {
+  font-size: 13px;
+  font-weight: 800;
   color: #15803D;
 }
 
@@ -463,3 +571,4 @@
   font-size: 17px;
   font-weight: 800;
 }
+
