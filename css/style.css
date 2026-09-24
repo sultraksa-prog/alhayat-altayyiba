@@ -224,31 +224,17 @@ body {
   background-color: #F8FAFC;
 }
 
-/* هيدر الصفحة الرئيسية */
-/* الهيدر العلوي المثبت عند التمرير بنعومة وفخامة */
-/* الهيدر العلوي المدمج والشفاف */
-  .app-header {
-    position: sticky;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    background: transparent;
-    transition: all 0.3s ease;
-  }
-
-  /* يتحول لزجاج ضبابي فخم فقط عندما يبدأ المستخدم بالتمرير لأسفل */
-  .app-header.scrolled {
-    background: rgba(9, 32, 63, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  }
+/* هيدر الصفحة الرئيسية (يتحرك وينسحب للأعلى طبيعياً مع كرت الصلاة) */
+.app-header {
+  position: relative; /* يتحرك مع محتوى الصفحة ولا يثبت في الأعلى */
+  width: 100%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: transparent;
+}
 
 .header-actions {
   display: flex;
