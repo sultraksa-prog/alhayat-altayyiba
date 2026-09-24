@@ -10,7 +10,7 @@
     'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
   ];
 
-  // 1. قاعدة بيانات المناسبات الدينية الإسلامية العامة الثابتة (لكافة المسلمين)
+  // 1. قاعدة بيانات المناسبات الدينية الإسلامية العامة الثابتة
   const ISLAMIC_RELIGIOUS_EVENTS = [
     { name: 'رأس السنة الهجرية', month: 1, day: 1, type: 'religious' },
     { name: 'يوم عاشوراء', month: 1, day: 10, type: 'religious' },
@@ -27,7 +27,7 @@
     { name: 'أيام التشريق', month: 12, day: 11, type: 'religious' }
   ];
 
-  // 2. قاعدة بيانات المناسبات الوطنية المدمجة مسبقاً (تعمل 100% أوفلاين)
+  // 2. قاعدة بيانات المناسبات الوطنية للدول العربية والإسلامية (تعمل 100% أوفلاين)
   const NATIONAL_EVENTS_DATABASE = {
     'السعودية': [
       { name: 'اليوم الوطني للمملكة العربية السعودية', isGreg: true, gMonth: 9, gDay: 23, type: 'national' },
@@ -92,75 +92,174 @@
     ]
   };
 
-  // استخراج قائمة المناسبات الشاملة (دينية + وطنية حسب الدولة المختارة)
+  // حالة التقويم
+  let calPerspective = localStorage.getItem('hayat_cal_perspective') || 'hijri';
+  let hijriOffset = parseInt(localStorage.getItem('hayat_hijri_offset') || '0', 10);
+  let activeSelectedDate = new Date();
+  
+  let currentViewingYear = 1448;
+  let currentViewingMonth = 4;
+  let currentViewingGregYear = 2026;
+  let currentViewingGregMonth = 8;
+  let currentOccFilter = 'all';
+
+  // تجريد التشكيل للبحث السلس
+  function normalizeArabicText(text) {
+    if (!text) return '';
+    return text
+      .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .trim()
+      .toLowerCase();
+  }
+
+  function getAdjustedDate(baseDate) {
+    const d = new Date(baseDate);
+    if (hijriOffset !== 0) {
+      d.setDate(d.getDate() + hijriOffset);
+    }
+    return d;
+  }
+
+  // مستخرج الأرقام الفلكية القياسي الحصين ضد NaN
+  function getHijriDetails(dateObj) {
+    const adjusted = getAdjustedDate(dateObj);
+    try {
+      const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric'
+      });
+      const parts = formatter.formatToParts(adjusted);
+      let day = 1, month = 1, year = 1448;
+      parts.forEach(p => {
+        if (p.type === 'day') day = parseInt(p.value, 10);
+        if (p.type === 'month') month = parseInt(p.value, 10);
+        if (p.type === 'year') year = parseInt(p.value, 10);
+      });
+
+      if (isNaN(day)) day = 1;
+      if (isNaN(month)) month = 1;
+      if (isNaN(year)) year = 1448;
+
+      return {
+        day,
+        month,
+        year,
+        monthName: HIJRI_MONTH_NAMES[month - 1] || 'محرم'
+      };
+    } catch (e) {
+      return { day: 1, month: 4, year: 1448, monthName: 'ربيع الثاني' };
+    }
+  }
+
+  // الدالة الأساسية لتشغيل التقويم وضمان حقن البيانات
+  window.initCalendarEngine = function () {
+    const today = new Date();
+    activeSelectedDate = new Date(today);
+    const todayH = getHijriDetails(today);
+    
+    currentViewingYear = todayH.year;
+    currentViewingMonth = todayH.month;
+    currentViewingGregYear = today.getFullYear();
+    currentViewingGregMonth = today.getMonth();
+
+    updatePerspectiveUI();
+    renderCalendar();
+    renderIslamicEvents();
+    renderSelectedDayPrayers(activeSelectedDate);
+    updateHijriAdjustmentStatusUI();
+  };
+
+  function updatePerspectiveUI() {
+    const btnText = document.getElementById('perspectiveModeText');
+    if (btnText) {
+      btnText.textContent = (calPerspective === 'hijri') ? 'الميلادي' : 'الهجري';
+    }
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calDaysGrid');
+    const mainTitle = document.getElementById('calCurrentMonthTitle');
+    const subTitle = document.getElementById('calSubMonthTitle');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    if (calPerspective === 'hijri') {
+      if (mainTitle) mainTitle.textContent = `${HIJRI_MONTH_NAMES[currentViewingMonth - 1]}، ${currentViewingYear} هـ`;
+      if (subTitle) subTitle.textContent = 'التقويم الهجري (أم القرى)';
+      renderHijriMonthGrid(currentViewingYear, currentViewingMonth);
+    } else {
+      if (mainTitle) mainTitle.textContent = `${GREG_MONTH_NAMES[currentViewingGregMonth]}، ${currentViewingGregYear} م`;
+      if (subTitle) subTitle.textContent = 'التقويم الميلادي';
+      renderGregorianMonthGrid(currentViewingGregYear, currentViewingGregMonth);
+    }
+  }
+
+  function findFirstDayOfHijriMonth(hYear, hMonth) {
+    const today = new Date();
+    const todayH = getHijriDetails(today);
+    
+    const monthDiff = (hYear - todayH.year) * 12 + (hMonth - todayH.month);
+    const estDays = Math.round(monthDiff * 29.53058) - (todayH.day - 1);
+    
+    let cursor = new Date(today);
+    cursor.setDate(cursor.getDate() + estDays);
+
+    for (let step = 0; step < 8; step++) {
+      const h = getHijriDetails(cursor);
+      if (h.year === hYear && h.month === hMonth && h.day === 1) {
+        return cursor;
+      }
+      if (h.year < hYear || (h.year === hYear && h.month < hMonth)) {
+        cursor.setDate(cursor.getDate() + 1);
+      } else if (h.day > 1) {
+        cursor.setDate(cursor.getDate() - (h.day - 1));
+      } else {
+        cursor.setDate(cursor.getDate() - 1);
+      }
+    }
+    return cursor;
+  }
+
+  // فحص أيام الصيام المستحب
+  function isRecommendedFasting(dateObj, hDay, hMonth) {
+    const dayOfWeek = dateObj.getDay();
+    if (hMonth === 10 && hDay === 1) return false;
+    if (hMonth === 12 && (hDay >= 10 && hDay <= 13)) return false;
+
+    if (dayOfWeek === 1 || dayOfWeek === 4) return true;
+    if (hDay === 13 || hDay === 14 || hDay === 15) return true;
+    if (hMonth === 1 && (hDay === 9 || hDay === 10)) return true;
+    if (hMonth === 12 && hDay === 9) return true;
+    if (hMonth === 10 && hDay >= 2 && hDay <= 7) return true;
+
+    return false;
+  }
+
+  // جلب كافة المناسبات المعتمدة للدولة
   function getAllOccasionsList() {
-    const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { country: 'السعودية' };
-    const country = userLoc.country || 'السعودية';
+    let country = 'السعودية';
+    try {
+      const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location'));
+      if (userLoc && userLoc.country) country = userLoc.country;
+    } catch (e) {}
 
     let nationalEvents = NATIONAL_EVENTS_DATABASE[country];
-
-    // إذا كانت الدولة غير مدرجة في القائمة المحلية، نقرأ من الـ LocalStorage إن تم جلبها سابقاً
     if (!nationalEvents) {
       const cachedCustom = localStorage.getItem(`hayat_national_events_${country}`);
       if (cachedCustom) {
         try { nationalEvents = JSON.parse(cachedCustom); } catch (e) {}
       }
     }
-
-    // إذا لم تكن موجودة نهائياً والمتصفح متصل بالإنترنت، نطلب جلبها في الخلفية وتخزينها
-    if (!nationalEvents && navigator.onLine) {
-      fetchAndCacheCountryEventsOnline(country);
-      nationalEvents = [];
-    }
-
     return [...ISLAMIC_RELIGIOUS_EVENTS, ...(nationalEvents || [])];
-  }
-
-  // الجلب التلقائي والتخزين المحلي للدول غير المدرجة عبر API دولي مفتوح ومجاني
-  async function fetchAndCacheCountryEventsOnline(countryName) {
-    try {
-      // استخراج كود الدولة أو البحث بالاسم
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?country=${encodeURIComponent(countryName)}&format=json&limit=1`);
-      const data = await res.json();
-      if (data && data[0] && data[0].display_name) {
-        // تخزين مؤقت يوضح جلب مناسبات الدولة
-        const fetchedHolidays = [
-          { name: `اليوم الوطني لـ ${countryName}`, isGreg: true, gMonth: 1, gDay: 1, type: 'national' }
-        ];
-        localStorage.setItem(`hayat_national_events_${countryName}`, JSON.stringify(fetchedHolidays));
-        renderComprehensiveOccasions();
-      }
-    } catch (e) {}
-  }
-
-  // دالة فحص أيام الصيام المستحب شرعاً
-  function isRecommendedFasting(dateObj, hDay, hMonth) {
-    const dayOfWeek = dateObj.getDay(); // 1 = الإثنين, 4 = الخميس
-    
-    // استثناء أيام العيد والتشريق (يحرم صيامها)
-    if (hMonth === 10 && hDay === 1) return false; // عيد الفطر
-    if (hMonth === 12 && (hDay >= 10 && hDay <= 13)) return false; // الأضحى والتشريق
-
-    // 1. الإثنين والخميس
-    if (dayOfWeek === 1 || dayOfWeek === 4) return true;
-
-    // 2. الأيام البيض (13، 14، 15 من كل شهر هجري)
-    if (hDay === 13 || hDay === 14 || hDay === 15) return true;
-
-    // 3. يوم عاشوراء وتاسوعاء (9 و 10 محرم)
-    if (hMonth === 1 && (hDay === 9 || hDay === 10)) return true;
-
-    // 4. يوم عرفة (9 ذو الحجة)
-    if (hMonth === 12 && hDay === 9) return true;
-
-    // 5. الست من شوال
-    if (hMonth === 10 && hDay >= 2 && hDay <= 7) return true;
-
-    return false;
   }
 
   function renderHijriMonthGrid(hYear, hMonth) {
     const grid = document.getElementById('calDaysGrid');
+    if (!grid) return;
     const firstDate = findFirstDayOfHijriMonth(hYear, hMonth);
     const firstDayIndex = firstDate.getDay();
 
@@ -169,6 +268,8 @@
       empty.className = 'cal-day-cell other-month';
       grid.appendChild(empty);
     }
+
+    const allEvents = getAllOccasionsList();
 
     for (let day = 1; day <= 30; day++) {
       const cellDate = new Date(firstDate);
@@ -181,8 +282,7 @@
       const isSelected = cellDate.toDateString() === activeSelectedDate.toDateString();
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
-      // فحص المناسبة وفحص الصيام المستحب
-      const hasEvent = ISLAMIC_EVENTS.some(ev => !ev.isGreg && ev.month === hMonth && ev.day === day);
+      const hasEvent = allEvents.some(ev => !ev.isGreg && ev.month === hMonth && ev.day === day);
       const isFasting = isRecommendedFasting(cellDate, day, hMonth);
 
       cell.innerHTML = `
@@ -206,6 +306,7 @@
 
   function renderGregorianMonthGrid(gYear, gMonth) {
     const grid = document.getElementById('calDaysGrid');
+    if (!grid) return;
     const firstDate = new Date(gYear, gMonth, 1);
     const firstDayIndex = firstDate.getDay();
     const daysInMonth = new Date(gYear, gMonth + 1, 0).getDate();
@@ -216,6 +317,8 @@
       grid.appendChild(empty);
     }
 
+    const allEvents = getAllOccasionsList();
+
     for (let day = 1; day <= daysInMonth; day++) {
       const cellDate = new Date(gYear, gMonth, day);
       const hDetails = getHijriDetails(cellDate);
@@ -224,7 +327,7 @@
       const cell = document.createElement('div');
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
-      const hasEvent = ISLAMIC_EVENTS.some(ev => 
+      const hasEvent = allEvents.some(ev => 
         (ev.isGreg && ev.gMonth === (gMonth + 1) && ev.gDay === day) ||
         (!ev.isGreg && ev.month === hDetails.month && ev.day === hDetails.day)
       );
@@ -249,29 +352,23 @@
     }
   }
 
-  // ==================== محرك الحساب الفلكي الشمسي المباشر لمواقيت الصلاة ====================
+  // ==================== محرك الحساب الفلكي الشمسي لمواقيت الصلاة ====================
   function calculateDailyPrayerTimes(dateObj, lat, lng, timezone = 3) {
     const rad = Math.PI / 180;
     const deg = 180 / Math.PI;
 
-    // حساب اليوم اليولياني النسبي
     const d = (dateObj.getTime() / 86400000) + 2440587.5 - 2451545.0;
-    
-    // الموقع الفلكي للشمس
     const M = (357.529 + 0.98560028 * d) % 360;
     const L = (280.459 + 0.98564736 * d) % 360;
     const lambda = (L + 1.915 * Math.sin(M * rad) + 0.020 * Math.sin(2 * M * rad)) % 360;
     const epsilon = 23.439 - 0.00000036 * d;
 
-    // الميل والمطلع المستقيم ومعادلة الوقت
     const alpha = Math.atan2(Math.cos(epsilon * rad) * Math.sin(lambda * rad), Math.cos(lambda * rad)) * deg;
     const delta = Math.asin(Math.sin(epsilon * rad) * Math.sin(lambda * rad)) * deg;
-    const EqT = (L / 15 - (alpha / 15)) * 60; // بالدقائق
+    const EqT = (L / 15 - (alpha / 15)) * 60;
 
-    // زوال الشمس الفلكي (الظهر)
     const solarNoon = 12 + timezone - (lng / 15) - (EqT / 60);
 
-    // زاوية ساعة الشمس عند أي ارتفاع فوق أو تحت الأفق
     function getHourAngle(altitude) {
       const cosH = (Math.sin(altitude * rad) - Math.sin(lat * rad) * Math.sin(delta * rad)) /
                    (Math.cos(lat * rad) * Math.cos(delta * rad));
@@ -279,13 +376,12 @@
       return Math.acos(cosH) * deg / 15;
     }
 
-    // زاوية ارتفاع الشمس وقت صلاة العصر (طول الظل = ظل الزوال + 1)
     const noonZenith = Math.abs(lat - delta);
     const asrAltitude = Math.atan(1 / (1 + Math.tan(noonZenith * rad))) * deg;
 
-    const fajrH = getHourAngle(-18.5);  // الفجر (أم القرى -18.5 درجة)
-    const sunH = getHourAngle(-0.833);  // الشروق والغروب الفلكي
-    const asrH = getHourAngle(asrAltitude); // العصر (زاوية نهارية صحيحة)
+    const fajrH = getHourAngle(-18.5);
+    const sunH = getHourAngle(-0.833);
+    const asrH = getHourAngle(asrAltitude);
 
     function formatTime(decHour) {
       if (decHour === null || isNaN(decHour)) return '--:--';
@@ -302,14 +398,13 @@
     return {
       Fajr: formatTime(solarNoon - (fajrH || 1.35)),
       Sunrise: formatTime(solarNoon - (sunH || 1.05)),
-      Dhuhr: formatTime(solarNoon + (2 / 60)), // إضافة دقيقتين احتياط الزوال
-      Asr: formatTime(solarNoon + (asrH || 3.3)), // وقت العصر النهاري الصحيح
+      Dhuhr: formatTime(solarNoon + (2 / 60)),
+      Asr: formatTime(solarNoon + (asrH || 3.3)),
       Maghrib: formatTime(maghribDec),
-      Isha: formatTime(maghribDec + 1.5) // العشاء (أم القرى: 90 دقيقة بعد المغرب)
+      Isha: formatTime(maghribDec + 1.5)
     };
   }
 
-  // عرض مواقيت صلاة اليوم المختار ديناميكياً
   function renderSelectedDayPrayers(dateObj) {
     const list = document.getElementById('calDayPrayersList');
     const hijriFull = document.getElementById('selectedDayHijriFull');
@@ -323,7 +418,6 @@
       gregFull.textContent = gFormatter.format(dateObj) + ' م';
     }
 
-    // جلب موقع المستخدم المحفوظ لحساب مواقيت اليوم المختار بدقة
     const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262 };
     const tz = (userLoc.lng > 40) ? 3 : 2;
     const dayTimings = calculateDailyPrayerTimes(dateObj, userLoc.lat, userLoc.lng, tz);
@@ -367,20 +461,18 @@
 
       if (ev.isGreg) {
         targetDate = new Date(today.getFullYear(), ev.gMonth - 1, ev.gDay);
-        dateDesc = `${ev.gDay} ${GREG_MONTH_NAMES[ev.gMonth - 1]}`;
+        dateDesc = `${ev.gDay} ${GREG_MONTH_NAMES[ev.gMonth - 1]} م`;
       } else {
         const monthDiff = ev.month - todayH.month;
         const dayDiff = ev.day - todayH.day;
-        const totalEstDays = (monthDiff * 29.53) + dayDiff;
         targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() + Math.round(totalEstDays));
-        dateDesc = `${String(ev.day).padStart(2, '0')} ${HIJRI_MONTH_NAMES[ev.month - 1]}، ${currentViewingYear} هـ`;
+        targetDate.setDate(targetDate.getDate() + Math.round((monthDiff * 29.53) + dayDiff));
+        dateDesc = `${String(ev.day).padStart(2, '0')} ${HIJRI_MONTH_NAMES[ev.month - 1]} هـ`;
       }
 
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      // الشرط: إما تقع في نفس الشهر المعروض أو متبقي عليها أقل من 30 يوماً
       const isInCurrentMonth = ev.isGreg 
         ? (calPerspective === 'gregorian' && ev.gMonth === (currentViewingGregMonth + 1))
         : (ev.month === currentViewingMonth);
@@ -409,7 +501,7 @@
         item.className = 'cal-event-item';
         item.innerHTML = `
           <div class="event-meta">
-            <h4>${ev.name} ${ev.type === 'national' ? '🇸🇦' : '🌙'}</h4>
+            <h4>${ev.name} ${ev.type === 'national' ? '📍' : '🌙'}</h4>
             <span>${dateDesc}</span>
           </div>
           <span class="${badgeClass}">${badgeText}</span>
@@ -419,14 +511,13 @@
     });
 
     if (countShown === 0) {
-      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات قريبة في هذا الشهر (أقل من 30 يوماً)</div>`;
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات في هذا الشهر أو قريبة منه</div>`;
     }
 
     renderComprehensiveOccasions();
   }
 
-  // 2. عرض كرت المناسبات الدينية والاجتماعية الشامل مع البحث وتصفية الدولة
-  let currentOccFilter = 'all';
+  // 2. عرض كرت المناسبات الدينية والاجتماعية الشامل
   function renderComprehensiveOccasions() {
     const listEl = document.getElementById('comprehensiveEventsList');
     const badgeEl = document.getElementById('calCountryBadgeDisplay');
@@ -437,9 +528,13 @@
     if (!listEl) return;
     listEl.innerHTML = '';
 
-    const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { country: 'السعودية' };
-    const country = userLoc.country || 'السعودية';
-    if (badgeEl) badgeEl.textContent = `دولة: ${country}`;
+    let country = 'السعودية';
+    try {
+      const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location'));
+      if (userLoc && userLoc.country) country = userLoc.country;
+    } catch (e) {}
+
+    if (badgeEl) badgeEl.textContent = country;
 
     const query = searchInput ? normalizeArabicText(searchInput.value) : '';
     const today = new Date();
@@ -451,10 +546,8 @@
     let matchedCount = 0;
 
     allEvents.forEach(ev => {
-      // تصفية حسب النوع (دينية / وطنية)
       if (currentOccFilter !== 'all' && ev.type !== currentOccFilter) return;
 
-      // تصفية حسب البحث بدون تشكيل
       const cleanName = normalizeArabicText(ev.name);
       if (query && !cleanName.includes(query)) return;
 
@@ -475,7 +568,6 @@
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      // حساب أقرب مناسبة قادمة
       if (diffDays >= 0 && diffDays < minDays) {
         minDays = diffDays;
         nextUpcoming = { name: ev.name, days: diffDays };
@@ -514,14 +606,12 @@
       listEl.innerHTML = `<div style="text-align:center; padding:18px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات مطابقة للبحث أو التصفية</div>`;
     }
 
-    // تحديث كرت المناسبة القادمة
     if (nextTitle && nextBadge && nextUpcoming) {
       nextTitle.textContent = nextUpcoming.name;
       nextBadge.textContent = nextUpcoming.days === 0 ? 'اليوم' : `بعد ${nextUpcoming.days} يوماً`;
     }
   }
 
-  // تحديث حالة تصحيح التاريخ الهجري في شاشة إعدادات أخرى
   function updateHijriAdjustmentStatusUI() {
     const textEl = document.getElementById('hijriAdjustmentStatusText');
     if (!textEl) return;
@@ -541,7 +631,6 @@
 
   // ربط جميع أحداث الشاشة
   document.addEventListener('DOMContentLoaded', () => {
-    // 1. التنقل بين الشهور عبر الأسهم في كلا المنظورين
     const prevBtn = document.getElementById('calPrevMonthBtn');
     const nextBtn = document.getElementById('calNextMonthBtn');
 
@@ -587,7 +676,6 @@
       };
     }
 
-    // 2. زر قلب المنظور بين الهجري والميلادي
     const togglePerspBtn = document.getElementById('toggleCalendarPerspectiveBtn');
     if (togglePerspBtn) {
       togglePerspBtn.onclick = () => {
@@ -598,7 +686,6 @@
       };
     }
 
-    // 3. زر العودة لليوم الحالي
     const todayBtn = document.getElementById('calReturnTodayBtn');
     if (todayBtn) {
       todayBtn.onclick = () => {
@@ -613,7 +700,6 @@
       };
     }
 
-    // 4. التبديل بين تبويبي (مواقيت الصلاة / المناسبات الشهرية)
     const tabPrayers = document.getElementById('tabCalPrayerTimes');
     const tabEvents = document.getElementById('tabCalEvents');
     const contentPrayers = document.getElementById('contentCalPrayerTimes');
@@ -635,7 +721,6 @@
       };
     }
 
-    // أحداث البحث والتصفية لكرت المناسبات الشامل
     const compSearch = document.getElementById('comprehensiveSearchInput');
     if (compSearch) {
       compSearch.oninput = () => renderComprehensiveOccasions();
@@ -650,7 +735,6 @@
       };
     });
 
-    // 5. نافذة تعديل التقويم الهجري في إعدادات أخرى
     const openAdjustBtn = document.getElementById('openHijriAdjustModalBtn');
     const adjustModal = document.getElementById('hijriAdjustModal');
     const closeAdjustBtn = document.getElementById('closeHijriAdjustBtn');
@@ -671,7 +755,6 @@
       });
     }
 
-    // 6. نافذة اختيار الشهر والسنة السريعة
     const openPickerBtn = document.getElementById('openMonthPickerBtn');
     const pickerModal = document.getElementById('calendarMonthPickerModal');
     const closePickerBtn = document.getElementById('closeCalMonthPickerBtn');
