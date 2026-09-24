@@ -1880,6 +1880,7 @@ ${APP_CONFIG.url}`;
 
   // ==================== تسجيل Service Worker ونظام التحديث الذكي ====================
   const CURRENT_APP_VERSION = 'v1.0.1';
+  const UPDATE_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // عداد 7 أيام بالملي ثانية
 
   // 1. فحص هل تم تحديث التطبيق للتو لعرض رسالة التهنئة برقم الإصدار الجديد
   const updatedVersion = localStorage.getItem('hayat_just_updated_version');
@@ -1911,30 +1912,77 @@ ${APP_CONFIG.url}`;
     });
 
     navigator.serviceWorker.register('./sw.js').then((registration) => {
-      // مراقبة التحديث التلقائي في الخلفية
+      
+      // 2. مراقبة التحديث التلقائي في الخلفية
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // إظهار النافذة المنبثقة الثابتة
             showUpdateToast(newWorker);
           }
         });
       });
 
-      // زر فحص التحديث يدوياً من شاشة الإعدادات
+      // 3. آلية الفحص التلقائي كل 7 أيام عند فتح التطبيق متصلاً بالإنترنت
+      function runPeriodicUpdateCheck() {
+        const lastCheck = parseInt(localStorage.getItem('hayat_last_update_check_time') || '0', 10);
+        const now = Date.now();
+
+        // إذا مرّت 7 أيام والجهاز متصل بالإنترنت
+        if (navigator.onLine && (now - lastCheck >= UPDATE_CHECK_INTERVAL_MS)) {
+          registration.update().then(() => {
+            // تسجيل وقت الفحص الناجح لتصفير عداد الـ 7 أيام
+            localStorage.setItem('hayat_last_update_check_time', now.toString());
+          }).catch(() => {});
+        }
+      }
+      runPeriodicUpdateCheck();
+
+      // 4. زر فحص التحديث يدوياً من شاشة الإعدادات
       const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
       const upToDateModal = document.getElementById('upToDateModal');
       const closeUpToDateBtn = document.getElementById('closeUpToDateBtn');
+
+      const offlineModal = document.getElementById('offlineUpdateModal');
+      const closeOfflineBtn = document.getElementById('closeOfflineModalBtn');
+      const openWifiSettingsBtn = document.getElementById('openWifiSettingsBtn');
 
       if (closeUpToDateBtn && upToDateModal) {
         closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
       }
 
+      if (closeOfflineBtn && offlineModal) {
+        closeOfflineBtn.onclick = () => offlineModal.classList.remove('show');
+      }
+
+      // زر فتح إعدادات الواي فاي والإنترنت
+      if (openWifiSettingsBtn) {
+        openWifiSettingsBtn.onclick = () => {
+          if (offlineModal) offlineModal.classList.remove('show');
+
+          // أ) جسر تطبيق أندرويد الأصيل APK مستقبلاً
+          if (window.AndroidBridge && typeof window.AndroidBridge.openWifiSettings === 'function') {
+            window.AndroidBridge.openWifiSettings();
+            return;
+          }
+
+          // ب) استدعاء صفحة إعدادات الواي فاي في هاتف الأندرويد مباشرة
+          try {
+            window.location.href = "intent:#Intent;action=android.settings.WIFI_SETTINGS;end";
+          } catch (e) {}
+        };
+      }
+
       if (checkUpdateBtn) {
         checkUpdateBtn.addEventListener('click', () => {
+          // فحص الاتصال بالإنترنت أولاً
+          if (!navigator.onLine) {
+            if (offlineModal) offlineModal.classList.add('show');
+            return;
+          }
+
           const titleEl = checkUpdateBtn.querySelector('.settings-item-title');
           const originalTitle = titleEl ? titleEl.textContent : 'تحديث التطبيق';
           if (titleEl) titleEl.textContent = 'جاري البحث عن تحديثات... ⏳';
@@ -1945,7 +1993,7 @@ ${APP_CONFIG.url}`;
               setTimeout(() => {
                 if (titleEl) titleEl.textContent = originalTitle;
 
-                // الحالة الأولى: يوجد تحديث معلق قيد الانتظار
+                // الحالة الأولى: يوجد تحديث قيد الانتظار
                 if (registration.waiting) {
                   showUpdateToast(registration.waiting);
                 } 
@@ -1966,14 +2014,15 @@ ${APP_CONFIG.url}`;
             })
             .catch(() => {
               if (titleEl) titleEl.textContent = originalTitle;
-              alert('تعذر فحص التحديثات، يرجى التأكد من اتصالك بالإنترنت.');
+              // في حال فشل الاتصال تظهر نافذة انقطاع الإنترنت الفاخرة
+              if (offlineModal) offlineModal.classList.add('show');
             });
         });
       }
     }).catch((err) => console.log('SW error:', err));
   }
 
-  // دالة إظهار إشعار التحديث الثابت (لا يختفي إلا بنقر المستخدم)
+  // دالة إظهار إشعار التحديث الثابت (لا يختفي إلا بقرار المستخدم)
   function showUpdateToast(newWorker) {
     const toast = document.getElementById('appUpdateToast');
     const updateBtn = document.getElementById('applyUpdateBtn');
@@ -1982,7 +2031,7 @@ ${APP_CONFIG.url}`;
     if (toast && updateBtn) {
       toast.classList.add('show');
 
-      // عند النقر على تحديث الآن: حفظ رقم الإصدار الجديد وتفعيل التحديث
+      // عند النقر على تحديث الآن: حفظ رقم الإصدار وتفعيل التحديث
       updateBtn.onclick = () => {
         updateBtn.textContent = 'جاري التحديث...';
         localStorage.setItem('hayat_just_updated_version', CURRENT_APP_VERSION);
