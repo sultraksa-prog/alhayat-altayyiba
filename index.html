@@ -746,18 +746,17 @@
           </div>
         </div>
 
-        <!-- التبويبان السفليان: مواقيت الصلاة / الأعياد الإسلامية -->
+        <!-- التبويبان السفليان: مواقيت الصلاة / المناسبات الشهرية والقريبة -->
         <div class="cal-tabs-container">
           <div class="cal-tabs-header">
             <button type="button" class="cal-tab-btn active" id="tabCalPrayerTimes">مواقيت الصلاة</button>
-            <button type="button" class="cal-tab-btn" id="tabCalEvents">المناسبات الدينية والإجتماعية</button>
+            <button type="button" class="cal-tab-btn" id="tabCalEvents">المناسبات الشهرية (أقل من 30 يوم)</button>
           </div>
 
           <!-- محتوى تبويب 1: مواقيت صلاة اليوم المختار -->
           <div class="cal-tab-content" id="contentCalPrayerTimes">
             <div class="cal-prayer-times-list" id="calDayPrayersList"></div>
 
-            <!-- كرت التاريخ المزدوج لليوم المختار -->
             <div class="cal-dual-date-card">
               <div class="dual-date-box">
                 <span class="d-label">التقويم الهجري</span>
@@ -771,36 +770,54 @@
             </div>
           </div>
 
-          <!-- محتوى تبويب 2: المناسبات الدينية والاجتماعية -->
+          <!-- محتوى تبويب 2: المناسبات الشهرية والأحداث القريبة (أقل من 30 يوم) -->
           <div class="cal-tab-content" id="contentCalEvents" style="display: none;">
             <div class="cal-sec-header">
               <span class="cal-sec-bar"></span>
-              <h4>مناسبات هذا الشهر</h4>
+              <h4>مناسبات هذا الشهر وما يقترب منها</h4>
             </div>
 
             <div class="cal-events-list" id="calEventsListContainer"></div>
-
-            <!-- كرت المناسبة القادمة الفاخر في الأسفل -->
-            <div class="cal-next-event-card" id="calNextEventCard">
-              <div class="next-event-right">
-                <span class="next-event-icon">📅</span>
-                <div class="next-event-text">
-                  <span class="next-event-label">المناسبة القادمة</span>
-                  <h4 class="next-event-title" id="nextEventTitleDisplay">--</h4>
-                </div>
-              </div>
-              <div class="next-event-badge" id="nextEventCountdownDisplay">-- يوماً</div>
-            </div>
-
-            <div class="cal-year-nav-row">
-              <button type="button" class="cal-year-btn" id="prevCalYearBtn">‹ السنة السابقة</button>
-              <button type="button" class="cal-year-btn" id="nextCalYearBtn">السنة القادمة ›</button>
-            </div>
           </div>
         </div>
 
-      </div>
-    </div>
+        <!-- الكرت الجديد المستقل: المناسبات الدينية والاجتماعية الشاملة (حسب الدولة) -->
+        <div class="cal-comprehensive-card">
+          <div class="comp-card-header">
+            <div class="comp-title-group">
+              <span class="comp-accent-dot"></span>
+              <h3 class="comp-card-title">المناسبات الدينية والاجتماعية</h3>
+            </div>
+            <span class="comp-country-badge" id="calCountryBadgeDisplay">المملكة العربية السعودية</span>
+          </div>
+
+          <!-- مربع البحث في كافة المناسبات -->
+          <div class="comp-search-box">
+            <input type="text" id="comprehensiveSearchInput" placeholder="ابحث في المناسبات الدينية والوطنية...">
+          </div>
+
+          <!-- أزرار التصفية السريعة -->
+          <div class="comp-filter-chips">
+            <button type="button" class="comp-chip active" data-type="all">الكل</button>
+            <button type="button" class="comp-chip" data-type="religious">دينية إسلامية 🌙</button>
+            <button type="button" class="comp-chip" data-type="national">وطنية ومحلية 🇸🇦</button>
+          </div>
+
+          <!-- قائمة المناسبات الشاملة -->
+          <div class="comp-events-scroll-list" id="comprehensiveEventsList"></div>
+
+          <!-- كرت المناسبة القادمة والعد التنازلي -->
+          <div class="cal-next-event-card" id="calNextEventCard">
+            <div class="next-event-right">
+              <span class="next-event-icon">📅</span>
+              <div class="next-event-text">
+                <span class="next-event-label">المناسبة القادمة</span>
+                <h4 class="next-event-title" id="nextEventTitleDisplay">--</h4>
+              </div>
+            </div>
+            <div class="next-event-badge" id="nextEventCountdownDisplay">-- يوماً</div>
+          </div>
+        </div>
 
     <!-- نافذة اختيار تعديل التاريخ الهجري المنبثقة (+2 إلى -2 يوم) -->
     <div class="bottom-sheet-backdrop" id="hijriAdjustModal">
