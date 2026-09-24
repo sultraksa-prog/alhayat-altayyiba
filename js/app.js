@@ -141,20 +141,31 @@ document.addEventListener('DOMContentLoaded', () => {
       history.pushState({ screenId: screen.id }, '');
     }
 
-    // حفظ الشاشة الحالية لضمان بقاء المستخدم فيها حتى لو أعيد تحميل الصفحة
+    // حفظ الشاشة النشطة
     localStorage.setItem('hayat_last_active_screen_id', screen.id);
 
     document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
     screen.classList.add('active');
     window.scrollTo(0, 0);
 
+    // إخفاء شريط التبويبات السفلي تلقائياً داخل المسبحة وإظهاره فوراً في باقي الشاشات
+    const bottomNavEl = document.querySelector('.bottom-nav');
+    if (bottomNavEl) {
+      if (screen.id === 'screen-tasbeeh') {
+        bottomNavEl.classList.add('nav-hidden');
+      } else {
+        bottomNavEl.classList.remove('nav-hidden');
+      }
+    }
+
+    // تنشيط التبويب المطابق
     document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
     const tabQiblaEl = document.getElementById('tabQibla');
 
     if (screen === screenHome) {
-      tabHome.classList.add('active');
+      if (tabHome) tabHome.classList.add('active');
     } else if (screen === screenAzkarCategories || screen === screenAzkarFavorites || screen === screenAzkarReader) {
-      tabAzkar.classList.add('active');
+      if (tabAzkar) tabAzkar.classList.add('active');
     } else if (screen.id === 'screen-qibla') {
       if (tabQiblaEl) tabQiblaEl.classList.add('active');
     } else if (screen === screenGeneralSettings || screen === screenAboutApp) {
@@ -1676,7 +1687,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.0.17', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.0.18', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
