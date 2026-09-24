@@ -109,6 +109,35 @@ document.addEventListener('DOMContentLoaded', () => {
       showScreen(screenHome);
     });
   }
+
+  //
+
+  const screenCalendar = document.getElementById('screen-calendar');
+  const openCalendarTileBtn = document.getElementById('openCalendarTileBtn');
+  const backToHomeFromCalendarBtn = document.getElementById('backToHomeFromCalendarBtn');
+
+  if (openCalendarTileBtn && screenCalendar) {
+    openCalendarTileBtn.addEventListener('click', () => {
+      showScreen(screenCalendar);
+      if (typeof window.initCalendarEngine === 'function') window.initCalendarEngine();
+    });
+  }
+  if (backToHomeFromCalendarBtn) {
+    backToHomeFromCalendarBtn.addEventListener('click', () => showScreen(screenHome));
+  }
+
+  const screenOtherSettings = document.getElementById('screen-other-settings');
+  const openOtherSettingsBtn = document.getElementById('openOtherSettingsBtn');
+  const backToSettingsFromOtherBtn = document.getElementById('backToSettingsFromOtherBtn');
+
+  if (openOtherSettingsBtn && screenOtherSettings) {
+    openOtherSettingsBtn.addEventListener('click', () => showScreen(screenOtherSettings));
+  }
+  if (backToSettingsFromOtherBtn) {
+    backToSettingsFromOtherBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+  }
+  
+  //
   
   const openFavTileBtn = document.getElementById('openFavTileBtn');
   const backToHomeBtn = document.getElementById('backToHomeBtn');
@@ -1687,7 +1716,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.0.19', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.0', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
