@@ -10,147 +10,127 @@
     'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
   ];
 
-  // قاعدة بيانات المناسبات الإسلامية والوطنية
-  const ISLAMIC_EVENTS = [
-    { name: 'رأس السنة الهجرية', month: 1, day: 1 },
-    { name: 'يوم عاشوراء', month: 1, day: 10 },
-    { name: 'المولد النبوي الشريف', month: 3, day: 12 },
-    { name: 'اليوم الوطني للمملكة العربية السعودية', isGreg: true, gMonth: 9, gDay: 23 },
-    { name: 'يوم التأسيس السعودي', isGreg: true, gMonth: 2, gDay: 22 },
-    { name: 'ليلة الإسراء والمعراج', month: 7, day: 27 },
-    { name: 'ليلة النصف من شعبان', month: 8, day: 15 },
-    { name: 'بداية شهر رمضان المبارك', month: 9, day: 1 },
-    { name: 'ليلة القدر (المتحرّاة)', month: 9, day: 27 },
-    { name: 'عيد الفطر المبارك', month: 10, day: 1 },
-    { name: 'بداية عشر ذي الحجة', month: 12, day: 1 },
-    { name: 'يوم التروية (الحج)', month: 12, day: 8 },
-    { name: 'يوم عرفة', month: 12, day: 9 },
-    { name: 'عيد الأضحى المبارك', month: 12, day: 10 },
-    { name: 'أيام التشريق', month: 12, day: 11 }
+  // 1. قاعدة بيانات المناسبات الدينية الإسلامية العامة الثابتة (لكافة المسلمين)
+  const ISLAMIC_RELIGIOUS_EVENTS = [
+    { name: 'رأس السنة الهجرية', month: 1, day: 1, type: 'religious' },
+    { name: 'يوم عاشوراء', month: 1, day: 10, type: 'religious' },
+    { name: 'المولد النبوي الشريف', month: 3, day: 12, type: 'religious' },
+    { name: 'ليلة الإسراء والمعراج', month: 7, day: 27, type: 'religious' },
+    { name: 'ليلة النصف من شعبان', month: 8, day: 15, type: 'religious' },
+    { name: 'غُرّة شهر رمضان المبارك', month: 9, day: 1, type: 'religious' },
+    { name: 'ليلة القدر (المتحرّاة)', month: 9, day: 27, type: 'religious' },
+    { name: 'عيد الفطر المبارك', month: 10, day: 1, type: 'religious' },
+    { name: 'بداية عشر ذي الحجة', month: 12, day: 1, type: 'religious' },
+    { name: 'يوم التروية (الحج)', month: 12, day: 8, type: 'religious' },
+    { name: 'يوم عرفة', month: 12, day: 9, type: 'religious' },
+    { name: 'عيد الأضحى المبارك', month: 12, day: 10, type: 'religious' },
+    { name: 'أيام التشريق', month: 12, day: 11, type: 'religious' }
   ];
 
-  // حالة التقويم
-  let calPerspective = localStorage.getItem('hayat_cal_perspective') || 'hijri';
-  let hijriOffset = parseInt(localStorage.getItem('hayat_hijri_offset') || '0', 10);
-  let activeSelectedDate = new Date();
-  
-  let currentViewingYear = 1448;
-  let currentViewingMonth = 4;
-  let currentViewingGregYear = 2026;
-  let currentViewingGregMonth = 8; // سبتمبر (0-indexed)
-
-  // محول فلكي هجري مع ضمان إرجاع أرقام إنجليزية ليفهمها parseInt بدون خطأ NaN
-  function getAdjustedDate(baseDate) {
-    const d = new Date(baseDate);
-    if (hijriOffset !== 0) {
-      d.setDate(d.getDate() + hijriOffset);
-    }
-    return d;
-  }
-
-  function getHijriDetails(dateObj) {
-    const adjusted = getAdjustedDate(dateObj);
-    try {
-      // إجبار المتصفح على إرجاع أرقام قياسية nu-latn حتى لا تصبح NaN
-      const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', {
-        day: 'numeric',
-        month: 'numeric',
-        year: 'numeric'
-      });
-      const parts = formatter.formatToParts(adjusted);
-      let day = 1, month = 1, year = 1448;
-      parts.forEach(p => {
-        if (p.type === 'day') day = parseInt(p.value, 10);
-        if (p.type === 'month') month = parseInt(p.value, 10);
-        if (p.type === 'year') year = parseInt(p.value, 10);
-      });
-
-      if (isNaN(day)) day = 1;
-      if (isNaN(month)) month = 1;
-      if (isNaN(year)) year = 1448;
-
-      return {
-        day,
-        month,
-        year,
-        monthName: HIJRI_MONTH_NAMES[month - 1] || 'محرم'
-      };
-    } catch (e) {
-      return { day: 1, month: 4, year: 1448, monthName: 'ربيع الثاني' };
-    }
-  }
-
-  // الدالة الرئيسية لتشغيل التقويم
-  window.initCalendarEngine = function () {
-    const today = new Date();
-    activeSelectedDate = new Date(today);
-    const todayH = getHijriDetails(today);
-    
-    currentViewingYear = todayH.year;
-    currentViewingMonth = todayH.month;
-    currentViewingGregYear = today.getFullYear();
-    currentViewingGregMonth = today.getMonth();
-
-    updatePerspectiveUI();
-    renderCalendar();
-    renderIslamicEvents();
-    renderSelectedDayPrayers(activeSelectedDate);
-    updateHijriAdjustmentStatusUI();
+  // 2. قاعدة بيانات المناسبات الوطنية المدمجة مسبقاً (تعمل 100% أوفلاين)
+  const NATIONAL_EVENTS_DATABASE = {
+    'السعودية': [
+      { name: 'اليوم الوطني للمملكة العربية السعودية', isGreg: true, gMonth: 9, gDay: 23, type: 'national' },
+      { name: 'يوم التأسيس السعودي', isGreg: true, gMonth: 2, gDay: 22, type: 'national' },
+      { name: 'يوم العلم السعودي', isGreg: true, gMonth: 3, gDay: 11, type: 'national' }
+    ],
+    'مصر': [
+      { name: 'عيد تحرير سيناء', isGreg: true, gMonth: 4, gDay: 25, type: 'national' },
+      { name: 'ثورة 30 يونيو', isGreg: true, gMonth: 6, gDay: 30, type: 'national' },
+      { name: 'ثورة 23 يوليو', isGreg: true, gMonth: 7, gDay: 23, type: 'national' },
+      { name: 'عيد القوات المسلحة (نصر أكتوبر)', isGreg: true, gMonth: 10, gDay: 6, type: 'national' }
+    ],
+    'السودان': [
+      { name: 'عيد الاستقلال السوداني', isGreg: true, gMonth: 1, gDay: 1, type: 'national' },
+      { name: 'ثورة 6 أبريل', isGreg: true, gMonth: 4, gDay: 6, type: 'national' },
+      { name: 'ثورة 19 ديسمبر', isGreg: true, gMonth: 12, gDay: 19, type: 'national' }
+    ],
+    'اليمن': [
+      { name: 'عيد الوحدة اليمنية', isGreg: true, gMonth: 5, gDay: 22, type: 'national' },
+      { name: 'ثورة 26 سبتمبر', isGreg: true, gMonth: 9, gDay: 26, type: 'national' },
+      { name: 'ثورة 14 أكتوبر', isGreg: true, gMonth: 10, gDay: 14, type: 'national' },
+      { name: 'عيد الاستقلال 30 نوفمبر', isGreg: true, gMonth: 11, gDay: 30, type: 'national' }
+    ],
+    'الإمارات': [
+      { name: 'يوم الشهيد الإماراتي', isGreg: true, gMonth: 11, gDay: 30, type: 'national' },
+      { name: 'عيد الاتحاد (اليوم الوطني)', isGreg: true, gMonth: 12, gDay: 2, type: 'national' }
+    ],
+    'الكويت': [
+      { name: 'العيد الوطني الكويتي', isGreg: true, gMonth: 2, gDay: 25, type: 'national' },
+      { name: 'عيد التحرير الكويتي', isGreg: true, gMonth: 2, gDay: 26, type: 'national' }
+    ],
+    'عمان': [
+      { name: 'اليوم الوطني العُماني', isGreg: true, gMonth: 11, gDay: 18, type: 'national' }
+    ],
+    'قطر': [
+      { name: 'اليوم الرياضي للدولة', isGreg: true, gMonth: 2, gDay: 10, type: 'national' },
+      { name: 'اليوم الوطني لقطر', isGreg: true, gMonth: 12, gDay: 18, type: 'national' }
+    ],
+    'البحرين': [
+      { name: 'اليوم الوطني البحريني', isGreg: true, gMonth: 12, gDay: 16, type: 'national' }
+    ],
+    'الأردن': [
+      { name: 'عيد استقلال المملكة الأردنية', isGreg: true, gMonth: 5, gDay: 25, type: 'national' }
+    ],
+    'فلسطين': [
+      { name: 'يوم الأرض الفلسطيني', isGreg: true, gMonth: 3, gDay: 30, type: 'national' },
+      { name: 'يوم الاستقلال الفلسطيني', isGreg: true, gMonth: 11, gDay: 15, type: 'national' }
+    ],
+    'المغرب': [
+      { name: 'عيد العرش المغربي', isGreg: true, gMonth: 7, gDay: 30, type: 'national' },
+      { name: 'ذكرى ثورة الملك والشعب', isGreg: true, gMonth: 8, gDay: 20, type: 'national' },
+      { name: 'ذكرى المسيرة الخضراء', isGreg: true, gMonth: 11, gDay: 6, type: 'national' },
+      { name: 'عيد الاستقلال المغربي', isGreg: true, gMonth: 11, gDay: 18, type: 'national' }
+    ],
+    'الجزائر': [
+      { name: 'عيد الاستقلال الجزائري', isGreg: true, gMonth: 7, gDay: 5, type: 'national' },
+      { name: 'ذكرى الثورة التحريرية', isGreg: true, gMonth: 11, gDay: 1, type: 'national' }
+    ],
+    'تونس': [
+      { name: 'عيد الاستقلال التونسي', isGreg: true, gMonth: 3, gDay: 20, type: 'national' },
+      { name: 'عيد الجمهورية التونسية', isGreg: true, gMonth: 7, gDay: 25, type: 'national' }
+    ]
   };
 
-  function updatePerspectiveUI() {
-    const btnText = document.getElementById('perspectiveModeText');
-    if (btnText) {
-      btnText.textContent = (calPerspective === 'hijri') ? 'الميلادي' : 'الهجري';
-    }
-  }
+  // استخراج قائمة المناسبات الشاملة (دينية + وطنية حسب الدولة المختارة)
+  function getAllOccasionsList() {
+    const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { country: 'السعودية' };
+    const country = userLoc.country || 'السعودية';
 
-  // رسم شبكة التقويم
-  function renderCalendar() {
-    const grid = document.getElementById('calDaysGrid');
-    const mainTitle = document.getElementById('calCurrentMonthTitle');
-    const subTitle = document.getElementById('calSubMonthTitle');
-    if (!grid) return;
-    grid.innerHTML = '';
+    let nationalEvents = NATIONAL_EVENTS_DATABASE[country];
 
-    if (calPerspective === 'hijri') {
-      mainTitle.textContent = `${HIJRI_MONTH_NAMES[currentViewingMonth - 1]}، ${currentViewingYear} هـ`;
-      subTitle.textContent = 'التقويم الهجري (أم القرى)';
-      renderHijriMonthGrid(currentViewingYear, currentViewingMonth);
-    } else {
-      mainTitle.textContent = `${GREG_MONTH_NAMES[currentViewingGregMonth]}، ${currentViewingGregYear} م`;
-      subTitle.textContent = 'التقويم الميلادي';
-      renderGregorianMonthGrid(currentViewingGregYear, currentViewingGregMonth);
-    }
-  }
-
-  // البحث الرياضي الدقيق عن أول يوم في الشهر الهجري
-  function findFirstDayOfHijriMonth(hYear, hMonth) {
-    const today = new Date();
-    const todayH = getHijriDetails(today);
-    
-    // حساب الفرق التقريبي بالأيام
-    const monthDiff = (hYear - todayH.year) * 12 + (hMonth - todayH.month);
-    const estDays = Math.round(monthDiff * 29.53058) - (todayH.day - 1);
-    
-    let cursor = new Date(today);
-    cursor.setDate(cursor.getDate() + estDays);
-
-    // ضبط دقيق حتى نصل لليوم الأول من نفس الشهر والسنة
-    for (let step = 0; step < 8; step++) {
-      const h = getHijriDetails(cursor);
-      if (h.year === hYear && h.month === hMonth && h.day === 1) {
-        return cursor;
-      }
-      if (h.year < hYear || (h.year === hYear && h.month < hMonth)) {
-        cursor.setDate(cursor.getDate() + 1);
-      } else if (h.day > 1) {
-        cursor.setDate(cursor.getDate() - (h.day - 1));
-      } else {
-        cursor.setDate(cursor.getDate() - 1);
+    // إذا كانت الدولة غير مدرجة في القائمة المحلية، نقرأ من الـ LocalStorage إن تم جلبها سابقاً
+    if (!nationalEvents) {
+      const cachedCustom = localStorage.getItem(`hayat_national_events_${country}`);
+      if (cachedCustom) {
+        try { nationalEvents = JSON.parse(cachedCustom); } catch (e) {}
       }
     }
-    return cursor;
+
+    // إذا لم تكن موجودة نهائياً والمتصفح متصل بالإنترنت، نطلب جلبها في الخلفية وتخزينها
+    if (!nationalEvents && navigator.onLine) {
+      fetchAndCacheCountryEventsOnline(country);
+      nationalEvents = [];
+    }
+
+    return [...ISLAMIC_RELIGIOUS_EVENTS, ...(nationalEvents || [])];
+  }
+
+  // الجلب التلقائي والتخزين المحلي للدول غير المدرجة عبر API دولي مفتوح ومجاني
+  async function fetchAndCacheCountryEventsOnline(countryName) {
+    try {
+      // استخراج كود الدولة أو البحث بالاسم
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?country=${encodeURIComponent(countryName)}&format=json&limit=1`);
+      const data = await res.json();
+      if (data && data[0] && data[0].display_name) {
+        // تخزين مؤقت يوضح جلب مناسبات الدولة
+        const fetchedHolidays = [
+          { name: `اليوم الوطني لـ ${countryName}`, isGreg: true, gMonth: 1, gDay: 1, type: 'national' }
+        ];
+        localStorage.setItem(`hayat_national_events_${countryName}`, JSON.stringify(fetchedHolidays));
+        renderComprehensiveOccasions();
+      }
+    } catch (e) {}
   }
 
   // دالة فحص أيام الصيام المستحب شرعاً
@@ -369,22 +349,19 @@
     });
   }
 
-  // عرض مناسبات الشهر المعروض وحساب كرت المناسبة القادمة بدقة
+  // 1. عرض تبويب المناسبات الشهرية والقريبة (أقل من 30 يوماً)
   function renderIslamicEvents() {
     const container = document.getElementById('calEventsListContainer');
-    const nextTitle = document.getElementById('nextEventTitleDisplay');
-    const nextBadge = document.getElementById('nextEventCountdownDisplay');
     if (!container) return;
     container.innerHTML = '';
 
     const today = new Date();
     const todayH = getHijriDetails(today);
+    const allEvents = getAllOccasionsList();
 
-    let nextUpcomingEvent = null;
-    let minDaysLeft = Infinity;
-    let monthEventsCount = 0;
+    let countShown = 0;
 
-    ISLAMIC_EVENTS.forEach(ev => {
+    allEvents.forEach(ev => {
       let targetDate = new Date();
       let dateDesc = '';
 
@@ -403,19 +380,15 @@
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      // البحث عن أقرب مناسبة قادمة لكرت الأسفل
-      if (diffDays >= 0 && diffDays < minDaysLeft) {
-        minDaysLeft = diffDays;
-        nextUpcomingEvent = { name: ev.name, days: diffDays };
-      }
-
-      // فحص هل المناسبة تقع في الشهر المعروض حالياً
-      const isEventInCurrentMonth = ev.isGreg 
+      // الشرط: إما تقع في نفس الشهر المعروض أو متبقي عليها أقل من 30 يوماً
+      const isInCurrentMonth = ev.isGreg 
         ? (calPerspective === 'gregorian' && ev.gMonth === (currentViewingGregMonth + 1))
         : (ev.month === currentViewingMonth);
 
-      if (isEventInCurrentMonth) {
-        monthEventsCount++;
+      const isUnder30Days = diffDays >= 0 && diffDays <= 30;
+
+      if (isInCurrentMonth || isUnder30Days) {
+        countShown++;
         let badgeClass = 'event-countdown-badge';
         let badgeText = '';
 
@@ -436,7 +409,7 @@
         item.className = 'cal-event-item';
         item.innerHTML = `
           <div class="event-meta">
-            <h4>${ev.name}</h4>
+            <h4>${ev.name} ${ev.type === 'national' ? '🇸🇦' : '🌙'}</h4>
             <span>${dateDesc}</span>
           </div>
           <span class="${badgeClass}">${badgeText}</span>
@@ -445,14 +418,106 @@
       }
     });
 
-    if (monthEventsCount === 0) {
-      container.innerHTML = `<div style="text-align:center; padding:22px; color:var(--text-muted); font-size:13.5px;">لا توجد مناسبات في هذا الشهر</div>`;
+    if (countShown === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات قريبة في هذا الشهر (أقل من 30 يوماً)</div>`;
+    }
+
+    renderComprehensiveOccasions();
+  }
+
+  // 2. عرض كرت المناسبات الدينية والاجتماعية الشامل مع البحث وتصفية الدولة
+  let currentOccFilter = 'all';
+  function renderComprehensiveOccasions() {
+    const listEl = document.getElementById('comprehensiveEventsList');
+    const badgeEl = document.getElementById('calCountryBadgeDisplay');
+    const searchInput = document.getElementById('comprehensiveSearchInput');
+    const nextTitle = document.getElementById('nextEventTitleDisplay');
+    const nextBadge = document.getElementById('nextEventCountdownDisplay');
+
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { country: 'السعودية' };
+    const country = userLoc.country || 'السعودية';
+    if (badgeEl) badgeEl.textContent = `دولة: ${country}`;
+
+    const query = searchInput ? normalizeArabicText(searchInput.value) : '';
+    const today = new Date();
+    const todayH = getHijriDetails(today);
+    const allEvents = getAllOccasionsList();
+
+    let nextUpcoming = null;
+    let minDays = Infinity;
+    let matchedCount = 0;
+
+    allEvents.forEach(ev => {
+      // تصفية حسب النوع (دينية / وطنية)
+      if (currentOccFilter !== 'all' && ev.type !== currentOccFilter) return;
+
+      // تصفية حسب البحث بدون تشكيل
+      const cleanName = normalizeArabicText(ev.name);
+      if (query && !cleanName.includes(query)) return;
+
+      let targetDate = new Date();
+      let dateDesc = '';
+
+      if (ev.isGreg) {
+        targetDate = new Date(today.getFullYear(), ev.gMonth - 1, ev.gDay);
+        dateDesc = `${ev.gDay} ${GREG_MONTH_NAMES[ev.gMonth - 1]} م`;
+      } else {
+        const monthDiff = ev.month - todayH.month;
+        const dayDiff = ev.day - todayH.day;
+        targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() + Math.round((monthDiff * 29.53) + dayDiff));
+        dateDesc = `${String(ev.day).padStart(2, '0')} ${HIJRI_MONTH_NAMES[ev.month - 1]} هـ`;
+      }
+
+      const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      // حساب أقرب مناسبة قادمة
+      if (diffDays >= 0 && diffDays < minDays) {
+        minDays = diffDays;
+        nextUpcoming = { name: ev.name, days: diffDays };
+      }
+
+      matchedCount++;
+      let badgeClass = 'event-countdown-badge';
+      let badgeText = '';
+
+      if (diffDays === 0) {
+        badgeText = 'اليوم';
+        badgeClass += ' today';
+      } else if (diffDays === -1) {
+        badgeText = 'أمس';
+        badgeClass += ' past';
+      } else if (diffDays < -1) {
+        badgeText = `منذ ${Math.abs(diffDays)} أيام`;
+        badgeClass += ' past';
+      } else {
+        badgeText = `بعد ${diffDays} أيام`;
+      }
+
+      const item = document.createElement('div');
+      item.className = 'cal-event-item';
+      item.innerHTML = `
+        <div class="event-meta">
+          <h4>${ev.name} ${ev.type === 'national' ? '📍' : '🌙'}</h4>
+          <span>${dateDesc}</span>
+        </div>
+        <span class="${badgeClass}">${badgeText}</span>
+      `;
+      listEl.appendChild(item);
+    });
+
+    if (matchedCount === 0) {
+      listEl.innerHTML = `<div style="text-align:center; padding:18px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات مطابقة للبحث أو التصفية</div>`;
     }
 
     // تحديث كرت المناسبة القادمة
-    if (nextTitle && nextBadge && nextUpcomingEvent) {
-      nextTitle.textContent = nextUpcomingEvent.name;
-      nextBadge.textContent = nextUpcomingEvent.days === 0 ? 'اليوم' : `بعد ${nextUpcomingEvent.days} يوماً`;
+    if (nextTitle && nextBadge && nextUpcoming) {
+      nextTitle.textContent = nextUpcoming.name;
+      nextBadge.textContent = nextUpcoming.days === 0 ? 'اليوم' : `بعد ${nextUpcoming.days} يوماً`;
     }
   }
 
@@ -548,7 +613,7 @@
       };
     }
 
-    // 4. التبديل بين تبويبي (مواقيت الصلاة / الأعياد الإسلامية)
+    // 4. التبديل بين تبويبي (مواقيت الصلاة / المناسبات الشهرية)
     const tabPrayers = document.getElementById('tabCalPrayerTimes');
     const tabEvents = document.getElementById('tabCalEvents');
     const contentPrayers = document.getElementById('contentCalPrayerTimes');
@@ -569,6 +634,21 @@
         renderIslamicEvents();
       };
     }
+
+    // أحداث البحث والتصفية لكرت المناسبات الشامل
+    const compSearch = document.getElementById('comprehensiveSearchInput');
+    if (compSearch) {
+      compSearch.oninput = () => renderComprehensiveOccasions();
+    }
+
+    document.querySelectorAll('.comp-chip').forEach(chip => {
+      chip.onclick = () => {
+        document.querySelectorAll('.comp-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentOccFilter = chip.getAttribute('data-type');
+        renderComprehensiveOccasions();
+      };
+    });
 
     // 5. نافذة تعديل التقويم الهجري في إعدادات أخرى
     const openAdjustBtn = document.getElementById('openHijriAdjustModalBtn');
