@@ -80,28 +80,27 @@
 
 html {
   width: 100%;
-  height: 100%;
-  overflow-x: hidden;
   background-color: var(--bg-app);
 }
 
 body {
   width: 100%;
   min-height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto; /* تفعيل التمرير العمودي الطبيعي */
+  margin: 0;
+  padding: 0;
   background-color: var(--bg-app);
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
 }
 
 .app-container {
   width: 100%;
   max-width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--bg-app);
   margin: 0 auto;
   position: relative;
+  overflow-x: hidden; /* هنا فقط لمنع الإزاحة الأفقية دون خنق التمرير الرأسي للـ body */
   padding-bottom: 80px;
 }
 
