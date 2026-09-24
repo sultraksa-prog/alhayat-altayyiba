@@ -1624,17 +1624,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // مراقبة تمرير الشاشة لتفعيل الهيدر الزجاجي الضبابي
-  window.addEventListener('scroll', () => {
-    const header = document.querySelector('.app-header');
-    if (header) {
-      if (window.scrollY > 20) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
-    }
-  });
+  // تم إلغاء تثبيت الهيدر ليتحرك وينسحب طبيعياً مع الصفحة
   
   // تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
   fetchPrayerTimes();
