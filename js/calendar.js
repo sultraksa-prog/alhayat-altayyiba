@@ -153,37 +153,65 @@
     return cursor;
   }
 
+  // دالة فحص أيام الصيام المستحب شرعاً
+  function isRecommendedFasting(dateObj, hDay, hMonth) {
+    const dayOfWeek = dateObj.getDay(); // 1 = الإثنين, 4 = الخميس
+    
+    // استثناء أيام العيد والتشريق (يحرم صيامها)
+    if (hMonth === 10 && hDay === 1) return false; // عيد الفطر
+    if (hMonth === 12 && (hDay >= 10 && hDay <= 13)) return false; // الأضحى والتشريق
+
+    // 1. الإثنين والخميس
+    if (dayOfWeek === 1 || dayOfWeek === 4) return true;
+
+    // 2. الأيام البيض (13، 14، 15 من كل شهر هجري)
+    if (hDay === 13 || hDay === 14 || hDay === 15) return true;
+
+    // 3. يوم عاشوراء وتاسوعاء (9 و 10 محرم)
+    if (hMonth === 1 && (hDay === 9 || hDay === 10)) return true;
+
+    // 4. يوم عرفة (9 ذو الحجة)
+    if (hMonth === 12 && hDay === 9) return true;
+
+    // 5. الست من شوال
+    if (hMonth === 10 && hDay >= 2 && hDay <= 7) return true;
+
+    return false;
+  }
+
   function renderHijriMonthGrid(hYear, hMonth) {
     const grid = document.getElementById('calDaysGrid');
     const firstDate = findFirstDayOfHijriMonth(hYear, hMonth);
-    const firstDayIndex = firstDate.getDay(); // 0 = الأحد
+    const firstDayIndex = firstDate.getDay();
 
-    // خلايا فارغة لضبط بداية الأسبوع
     for (let f = 0; f < firstDayIndex; f++) {
       const empty = document.createElement('div');
       empty.className = 'cal-day-cell other-month';
       grid.appendChild(empty);
     }
 
-    // رسم أيام الشهر الهجري (29 أو 30 يوماً)
     for (let day = 1; day <= 30; day++) {
       const cellDate = new Date(firstDate);
       cellDate.setDate(cellDate.getDate() + (day - 1));
       
       const hCheck = getHijriDetails(cellDate);
-      if (hCheck.month !== hMonth) break; // انتهاء الشهر إذا كان 29 يوماً
+      if (hCheck.month !== hMonth) break;
 
       const cell = document.createElement('div');
       const isSelected = cellDate.toDateString() === activeSelectedDate.toDateString();
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
-      // فحص وجود مناسبة
+      // فحص المناسبة وفحص الصيام المستحب
       const hasEvent = ISLAMIC_EVENTS.some(ev => !ev.isGreg && ev.month === hMonth && ev.day === day);
+      const isFasting = isRecommendedFasting(cellDate, day, hMonth);
 
       cell.innerHTML = `
-        ${hasEvent ? '<div class="cal-event-dot"></div>' : ''}
         <span class="cal-day-primary">${day}</span>
         <span class="cal-day-secondary">${cellDate.getDate()}</span>
+        <div class="cal-cell-dots-row">
+          ${hasEvent ? '<span class="cell-dot dot-event" title="مناسبة"></span>' : ''}
+          ${isFasting ? '<span class="cell-dot dot-fasting" title="صيام مستحب"></span>' : ''}
+        </div>
       `;
 
       cell.onclick = () => {
@@ -216,16 +244,19 @@
       const cell = document.createElement('div');
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
-      // فحص وجود مناسبة
       const hasEvent = ISLAMIC_EVENTS.some(ev => 
         (ev.isGreg && ev.gMonth === (gMonth + 1) && ev.gDay === day) ||
         (!ev.isGreg && ev.month === hDetails.month && ev.day === hDetails.day)
       );
+      const isFasting = isRecommendedFasting(cellDate, hDetails.day, hDetails.month);
 
       cell.innerHTML = `
-        ${hasEvent ? '<div class="cal-event-dot"></div>' : ''}
         <span class="cal-day-primary">${day}</span>
         <span class="cal-day-secondary">${hDetails.day}</span>
+        <div class="cal-cell-dots-row">
+          ${hasEvent ? '<span class="cell-dot dot-event" title="مناسبة"></span>' : ''}
+          ${isFasting ? '<span class="cell-dot dot-fasting" title="صيام مستحب"></span>' : ''}
+        </div>
       `;
 
       cell.onclick = () => {
@@ -338,14 +369,20 @@
     });
   }
 
-  // عرض قائمة الأعياد والمناسبات مع العداد التنازلي
+  // عرض مناسبات الشهر المعروض وحساب كرت المناسبة القادمة بدقة
   function renderIslamicEvents() {
     const container = document.getElementById('calEventsListContainer');
+    const nextTitle = document.getElementById('nextEventTitleDisplay');
+    const nextBadge = document.getElementById('nextEventCountdownDisplay');
     if (!container) return;
     container.innerHTML = '';
 
     const today = new Date();
     const todayH = getHijriDetails(today);
+
+    let nextUpcomingEvent = null;
+    let minDaysLeft = Infinity;
+    let monthEventsCount = 0;
 
     ISLAMIC_EVENTS.forEach(ev => {
       let targetDate = new Date();
@@ -366,33 +403,57 @@
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      let badgeClass = 'event-countdown-badge';
-      let badgeText = '';
-
-      if (diffDays === 0) {
-        badgeText = 'اليوم';
-        badgeClass += ' today';
-      } else if (diffDays === -1) {
-        badgeText = 'أمس';
-        badgeClass += ' past';
-      } else if (diffDays < -1) {
-        badgeText = `منذ ${Math.abs(diffDays)} أيام`;
-        badgeClass += ' past';
-      } else {
-        badgeText = `بعد ${diffDays} أيام`;
+      // البحث عن أقرب مناسبة قادمة لكرت الأسفل
+      if (diffDays >= 0 && diffDays < minDaysLeft) {
+        minDaysLeft = diffDays;
+        nextUpcomingEvent = { name: ev.name, days: diffDays };
       }
 
-      const item = document.createElement('div');
-      item.className = 'cal-event-item';
-      item.innerHTML = `
-        <div class="event-meta">
-          <h4>${ev.name}</h4>
-          <span>${dateDesc}</span>
-        </div>
-        <span class="${badgeClass}">${badgeText}</span>
-      `;
-      container.appendChild(item);
+      // فحص هل المناسبة تقع في الشهر المعروض حالياً
+      const isEventInCurrentMonth = ev.isGreg 
+        ? (calPerspective === 'gregorian' && ev.gMonth === (currentViewingGregMonth + 1))
+        : (ev.month === currentViewingMonth);
+
+      if (isEventInCurrentMonth) {
+        monthEventsCount++;
+        let badgeClass = 'event-countdown-badge';
+        let badgeText = '';
+
+        if (diffDays === 0) {
+          badgeText = 'اليوم';
+          badgeClass += ' today';
+        } else if (diffDays === -1) {
+          badgeText = 'أمس';
+          badgeClass += ' past';
+        } else if (diffDays < -1) {
+          badgeText = `منذ ${Math.abs(diffDays)} أيام`;
+          badgeClass += ' past';
+        } else {
+          badgeText = `بعد ${diffDays} أيام`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'cal-event-item';
+        item.innerHTML = `
+          <div class="event-meta">
+            <h4>${ev.name}</h4>
+            <span>${dateDesc}</span>
+          </div>
+          <span class="${badgeClass}">${badgeText}</span>
+        `;
+        container.appendChild(item);
+      }
     });
+
+    if (monthEventsCount === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:22px; color:var(--text-muted); font-size:13.5px;">لا توجد مناسبات في هذا الشهر</div>`;
+    }
+
+    // تحديث كرت المناسبة القادمة
+    if (nextTitle && nextBadge && nextUpcomingEvent) {
+      nextTitle.textContent = nextUpcomingEvent.name;
+      nextBadge.textContent = nextUpcomingEvent.days === 0 ? 'اليوم' : `بعد ${nextUpcomingEvent.days} يوماً`;
+    }
   }
 
   // تحديث حالة تصحيح التاريخ الهجري في شاشة إعدادات أخرى
