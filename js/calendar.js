@@ -239,7 +239,6 @@
   }
 
   // ==================== محرك الحساب الفلكي الشمسي المباشر لمواقيت الصلاة ====================
-  // يقوم بحساب مواقيت الصلاة بدقة فلكية لأي يوم في السنة حتى بدون إنترنت
   function calculateDailyPrayerTimes(dateObj, lat, lng, timezone = 3) {
     const rad = Math.PI / 180;
     const deg = 180 / Math.PI;
@@ -258,23 +257,24 @@
     const delta = Math.asin(Math.sin(epsilon * rad) * Math.sin(lambda * rad)) * deg;
     const EqT = (L / 15 - (alpha / 15)) * 60; // بالدقائق
 
-    // زوال الشمس (الظهر الفلكي)
+    // زوال الشمس الفلكي (الظهر)
     const solarNoon = 12 + timezone - (lng / 15) - (EqT / 60);
 
-    // زاوية ساعة الشمس عند أي ارتفاع
-    function getHourAngle(angle) {
-      const cosH = (Math.sin(angle * rad) - Math.sin(lat * rad) * Math.sin(delta * rad)) /
+    // زاوية ساعة الشمس عند أي ارتفاع فوق أو تحت الأفق
+    function getHourAngle(altitude) {
+      const cosH = (Math.sin(altitude * rad) - Math.sin(lat * rad) * Math.sin(delta * rad)) /
                    (Math.cos(lat * rad) * Math.cos(delta * rad));
       if (cosH > 1 || cosH < -1) return null;
       return Math.acos(cosH) * deg / 15;
     }
 
-    // زاوية صلاة العصر (طول الظل = ظل الزوال + طول الشاخص)
-    const asrAngle = -Math.atan(1 + Math.tan(Math.abs(lat - delta) * rad)) * deg;
+    // زاوية ارتفاع الشمس وقت صلاة العصر (طول الظل = ظل الزوال + 1)
+    const noonZenith = Math.abs(lat - delta);
+    const asrAltitude = Math.atan(1 / (1 + Math.tan(noonZenith * rad))) * deg;
 
-    const fajrH = getHourAngle(-18.5); // أم القرى
-    const sunH = getHourAngle(-0.833); // الشروق والغروب
-    const asrH = getHourAngle(asrAngle);
+    const fajrH = getHourAngle(-18.5);  // الفجر (أم القرى -18.5 درجة)
+    const sunH = getHourAngle(-0.833);  // الشروق والغروب الفلكي
+    const asrH = getHourAngle(asrAltitude); // العصر (زاوية نهارية صحيحة)
 
     function formatTime(decHour) {
       if (decHour === null || isNaN(decHour)) return '--:--';
@@ -286,13 +286,15 @@
       return `${h}:${String(m).padStart(2, '0')} ${period}`;
     }
 
+    const maghribDec = solarNoon + (sunH || 1.05);
+
     return {
       Fajr: formatTime(solarNoon - (fajrH || 1.35)),
       Sunrise: formatTime(solarNoon - (sunH || 1.05)),
-      Dhuhr: formatTime(solarNoon),
-      Asr: formatTime(solarNoon + (asrH || 1.1)),
-      Maghrib: formatTime(solarNoon + (sunH || 1.05)),
-      Isha: formatTime(solarNoon + (sunH || 1.05) + 1.5) // أم القرى: 90 دقيقة بعد المغرب
+      Dhuhr: formatTime(solarNoon + (2 / 60)), // إضافة دقيقتين احتياط الزوال
+      Asr: formatTime(solarNoon + (asrH || 3.3)), // وقت العصر النهاري الصحيح
+      Maghrib: formatTime(maghribDec),
+      Isha: formatTime(maghribDec + 1.5) // العشاء (أم القرى: 90 دقيقة بعد المغرب)
     };
   }
 
@@ -310,7 +312,7 @@
       gregFull.textContent = gFormatter.format(dateObj) + ' م';
     }
 
-    // جلب موقع المستخدم المسجل لحساب مواقيت هذا اليوم بدقة
+    // جلب موقع المستخدم المحفوظ لحساب مواقيت اليوم المختار بدقة
     const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262 };
     const tz = (userLoc.lng > 40) ? 3 : 2;
     const dayTimings = calculateDailyPrayerTimes(dateObj, userLoc.lat, userLoc.lng, tz);
