@@ -116,28 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
   // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
-  // 1. درع منع سحب المتصفح للتحديث عند قمة الشاشة (حماية تجربة التطبيق الأصيل)
-  let pullTouchStartY = 0;
-  window.addEventListener('touchstart', (e) => {
-    if (e.touches && e.touches.length === 1) {
-      pullTouchStartY = e.touches[0].clientY;
-    }
-  }, { passive: true });
-
-  window.addEventListener('touchmove', (e) => {
-    if (!e.touches || e.touches.length !== 1) return;
-    const currentY = e.touches[0].clientY;
-    // إذا كان المستخدم عند قمة الشاشة وسحب إصبعه للأسفل
-    if (window.scrollY <= 0 && currentY > pullTouchStartY) {
-      // السماح بالتمرير إذا كان اللمس داخل قائمة منبثقة قابلة للتمرير
-      const innerScrollable = e.target.closest('.modal-detail-text, .modal-alert-text, .fav-search-results-list, .quick-cities-grid, .tasbeeh-picker-list');
-      if (!innerScrollable && e.cancelable) {
-        e.preventDefault(); // إيقاف سهم التحديث الدائري وطرد المستخدم للرئيسية
-      }
-    }
-  }, { passive: false });
-
-  // 2. تسجيل الشاشة الرئيسية كنقطة بداية
+  // تسجيل الشاشة الرئيسية كنقطة بداية
   if (!history.state) {
     history.replaceState({ screenId: 'screen-home' }, '');
   }
