@@ -299,19 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  if (tabQibla) {
-    tabQibla.addEventListener('click', (e) => {
-      e.preventDefault();
-      showScreen(screenQibla);
-      initQiblaCompass();
-    });
-  }
-  if (backToHomeFromQiblaBtn) {
-    backToHomeFromQiblaBtn.addEventListener('click', () => {
-      stopQiblaCompass();
-      showScreen(screenHome);
-    });
-  }
   openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
   openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
   if (openFavTileBtn) {
@@ -1689,7 +1676,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.0.16', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.0.17', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
