@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/calendar.css">
 </head>
 <body>
 
@@ -223,7 +224,7 @@
           <span class="tool-title">المفضلة</span>
         </div>
         <div class="tool-card" id="openTasbeehTileBtn"><div class="tool-icon-box bg-soft-teal">📿</div><span class="tool-title">التسبيح</span></div>
-        <div class="tool-card"><div class="tool-icon-box bg-soft-sky">🗓️</div><span class="tool-title">التقويم</span></div>
+        <div class="tool-card" id="openCalendarTileBtn"><div class="tool-icon-box bg-soft-sky">🗓️</div><span class="tool-title">التقويم</span></div>
         <div class="tool-card"><div class="tool-icon-box bg-soft-mint">💌</div><span class="tool-title">الأدعية</span></div>
         <div class="tool-card"><div class="tool-icon-box bg-soft-amber">✨</div><span class="tool-title">لله الحسنى</span></div>
         <div class="tool-card"><div class="tool-icon-box bg-soft-indigo">📜</div><span class="tool-title">الشهادة</span></div>
@@ -278,7 +279,7 @@
         </div>
 
         <!-- 5. إعدادات أخرى -->
-        <div class="settings-menu-card" onclick="alert('خيارات إضافية قادمة قريباً')">
+        <div class="settings-menu-card" id="openOtherSettingsBtn">
           <div class="settings-item-icon bg-icon-indigo">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
           </div>
@@ -630,6 +631,187 @@
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+    </div>
+
+    <!-- ==================== الشاشة: إعدادات أخرى وتصحيح التاريخ ==================== -->
+    <div id="screen-other-settings" class="screen-view">
+      <header class="section-nav-header">
+        <button class="nav-back-btn" id="backToSettingsFromOtherBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <h2 class="section-page-title">إعدادات أخرى</h2>
+        <div style="width: 24px;"></div>
+      </header>
+
+      <div class="other-settings-body">
+        <!-- القسم 1: تحديد الموقع تلقائياً -->
+        <span class="other-settings-sec-label">يتم تحديد الموقع تلقائيًا</span>
+        <div class="other-settings-card">
+          <div class="other-setting-row">
+            <div class="other-setting-info">
+              <h4 class="other-setting-title">تحديث الموقع و التوقيت تلقائيًا</h4>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleAutoLocationTiming" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <p class="other-setting-desc">سيتم تحديث مواقيت الصلاة تلقائيًا عند تغيّر الموقع بشكل طفيف. إذا تغيّرت مدينتك، ستتم مطالبتك بالإذن للتبديل.</p>
+        </div>
+
+        <!-- القسم 2: تصحيح التاريخ الهجري -->
+        <span class="other-settings-sec-label">تصحيح التاريخ</span>
+        <div class="other-settings-card">
+          <div class="other-setting-row clickable" id="openHijriAdjustModalBtn">
+            <h4 class="other-setting-title">تعديل التقويم الهجري</h4>
+            <div class="other-setting-action-val">
+              <span id="hijriAdjustmentStatusText">لم يتم تحديدها</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+          </div>
+          <p class="other-setting-desc">سيتم تصحيح تاريخ التقويم الهجري مقابل التقويم الميلادي، وينعكس التعديل على الشاشة الرئيسية والتقويم معاً.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== الشاشة: التقويم الإسلامي الشامل والمناسبات ==================== -->
+    <div id="screen-calendar" class="screen-view">
+      <header class="section-nav-header">
+        <button class="nav-back-btn" id="backToHomeFromCalendarBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <h2 class="section-page-title">التقويم</h2>
+        <div style="width: 24px;"></div>
+      </header>
+
+      <div class="calendar-screen-body">
+        
+        <!-- الهيدر التفاعلي للشهر ومحول المنظور -->
+        <div class="cal-month-header-card">
+          <div class="cal-header-top-row">
+            <!-- سهم الشهر السابق -->
+            <button type="button" class="cal-arrow-btn" id="calPrevMonthBtn" title="الشهر السابق">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <!-- عنوان الشهر والسنة (ينقر عليه لفتح عجلة الاختيار السريع) -->
+            <div class="cal-title-center" id="openMonthPickerBtn" title="انقر لاختيار الشهر والسنة">
+              <div class="cal-main-month-title">
+                <span id="calCurrentMonthTitle">ربيع الثاني، 1448</span>
+                <span class="cal-title-chevron">▼</span>
+              </div>
+              <span class="cal-sub-month-title" id="calSubMonthTitle">سبتمبر، 2026 - أكتوبر</span>
+            </div>
+
+            <!-- سهم الشهر التالي -->
+            <button type="button" class="cal-arrow-btn" id="calNextMonthBtn" title="الشهر التالي">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+          </div>
+
+          <!-- زر تحويل المنظور (هجري / ميلادي) -->
+          <div class="cal-perspective-bar">
+            <button type="button" class="cal-perspective-chip" id="toggleCalendarPerspectiveBtn">
+              <span id="perspectiveModeIcon">أ|1</span>
+              <span id="perspectiveModeText">الميلادي</span>
+            </button>
+            <div style="flex: 1;"></div>
+            <button type="button" class="cal-today-pill" id="calReturnTodayBtn">اليوم</button>
+          </div>
+        </div>
+
+        <!-- شبكة أيام الأسبوع وشبكة التقويم الكاملة -->
+        <div class="cal-grid-wrapper">
+          <div class="cal-weekdays-row" id="calWeekdaysRow">
+            <span>الأحد</span><span>الاثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span>
+          </div>
+
+          <!-- شبكة الأيام المتفاعلة (تتغير تلقائياً حسب الشهر والمنظور) -->
+          <div class="cal-days-grid" id="calDaysGrid"></div>
+
+          <!-- مقبض توسيع وتصغير التقويم (بين أسبوع وشهر كامل) -->
+          <div class="cal-collapse-handle" id="calCollapseToggleBtn" title="تبديل العرض بين أسبوع وشهر كامل">
+            <div class="cal-drag-bar"></div>
+          </div>
+        </div>
+
+        <!-- التبويبان السفليان: مواقيت الصلاة / الأعياد الإسلامية -->
+        <div class="cal-tabs-container">
+          <div class="cal-tabs-header">
+            <button type="button" class="cal-tab-btn active" id="tabCalPrayerTimes">مواقيت الصلاة</button>
+            <button type="button" class="cal-tab-btn" id="tabCalEvents">الأعياد الإسلامية</button>
+          </div>
+
+          <!-- محتوى تبويب 1: مواقيت صلاة اليوم المختار -->
+          <div class="cal-tab-content" id="contentCalPrayerTimes">
+            <div class="cal-prayer-times-list" id="calDayPrayersList"></div>
+
+            <!-- كرت التاريخ المزدوج لليوم المختار -->
+            <div class="cal-dual-date-card">
+              <div class="dual-date-box">
+                <span class="d-label">التقويم الهجري</span>
+                <span class="d-val" id="selectedDayHijriFull">--</span>
+              </div>
+              <div class="dual-date-divider"></div>
+              <div class="dual-date-box">
+                <span class="d-label">التقويم الميلادي</span>
+                <span class="d-val" id="selectedDayGregFull">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- محتوى تبويب 2: قائمة الأعياد والمناسبات الإسلامية والوطنية -->
+          <div class="cal-tab-content" id="contentCalEvents" style="display: none;">
+            <div class="cal-events-list" id="calEventsListContainer"></div>
+
+            <div class="cal-year-nav-row">
+              <button type="button" class="cal-year-btn" id="prevCalYearBtn">‹ السنة السابقة</button>
+              <button type="button" class="cal-year-btn" id="nextCalYearBtn">السنة القادمة ›</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- نافذة اختيار تعديل التاريخ الهجري المنبثقة (+2 إلى -2 يوم) -->
+    <div class="bottom-sheet-backdrop" id="hijriAdjustModal">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title" style="margin: 0;">تعديل التقويم الهجري</h3>
+          <button type="button" class="modal-btn-link" id="closeHijriAdjustBtn" style="font-size: 18px;">✕</button>
+        </div>
+        <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px;">اختر عدد الأيام لتصحيح التاريخ الهجري حسب رؤية الهلال:</p>
+
+        <div class="hijri-adjust-options-list">
+          <button type="button" class="adjust-opt-item" data-offset="2"><span>+2 يوم</span></button>
+          <button type="button" class="adjust-opt-item" data-offset="1"><span>+1 يوم</span></button>
+          <button type="button" class="adjust-opt-item active" data-offset="0"><span>0 (افتراضي - لم يتم تحديدها)</span></button>
+          <button type="button" class="adjust-opt-item" data-offset="-1"><span>-1 يوم</span></button>
+          <button type="button" class="adjust-opt-item" data-offset="-2"><span>-2 يوم</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- نافذة اختيار الشهر والسنة السريعة (Month/Year Picker) -->
+    <div class="bottom-sheet-backdrop" id="calendarMonthPickerModal">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title" style="margin: 0;">اختيار الشهر والسنة</h3>
+          <button type="button" class="modal-btn-link" id="closeCalMonthPickerBtn" style="font-size: 18px;">✕</button>
+        </div>
+
+        <div class="cal-picker-wheels-box">
+          <div class="picker-wheel-col" id="pickerMonthCol"></div>
+          <div class="picker-wheel-col" id="pickerYearCol"></div>
+        </div>
+
+        <div class="modal-actions-row" style="justify-content: center; margin-top: 18px;">
+          <button type="button" class="modal-btn-primary" id="confirmMonthPickerBtn" style="width: 100%; padding: 12px 0;">تأكيد</button>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== الشاشة: المسبحة الإلكترونية المطورة ==================== -->
@@ -1278,6 +1460,7 @@
     </div>
 
   <script src="js/azkar-data.js"></script>
+  <script src="js/calendar.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
