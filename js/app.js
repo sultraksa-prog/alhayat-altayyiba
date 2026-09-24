@@ -214,15 +214,52 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen(screenHome, false);
   });
 
-  if (tabHome) tabHome.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenHome); });
-  
+  let pendingExitTargetScreen = null;
+
+  // دالة فحص أمان مغادرة الأذكار قبل الخروج عبر أي تبويب سفلي
+  function attemptNavigateFromTabs(targetScreen, callback = null) {
+    const activeScreen = document.querySelector('.screen-view.active');
+    
+    // إذا كان المستخدم يقرأ داخل صفحة الأذكار
+    if (activeScreen === screenAzkarReader) {
+      const allAzkar = window.azkarState || azkarState;
+      const category = allAzkar.find(c => c.id === currentActiveCategoryId);
+
+      if (category && category.items && category.items.length > 0) {
+        const isAllDone = category.items.every(it => it.currentCount === 0);
+        
+        // إذا لم ينتهِ من القراءة وخيار تأكيد الخروج مفعّل في الإعدادات
+        if (!isAllDone && dhikrSettings.confirmExit) {
+          pendingExitTargetScreen = { screen: targetScreen, cb: callback };
+          const exitModal = document.getElementById('exitConfirmModal');
+          if (exitModal) exitModal.classList.add('show');
+          return; // منع الانتقال لحين تأكيد المستخدم
+        }
+      }
+    }
+
+    // الانتقال المباشر إذا لم يكن هناك قراءة غير مكتملة
+    showScreen(targetScreen);
+    if (callback) callback();
+  }
+
+  // 1. تبويب الرئيسية
+  if (tabHome) {
+    tabHome.addEventListener('click', (e) => {
+      e.preventDefault();
+      attemptNavigateFromTabs(screenHome);
+    });
+  }
+
+  // 2. تبويب القبلة
   const tabQiblaBtn = document.getElementById('tabQibla');
   const screenQiblaView = document.getElementById('screen-qibla');
   if (tabQiblaBtn && screenQiblaView) {
     tabQiblaBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      showScreen(screenQiblaView);
-      if (typeof initQiblaCompass === 'function') initQiblaCompass();
+      attemptNavigateFromTabs(screenQiblaView, () => {
+        if (typeof initQiblaCompass === 'function') initQiblaCompass();
+      });
     });
   }
 
@@ -234,35 +271,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
-  
-  // فتح شاشة الإعدادات العامة من الهيدر العلوي ومن التبويب السفلي
-if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
-if (tabGeneralSettings) tabGeneralSettings.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenGeneralSettings); });
-if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
-
-// فتح إعدادات الأذكار من داخل الإعدادات العامة
-if (openDhikrSettingsFromMenu) {
-  openDhikrSettingsFromMenu.addEventListener('click', () => {
-    syncSettingsUI();
-    azkarSettingsModal.classList.add('show');
-  });
-}
-
-// فتح شاشة حول التطبيق
-if (openAboutScreenBtn) {
-    openAboutScreenBtn.addEventListener('click', () => {
-      // حقن رقم الإصدار المركزي لحظياً في الشاشة فور فتحها
-      const aboutVerBadge = document.getElementById('aboutVersionBadge');
-      if (aboutVerBadge && typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) {
-        aboutVerBadge.textContent = `الإصدار ${APP_CONFIG.version}`;
-      }
-      showScreen(screenAboutApp);
+  // 3. تبويب وشاشة الإعدادات العامة
+  if (openGeneralSettingsBtn) openGeneralSettingsBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+  if (tabGeneralSettings) {
+    tabGeneralSettings.addEventListener('click', (e) => {
+      e.preventDefault();
+      attemptNavigateFromTabs(screenGeneralSettings);
     });
   }
-if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+  if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
+
+  if (openDhikrSettingsFromMenu) {
+    openDhikrSettingsFromMenu.addEventListener('click', () => {
+      syncSettingsUI();
+      azkarSettingsModal.classList.add('show');
+    });
+  }
+
+  if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
+  if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+
+  // 4. تبويب أذكار المسلم
+  if (tabAzkar) {
+    tabAzkar.addEventListener('click', (e) => {
+      e.preventDefault();
+      attemptNavigateFromTabs(screenAzkarCategories, () => renderAzkarCategories());
+    });
+  }
   
-  if (tabAzkar) tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
   if (tabQibla) {
     tabQibla.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1018,15 +1054,25 @@ document.getElementById('browseCompletedDhikrBtn').addEventListener('click', () 
   openCategoryReader(targetCompletedCategoryId);
 });
 
-// 3. أزرار تأكيد الخروج قبل الإكمال
+// 3. أزرار تأكيد الخروج والتوجيه الذكي
 document.getElementById('continueReadingBtn').addEventListener('click', () => {
   document.getElementById('exitConfirmModal').classList.remove('show');
+  pendingExitTargetScreen = null; // إلغاء المغادرة والبقاء في صفحة القراءة
 });
 
 document.getElementById('confirmExitBtn').addEventListener('click', () => {
   document.getElementById('exitConfirmModal').classList.remove('show');
-  showScreen(screenAzkarCategories);
-  renderAzkarCategories();
+
+  // إذا كان المستخدم قد نقر على أيقونة محددة من التبويب السفلي (كالرئيسية أو القبلة أو الإعدادات)
+  if (pendingExitTargetScreen) {
+    showScreen(pendingExitTargetScreen.screen);
+    if (pendingExitTargetScreen.cb) pendingExitTargetScreen.cb();
+    pendingExitTargetScreen = null;
+  } else {
+    // إذا كان الخروج عبر سهم الرجوع العلوي الافتراضي
+    showScreen(screenAzkarCategories);
+    renderAzkarCategories();
+  }
 });
 
   // العداد التنازلي والمشاركة
@@ -1643,7 +1689,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.0.15', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.0.16', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
