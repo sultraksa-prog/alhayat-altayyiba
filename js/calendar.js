@@ -30,13 +30,16 @@
   ];
 
   // حالة التقويم
-  let calPerspective = localStorage.getItem('hayat_cal_perspective') || 'hijri'; // 'hijri' or 'gregorian'
+  let calPerspective = localStorage.getItem('hayat_cal_perspective') || 'hijri';
   let hijriOffset = parseInt(localStorage.getItem('hayat_hijri_offset') || '0', 10);
   let activeSelectedDate = new Date();
+  
   let currentViewingYear = 1448;
-  let currentViewingMonth = 4; // ربيع الثاني افتراضياً
+  let currentViewingMonth = 4;
+  let currentViewingGregYear = 2026;
+  let currentViewingGregMonth = 8; // سبتمبر (0-indexed)
 
-  // محول فلكي هجري أم القرى عالي الدقة بدون إنترنت
+  // محول فلكي هجري مع ضمان إرجاع أرقام إنجليزية ليفهمها parseInt بدون خطأ NaN
   function getAdjustedDate(baseDate) {
     const d = new Date(baseDate);
     if (hijriOffset !== 0) {
@@ -47,31 +50,60 @@
 
   function getHijriDetails(dateObj) {
     const adjusted = getAdjustedDate(dateObj);
-    const formatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
-      day: 'numeric',
-      month: 'numeric',
-      year: 'numeric'
-    });
-    const parts = formatter.formatToParts(adjusted);
-    let day = 1, month = 1, year = 1448;
-    parts.forEach(p => {
-      if (p.type === 'day') day = parseInt(p.value, 10);
-      if (p.type === 'month') month = parseInt(p.value, 10);
-      if (p.type === 'year') year = parseInt(p.value, 10);
-    });
-    return { day, month, year, monthName: HIJRI_MONTH_NAMES[month - 1] };
+    try {
+      // إجبار المتصفح على إرجاع أرقام قياسية nu-latn حتى لا تصبح NaN
+      const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric'
+      });
+      const parts = formatter.formatToParts(adjusted);
+      let day = 1, month = 1, year = 1448;
+      parts.forEach(p => {
+        if (p.type === 'day') day = parseInt(p.value, 10);
+        if (p.type === 'month') month = parseInt(p.value, 10);
+        if (p.type === 'year') year = parseInt(p.value, 10);
+      });
+
+      if (isNaN(day)) day = 1;
+      if (isNaN(month)) month = 1;
+      if (isNaN(year)) year = 1448;
+
+      return {
+        day,
+        month,
+        year,
+        monthName: HIJRI_MONTH_NAMES[month - 1] || 'محرم'
+      };
+    } catch (e) {
+      return { day: 1, month: 4, year: 1448, monthName: 'ربيع الثاني' };
+    }
   }
 
-  // تهيئة شاشتي التقويم وإعدادات أخرى
+  // الدالة الرئيسية لتشغيل التقويم
   window.initCalendarEngine = function () {
-    const todayHijri = getHijriDetails(new Date());
-    currentViewingYear = todayHijri.year;
-    currentViewingMonth = todayHijri.month;
+    const today = new Date();
+    activeSelectedDate = new Date(today);
+    const todayH = getHijriDetails(today);
+    
+    currentViewingYear = todayH.year;
+    currentViewingMonth = todayH.month;
+    currentViewingGregYear = today.getFullYear();
+    currentViewingGregMonth = today.getMonth();
+
+    updatePerspectiveUI();
     renderCalendar();
     renderIslamicEvents();
     renderSelectedDayPrayers(activeSelectedDate);
     updateHijriAdjustmentStatusUI();
   };
+
+  function updatePerspectiveUI() {
+    const btnText = document.getElementById('perspectiveModeText');
+    if (btnText) {
+      btnText.textContent = (calPerspective === 'hijri') ? 'الميلادي' : 'الهجري';
+    }
+  }
 
   // رسم شبكة التقويم
   function renderCalendar() {
@@ -83,48 +115,63 @@
 
     if (calPerspective === 'hijri') {
       mainTitle.textContent = `${HIJRI_MONTH_NAMES[currentViewingMonth - 1]}، ${currentViewingYear} هـ`;
-      subTitle.textContent = 'انقر لقلب المنظور أو اختيار شهر';
+      subTitle.textContent = 'التقويم الهجري (أم القرى)';
       renderHijriMonthGrid(currentViewingYear, currentViewingMonth);
     } else {
-      const gMonth = activeSelectedDate.getMonth();
-      const gYear = activeSelectedDate.getFullYear();
-      mainTitle.textContent = `${GREG_MONTH_NAMES[gMonth]}، ${gYear} م`;
-      subTitle.textContent = 'منظور ميلادي';
-      renderGregorianMonthGrid(gYear, gMonth);
+      mainTitle.textContent = `${GREG_MONTH_NAMES[currentViewingGregMonth]}، ${currentViewingGregYear} م`;
+      subTitle.textContent = 'التقويم الميلادي';
+      renderGregorianMonthGrid(currentViewingGregYear, currentViewingGregMonth);
     }
+  }
+
+  // البحث الرياضي الدقيق عن أول يوم في الشهر الهجري
+  function findFirstDayOfHijriMonth(hYear, hMonth) {
+    const today = new Date();
+    const todayH = getHijriDetails(today);
+    
+    // حساب الفرق التقريبي بالأيام
+    const monthDiff = (hYear - todayH.year) * 12 + (hMonth - todayH.month);
+    const estDays = Math.round(monthDiff * 29.53058) - (todayH.day - 1);
+    
+    let cursor = new Date(today);
+    cursor.setDate(cursor.getDate() + estDays);
+
+    // ضبط دقيق حتى نصل لليوم الأول من نفس الشهر والسنة
+    for (let step = 0; step < 8; step++) {
+      const h = getHijriDetails(cursor);
+      if (h.year === hYear && h.month === hMonth && h.day === 1) {
+        return cursor;
+      }
+      if (h.year < hYear || (h.year === hYear && h.month < hMonth)) {
+        cursor.setDate(cursor.getDate() + 1);
+      } else if (h.day > 1) {
+        cursor.setDate(cursor.getDate() - (h.day - 1));
+      } else {
+        cursor.setDate(cursor.getDate() - 1);
+      }
+    }
+    return cursor;
   }
 
   function renderHijriMonthGrid(hYear, hMonth) {
     const grid = document.getElementById('calDaysGrid');
-    
-    // تقدير بداية الشهر الهجري فلكياً
-    let tempDate = new Date();
-    // البحث عن أول يوم في الشهر الهجري
-    for (let i = -40; i <= 40; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      const h = getHijriDetails(d);
-      if (h.year === hYear && h.month === hMonth && h.day === 1) {
-        tempDate = d;
-        break;
-      }
-    }
+    const firstDate = findFirstDayOfHijriMonth(hYear, hMonth);
+    const firstDayIndex = firstDate.getDay(); // 0 = الأحد
 
-    const firstDayIndex = tempDate.getDay(); // 0 = الأحد, 6 = السبت
-    
-    // خلايا فارغة لبداية الأسبوع
+    // خلايا فارغة لضبط بداية الأسبوع
     for (let f = 0; f < firstDayIndex; f++) {
       const empty = document.createElement('div');
       empty.className = 'cal-day-cell other-month';
       grid.appendChild(empty);
     }
 
-    // رسم 29 أو 30 يوماً للشهر
+    // رسم أيام الشهر الهجري (29 أو 30 يوماً)
     for (let day = 1; day <= 30; day++) {
-      const cellDate = new Date(tempDate);
+      const cellDate = new Date(firstDate);
       cellDate.setDate(cellDate.getDate() + (day - 1));
+      
       const hCheck = getHijriDetails(cellDate);
-      if (hCheck.month !== hMonth) break; // انتهاء الشهر عند 29 يوماً
+      if (hCheck.month !== hMonth) break; // انتهاء الشهر إذا كان 29 يوماً
 
       const cell = document.createElement('div');
       const isSelected = cellDate.toDateString() === activeSelectedDate.toDateString();
@@ -169,7 +216,14 @@
       const cell = document.createElement('div');
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
+      // فحص وجود مناسبة
+      const hasEvent = ISLAMIC_EVENTS.some(ev => 
+        (ev.isGreg && ev.gMonth === (gMonth + 1) && ev.gDay === day) ||
+        (!ev.isGreg && ev.month === hDetails.month && ev.day === hDetails.day)
+      );
+
       cell.innerHTML = `
+        ${hasEvent ? '<div class="cal-event-dot"></div>' : ''}
         <span class="cal-day-primary">${day}</span>
         <span class="cal-day-secondary">${hDetails.day}</span>
       `;
@@ -184,7 +238,65 @@
     }
   }
 
-  // حساب وعرض مواقيت صلاة اليوم المختار
+  // ==================== محرك الحساب الفلكي الشمسي المباشر لمواقيت الصلاة ====================
+  // يقوم بحساب مواقيت الصلاة بدقة فلكية لأي يوم في السنة حتى بدون إنترنت
+  function calculateDailyPrayerTimes(dateObj, lat, lng, timezone = 3) {
+    const rad = Math.PI / 180;
+    const deg = 180 / Math.PI;
+
+    // حساب اليوم اليولياني النسبي
+    const d = (dateObj.getTime() / 86400000) + 2440587.5 - 2451545.0;
+    
+    // الموقع الفلكي للشمس
+    const M = (357.529 + 0.98560028 * d) % 360;
+    const L = (280.459 + 0.98564736 * d) % 360;
+    const lambda = (L + 1.915 * Math.sin(M * rad) + 0.020 * Math.sin(2 * M * rad)) % 360;
+    const epsilon = 23.439 - 0.00000036 * d;
+
+    // الميل والمطلع المستقيم ومعادلة الوقت
+    const alpha = Math.atan2(Math.cos(epsilon * rad) * Math.sin(lambda * rad), Math.cos(lambda * rad)) * deg;
+    const delta = Math.asin(Math.sin(epsilon * rad) * Math.sin(lambda * rad)) * deg;
+    const EqT = (L / 15 - (alpha / 15)) * 60; // بالدقائق
+
+    // زوال الشمس (الظهر الفلكي)
+    const solarNoon = 12 + timezone - (lng / 15) - (EqT / 60);
+
+    // زاوية ساعة الشمس عند أي ارتفاع
+    function getHourAngle(angle) {
+      const cosH = (Math.sin(angle * rad) - Math.sin(lat * rad) * Math.sin(delta * rad)) /
+                   (Math.cos(lat * rad) * Math.cos(delta * rad));
+      if (cosH > 1 || cosH < -1) return null;
+      return Math.acos(cosH) * deg / 15;
+    }
+
+    // زاوية صلاة العصر (طول الظل = ظل الزوال + طول الشاخص)
+    const asrAngle = -Math.atan(1 + Math.tan(Math.abs(lat - delta) * rad)) * deg;
+
+    const fajrH = getHourAngle(-18.5); // أم القرى
+    const sunH = getHourAngle(-0.833); // الشروق والغروب
+    const asrH = getHourAngle(asrAngle);
+
+    function formatTime(decHour) {
+      if (decHour === null || isNaN(decHour)) return '--:--';
+      decHour = (decHour + 24) % 24;
+      let h = Math.floor(decHour);
+      let m = Math.floor((decHour - h) * 60);
+      const period = h >= 12 ? 'م' : 'ص';
+      h = h % 12 || 12;
+      return `${h}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    return {
+      Fajr: formatTime(solarNoon - (fajrH || 1.35)),
+      Sunrise: formatTime(solarNoon - (sunH || 1.05)),
+      Dhuhr: formatTime(solarNoon),
+      Asr: formatTime(solarNoon + (asrH || 1.1)),
+      Maghrib: formatTime(solarNoon + (sunH || 1.05)),
+      Isha: formatTime(solarNoon + (sunH || 1.05) + 1.5) // أم القرى: 90 دقيقة بعد المغرب
+    };
+  }
+
+  // عرض مواقيت صلاة اليوم المختار ديناميكياً
   function renderSelectedDayPrayers(dateObj) {
     const list = document.getElementById('calDayPrayersList');
     const hijriFull = document.getElementById('selectedDayHijriFull');
@@ -198,11 +310,10 @@
       gregFull.textContent = gFormatter.format(dateObj) + ' م';
     }
 
-    // جلب المواقيت المحفوظة أو حسابها تقديرياً
-    const cached = JSON.parse(localStorage.getItem('hayat_cached_timings')) || {};
-    const timings = cached.timings || {
-      Fajr: '04:54', Sunrise: '06:10', Dhuhr: '12:13', Asr: '15:38', Maghrib: '18:15', Isha: '19:45'
-    };
+    // جلب موقع المستخدم المسجل لحساب مواقيت هذا اليوم بدقة
+    const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262 };
+    const tz = (userLoc.lng > 40) ? 3 : 2;
+    const dayTimings = calculateDailyPrayerTimes(dateObj, userLoc.lat, userLoc.lng, tz);
 
     const prayers = [
       { name: 'الفجر', key: 'Fajr' },
@@ -219,13 +330,13 @@
       row.className = 'cal-prayer-row';
       row.innerHTML = `
         <span class="cal-prayer-name">${p.name}</span>
-        <span class="cal-prayer-time">${timings[p.key] || '--:--'}</span>
+        <span class="cal-prayer-time">${dayTimings[p.key]}</span>
       `;
       list.appendChild(row);
     });
   }
 
-  // عرض الأعياد والمناسبات مع العداد التنازلي الذكي
+  // عرض قائمة الأعياد والمناسبات مع العداد التنازلي
   function renderIslamicEvents() {
     const container = document.getElementById('calEventsListContainer');
     if (!container) return;
@@ -242,16 +353,14 @@
         targetDate = new Date(today.getFullYear(), ev.gMonth - 1, ev.gDay);
         dateDesc = `${ev.gDay} ${GREG_MONTH_NAMES[ev.gMonth - 1]}`;
       } else {
-        // تقدير موعد المناسبة الهجرية
         const monthDiff = ev.month - todayH.month;
         const dayDiff = ev.day - todayH.day;
-        const totalEstDays = (monthDiff * 29.5) + dayDiff;
-        targetDate = new Date();
+        const totalEstDays = (monthDiff * 29.53) + dayDiff;
+        targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + Math.round(totalEstDays));
         dateDesc = `${String(ev.day).padStart(2, '0')} ${HIJRI_MONTH_NAMES[ev.month - 1]}، ${currentViewingYear} هـ`;
       }
 
-      // حساب فارق الأيام الحقيقي
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
@@ -284,7 +393,7 @@
     });
   }
 
-  // تحديث حالة نص تصحيح التاريخ الهجري في إعدادات أخرى
+  // تحديث حالة تصحيح التاريخ الهجري في شاشة إعدادات أخرى
   function updateHijriAdjustmentStatusUI() {
     const textEl = document.getElementById('hijriAdjustmentStatusText');
     if (!textEl) return;
@@ -302,46 +411,66 @@
     });
   }
 
-  // ربط أحداث التقويم عند تشغيل الصفحة
+  // ربط جميع أحداث الشاشة
   document.addEventListener('DOMContentLoaded', () => {
-    // 1. التنقل بين الشهور
+    // 1. التنقل بين الشهور عبر الأسهم في كلا المنظورين
     const prevBtn = document.getElementById('calPrevMonthBtn');
     const nextBtn = document.getElementById('calNextMonthBtn');
+
     if (prevBtn) {
       prevBtn.onclick = () => {
-        if (currentViewingMonth === 1) {
-          currentViewingMonth = 12;
-          currentViewingYear--;
+        if (calPerspective === 'hijri') {
+          if (currentViewingMonth === 1) {
+            currentViewingMonth = 12;
+            currentViewingYear--;
+          } else {
+            currentViewingMonth--;
+          }
         } else {
-          currentViewingMonth--;
-        }
-        renderCalendar();
-      };
-    }
-    if (nextBtn) {
-      nextBtn.onclick = () => {
-        if (currentViewingMonth === 12) {
-          currentViewingMonth = 1;
-          currentViewingYear++;
-        } else {
-          currentViewingMonth++;
+          if (currentViewingGregMonth === 0) {
+            currentViewingGregMonth = 11;
+            currentViewingGregYear--;
+          } else {
+            currentViewingGregMonth--;
+          }
         }
         renderCalendar();
       };
     }
 
-    // 2. زر قلب المنظور
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        if (calPerspective === 'hijri') {
+          if (currentViewingMonth === 12) {
+            currentViewingMonth = 1;
+            currentViewingYear++;
+          } else {
+            currentViewingMonth++;
+          }
+        } else {
+          if (currentViewingGregMonth === 11) {
+            currentViewingGregMonth = 0;
+            currentViewingGregYear++;
+          } else {
+            currentViewingGregMonth++;
+          }
+        }
+        renderCalendar();
+      };
+    }
+
+    // 2. زر قلب المنظور بين الهجري والميلادي
     const togglePerspBtn = document.getElementById('toggleCalendarPerspectiveBtn');
     if (togglePerspBtn) {
       togglePerspBtn.onclick = () => {
         calPerspective = (calPerspective === 'hijri') ? 'gregorian' : 'hijri';
         localStorage.setItem('hayat_cal_perspective', calPerspective);
-        document.getElementById('perspectiveModeText').textContent = (calPerspective === 'hijri') ? 'الميلادي' : 'الهجري';
+        updatePerspectiveUI();
         renderCalendar();
       };
     }
 
-    // 3. زر اليوم
+    // 3. زر العودة لليوم الحالي
     const todayBtn = document.getElementById('calReturnTodayBtn');
     if (todayBtn) {
       todayBtn.onclick = () => {
@@ -349,12 +478,14 @@
         const t = getHijriDetails(activeSelectedDate);
         currentViewingYear = t.year;
         currentViewingMonth = t.month;
+        currentViewingGregYear = activeSelectedDate.getFullYear();
+        currentViewingGregMonth = activeSelectedDate.getMonth();
         renderCalendar();
         renderSelectedDayPrayers(activeSelectedDate);
       };
     }
 
-    // 4. التبديل بين تبويبي (مواقيت الصلاة / الأعياد)
+    // 4. التبديل بين تبويبي (مواقيت الصلاة / الأعياد الإسلامية)
     const tabPrayers = document.getElementById('tabCalPrayerTimes');
     const tabEvents = document.getElementById('tabCalEvents');
     const contentPrayers = document.getElementById('contentCalPrayerTimes');
@@ -376,7 +507,7 @@
       };
     }
 
-    // 5. نافذة تعديل التقويم الهجري
+    // 5. نافذة تعديل التقويم الهجري في إعدادات أخرى
     const openAdjustBtn = document.getElementById('openHijriAdjustModalBtn');
     const adjustModal = document.getElementById('hijriAdjustModal');
     const closeAdjustBtn = document.getElementById('closeHijriAdjustBtn');
@@ -392,7 +523,6 @@
           updateHijriAdjustmentStatusUI();
           renderCalendar();
           adjustModal.classList.remove('show');
-          // تحديث شريط تاريخ الشاشة الرئيسية فوراً
           if (typeof fetchPrayerTimes === 'function') fetchPrayerTimes();
         };
       });
@@ -425,23 +555,38 @@
       monthCol.innerHTML = '';
       yearCol.innerHTML = '';
 
-      HIJRI_MONTH_NAMES.forEach((m, idx) => {
+      const months = (calPerspective === 'hijri') ? HIJRI_MONTH_NAMES : GREG_MONTH_NAMES;
+      const curMonth = (calPerspective === 'hijri') ? currentViewingMonth : (currentViewingGregMonth + 1);
+
+      months.forEach((m, idx) => {
         const item = document.createElement('div');
-        item.className = `wheel-item ${idx + 1 === currentViewingMonth ? 'active' : ''}`;
+        item.className = `wheel-item ${idx + 1 === curMonth ? 'active' : ''}`;
         item.textContent = m;
         item.onclick = () => {
-          currentViewingMonth = idx + 1;
+          if (calPerspective === 'hijri') {
+            currentViewingMonth = idx + 1;
+          } else {
+            currentViewingGregMonth = idx;
+          }
           populatePickerWheels();
         };
         monthCol.appendChild(item);
       });
 
-      for (let y = 1445; y <= 1452; y++) {
+      const startYear = (calPerspective === 'hijri') ? 1445 : 2024;
+      const endYear = (calPerspective === 'hijri') ? 1453 : 2032;
+      const curYear = (calPerspective === 'hijri') ? currentViewingYear : currentViewingGregYear;
+
+      for (let y = startYear; y <= endYear; y++) {
         const item = document.createElement('div');
-        item.className = `wheel-item ${y === currentViewingYear ? 'active' : ''}`;
+        item.className = `wheel-item ${y === curYear ? 'active' : ''}`;
         item.textContent = y;
         item.onclick = () => {
-          currentViewingYear = y;
+          if (calPerspective === 'hijri') {
+            currentViewingYear = y;
+          } else {
+            currentViewingGregYear = y;
+          }
           populatePickerWheels();
         };
         yearCol.appendChild(item);
