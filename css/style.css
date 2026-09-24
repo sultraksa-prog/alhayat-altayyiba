@@ -83,6 +83,8 @@ html, body {
   min-height: 100%;
   overflow-x: hidden;
   background-color: var(--bg-app);
+  overscroll-behavior: none; /* إيقاف سحب التحديث في المتصفحات بالكامل */
+  overscroll-behavior-y: none;
 }
 
 .app-container {
@@ -94,6 +96,7 @@ html, body {
   position: relative;
   overflow-x: hidden;
   padding-bottom: 80px;
+  overscroll-behavior-y: none; /* منع ارتداد حاوية التطبيق */
 }
 
 @media (min-width: 500px) {
