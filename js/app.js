@@ -116,17 +116,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
   // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
-  // تسجيل الشاشة الرئيسية كنقطة بداية
+  // إدارة الرجوع وسحب الحافة (History API) مع استعادة الشاشة النشطة
   if (!history.state) {
     history.replaceState({ screenId: 'screen-home' }, '');
   }
 
+  // استعادة الشاشة التي كان يقف عليها المستخدم تلقائياً لمنع طرده للرئيسية
+  const savedScreenId = localStorage.getItem('hayat_last_active_screen_id');
+  if (savedScreenId && savedScreenId !== 'screen-home') {
+    const targetScreenEl = document.getElementById(savedScreenId);
+    if (targetScreenEl) {
+      showScreen(targetScreenEl, false);
+      if (savedScreenId === 'screen-azkar-categories') renderAzkarCategories();
+      if (savedScreenId === 'screen-azkar-favorites') renderFavorites();
+      if (savedScreenId === 'screen-tasbeeh' && typeof initTasbeehEngine === 'function') initTasbeehEngine();
+    }
+  }
+
   function showScreen(screen, pushToHistory = true) {
+    if (!screen) return;
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
       history.pushState({ screenId: screen.id }, '');
     }
+
+    // حفظ الشاشة الحالية لضمان بقاء المستخدم فيها حتى لو أعيد تحميل الصفحة
+    localStorage.setItem('hayat_last_active_screen_id', screen.id);
 
     document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
     screen.classList.add('active');
