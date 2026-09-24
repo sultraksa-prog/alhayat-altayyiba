@@ -1261,7 +1261,22 @@
         </div>
       </div>
     </div>
-  
+
+    <!-- نافذة تنبيه انقطاع الإنترنت عند فحص التحديثات (بديلة الـ alert) -->
+    <div class="custom-modal-backdrop" id="offlineUpdateModal">
+      <div class="custom-modal-card text-center" style="max-width: 320px;">
+        <div class="offline-modal-icon-box">📡</div>
+        <h3 class="modal-card-title" style="margin-bottom: 6px;">لا يوجد اتصال بالإنترنت</h3>
+        <p class="celebration-text" style="font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+          يتطلب فحص التحديثات الاتصال بالشبكة. يرجى تفعيل Wi-Fi أو بيانات الجوال للمتابعة.
+        </p>
+        <div class="modal-actions-row" style="justify-content: center; gap: 14px;">
+          <button type="button" class="modal-btn-link text-muted" id="closeOfflineModalBtn">لاحقاً</button>
+          <button type="button" class="modal-btn-primary" id="openWifiSettingsBtn" style="padding: 9px 24px;">فتح الإنترنت</button>
+        </div>
+      </div>
+    </div>
+
   <script src="js/azkar-data.js"></script>
   <script src="js/app.js"></script>
 </body>
