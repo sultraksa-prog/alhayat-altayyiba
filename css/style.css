@@ -2949,6 +2949,12 @@ body {
   }
 }
 
+/* إخفاء شريط التبويبات السفلي كلياً بمجرد تفعيل شاشة المسبحة */
+#screen-tasbeeh.active ~ .bottom-nav,
+.bottom-nav.nav-hidden {
+  display: none !important;
+}
+
 /* تنسيق أيقونة نافذة انقطاع الإنترنت */
 .offline-modal-icon-box {
   width: 60px;
@@ -2962,11 +2968,5 @@ body {
   font-size: 26px;
   margin: 0 auto 12px auto;
   box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
-}
-
-/* إخفاء شريط التبويبات السفلي كلياً بمجرد تفعيل شاشة المسبحة */
-#screen-tasbeeh.active ~ .bottom-nav,
-.bottom-nav.nav-hidden {
-  display: none !important;
 }
 
