@@ -250,7 +250,16 @@ if (openDhikrSettingsFromMenu) {
 }
 
 // فتح شاشة حول التطبيق
-if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
+if (openAboutScreenBtn) {
+    openAboutScreenBtn.addEventListener('click', () => {
+      // حقن رقم الإصدار المركزي لحظياً في الشاشة فور فتحها
+      const aboutVerBadge = document.getElementById('aboutVersionBadge');
+      if (aboutVerBadge && typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) {
+        aboutVerBadge.textContent = `الإصدار ${APP_CONFIG.version}`;
+      }
+      showScreen(screenAboutApp);
+    });
+  }
 if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
   
   if (tabAzkar) tabAzkar.addEventListener('click', (e) => { e.preventDefault(); showScreen(screenAzkarCategories); renderAzkarCategories(); });
