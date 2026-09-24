@@ -1634,9 +1634,16 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    url: window.location.href.split('#')[0], // رابط التطبيق الحالي تلقائياً
-    shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات' // وصف التطبيق (6 كلمات)
+    version: '1.0.1', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    url: window.location.href.split('#')[0],
+    shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
+
+  // تحديث رقم الإصدار ديناميكياً في شاشة "حول الحياة الطيبة"
+  const aboutVerBadge = document.getElementById('aboutVersionBadge');
+  if (aboutVerBadge) {
+    aboutVerBadge.textContent = `الإصدار ${APP_CONFIG.version}`;
+  }
 
   const openShareBtn = document.getElementById('openShareBtn');
   const shareModalBackdrop = document.getElementById('shareModalBackdrop');
@@ -1895,7 +1902,7 @@ ${APP_CONFIG.url}`;
   }
 
   // ==================== تسجيل Service Worker ونظام التحديث الذكي ====================
-  const CURRENT_APP_VERSION = 'v1.0.1';
+  const CURRENT_APP_VERSION = `v${APP_CONFIG.version}`;
   const UPDATE_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // عداد 7 أيام بالملي ثانية
 
   // 1. فحص هل تم تحديث التطبيق للتو لعرض رسالة التهنئة برقم الإصدار الجديد
