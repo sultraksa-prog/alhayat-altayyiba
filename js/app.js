@@ -1725,7 +1725,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.08', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.09', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -1999,29 +1999,35 @@ ${APP_CONFIG.url}`;
   const forcePurgeSuccess = localStorage.getItem('hayat_force_purge_success');
   const justUpdatedFlag = localStorage.getItem('hayat_just_updated_flag') || localStorage.getItem('hayat_just_updated_version');
 
-  // أ) في حال نجاح التحديث الإجباري وإصلاح الملفات: توجيه للإعدادات وإظهار الرسالة لمدة ثانيتين
+  // أ) في حال نجاح التحديث الإجباري وإصلاح الملفات: نافذة دائمة وبدون زر التحديث الإجباري وتوجيه للإعدادات عند الإغلاق
   if (forcePurgeSuccess) {
     localStorage.removeItem('hayat_force_purge_success');
 
     setTimeout(() => {
-      // توجيه المستخدم لشاشة الإعدادات
-      if (screenGeneralSettings) showScreen(screenGeneralSettings, false);
-
       const modal = document.getElementById('upToDateModal');
       const icon = document.getElementById('modalStatusIcon');
       const title = document.getElementById('modalStatusTitle');
       const text = document.getElementById('modalStatusText');
+      const purgeSec = document.getElementById('modalPurgeSection');
+      const closeBtn = document.getElementById('closeUpToDateBtn');
 
       if (modal && title && text) {
         if (icon) icon.textContent = '🛠️';
         title.textContent = 'تم الإصلاح والتحديث';
         text.innerHTML = `تمت عملية التحديث الإجباري وإصلاح ملفات التطبيق بنجاح.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
-        modal.classList.add('show');
+        
+        // إخفاء قسم وسؤال التحديث الإجباري تماماً في نافذة التهنئة
+        if (purgeSec) purgeSec.style.display = 'none';
 
-        // استمرار ظهور الرسالة لمدة ثانيتين ونصف ثم إغلاقها تلقائياً
-        setTimeout(() => {
-          modal.classList.remove('show');
-        }, 2500);
+        // ضبط زر الإغلاق ليقوم بإغلاق النافذة وتوجيه المستخدم لشاشة الإعدادات
+        if (closeBtn) {
+          closeBtn.onclick = () => {
+            modal.classList.remove('show');
+            if (screenGeneralSettings) showScreen(screenGeneralSettings, false);
+          };
+        }
+
+        modal.classList.add('show');
       }
     }, 450);
   } 
@@ -2035,12 +2041,24 @@ ${APP_CONFIG.url}`;
       const icon = document.getElementById('modalStatusIcon');
       const title = document.getElementById('modalStatusTitle');
       const text = document.getElementById('modalStatusText');
+      const purgeSec = document.getElementById('modalPurgeSection');
+      const closeBtn = document.getElementById('closeUpToDateBtn');
 
       if (modal && title && text) {
         if (icon) icon.textContent = '✨';
         title.textContent = 'تم التحديث بنجاح';
         const newVersionText = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) ? `v${APP_CONFIG.version}` : 'الجديد';
         text.innerHTML = `تم تحديث التطبيق بنجاح إلى الإصدار (<strong>${newVersionText}</strong>).<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+        
+        if (purgeSec) purgeSec.style.display = 'none';
+
+        if (closeBtn) {
+          closeBtn.onclick = () => {
+            modal.classList.remove('show');
+            if (screenGeneralSettings) showScreen(screenGeneralSettings, false);
+          };
+        }
+
         modal.classList.add('show');
       }
     }, 600);
@@ -2115,7 +2133,7 @@ ${APP_CONFIG.url}`;
         };
       }
 
-      // 5. زر التحديث الإجباري وإصلاح كاش الملفات مع التوجيه ورسائل التأكيد
+      // 5. زر التحديث الإجباري وإصلاح كاش الملفات
       const forcePurgeBtn = document.getElementById('forceCachePurgeBtn');
       if (forcePurgeBtn) {
         forcePurgeBtn.onclick = async () => {
@@ -2129,27 +2147,21 @@ ${APP_CONFIG.url}`;
           forcePurgeBtn.textContent = 'جاري مسح الكاش وتحديث الملفات... ⏳';
 
           try {
-            // مسح ملفات الكاش برمجياً دون لمس LocalStorage
             if ('caches' in window) {
               const cacheKeys = await caches.keys();
               await Promise.all(cacheKeys.map(key => caches.delete(key)));
             }
 
-            // إلغاء تسجيل السيرفر ووركر لجلب النسخة النظيفة
             if ('serviceWorker' in navigator) {
               const registrations = await navigator.serviceWorker.getRegistrations();
               await Promise.all(registrations.map(reg => reg.unregister()));
             }
 
-            // تسجيل علامة نجاح الإصلاح وتوجيه المستخدم لشاشة الإعدادات
             localStorage.setItem('hayat_force_purge_success', 'true');
-            localStorage.setItem('hayat_last_active_screen_id', 'screen-general-settings');
 
-            // إعادة تحميل إجبارية ونظيفة تماماً
             const cleanUrl = window.location.origin + window.location.pathname + '?cache_cleared=' + Date.now();
             window.location.replace(cleanUrl);
           } catch (err) {
-            // معالجة حالة الفشل
             forcePurgeBtn.textContent = originalPurgeText;
             alert('تعذر إتمام عملية إصلاح الملفات، يرجى المحاولة مرة أخرى.');
           }
@@ -2179,6 +2191,7 @@ ${APP_CONFIG.url}`;
                   const icon = document.getElementById('modalStatusIcon');
                   const title = document.getElementById('modalStatusTitle');
                   const text = document.getElementById('modalStatusText');
+                  const purgeSec = document.getElementById('modalPurgeSection');
 
                   if (icon) icon.textContent = '✓';
                   if (title) title.textContent = 'أنت على أحدث إصدار';
@@ -2186,6 +2199,15 @@ ${APP_CONFIG.url}`;
                     const currentVerDisplay = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) ? `v${APP_CONFIG.version}` : '';
                     text.innerHTML = `أنت تستخدم أحدث إصدار بالفعل (<strong>${currentVerDisplay}</strong>)، ولا يوجد أي تحديث جديد حالياً.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
                   }
+
+                  // إظهار قسم التحديث الإجباري فقط في حالة فحص التحديثات وعدم وجود جديد
+                  if (purgeSec) purgeSec.style.display = 'block';
+
+                  // عند الإغلاق العادي في الإعدادات: إغلاق النافذة فقط
+                  if (closeUpToDateBtn) {
+                    closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
+                  }
+
                   if (upToDateModal) upToDateModal.classList.add('show');
                 }
               }, 850);
