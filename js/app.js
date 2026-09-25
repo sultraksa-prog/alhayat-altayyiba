@@ -223,7 +223,7 @@ if (isRunningStandalone) {
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
-  // ==================== نظام التنقل ومنطق الخروج المزدوج الذكي الفوري ====================
+  // ==================== نظام التنقل المتكامل ومنطق الخروج المحصور بالرئيسية ====================
   let lastExitAttemptTime = 0;
   let exitToastTimer = null;
 
@@ -234,6 +234,8 @@ if (isRunningStandalone) {
     clearTimeout(exitToastTimer);
     exitToastTimer = setTimeout(() => {
       hideExitToast();
+      // تصفير عداد الوقت فور اختفاء الرسالة ليمنع الخروج المفاجئ بعد مرور الثواني
+      lastExitAttemptTime = 0;
     }, 2000);
   }
 
@@ -242,7 +244,7 @@ if (isRunningStandalone) {
     if (toast) toast.classList.remove('show');
   }
 
-  // تهيئة مسار الهاش الأولي لمنع تراكم السجل عند الفتح
+  // تهيئة مصد الأمان عند الفتح
   if (!location.hash || location.hash === '#root') {
     history.replaceState({ screenId: 'screen-home', isRoot: true }, '', '#root');
     history.pushState({ screenId: 'screen-home' }, '', '#app');
@@ -253,13 +255,9 @@ if (isRunningStandalone) {
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
-      // قاعدة ذهبية: العودة للشاشة الرئيسية تستبدل الحالة دائماً ولا تُراكم صفحات في الذاكرة
-      if (screen === screenHome) {
-        history.replaceState({ screenId: 'screen-home' }, '', '#app');
-      } else {
-        const hashTag = '#' + screen.id.replace('screen-', '');
-        history.replaceState({ screenId: screen.id }, '', hashTag);
-      }
+      const hashTag = screen === screenHome ? '#app' : '#' + screen.id.replace('screen-', '');
+      // تسجيل كل شاشة في السجل بخطوة مستقلة لتمكين الرجوع السلس إليها
+      history.pushState({ screenId: screen.id }, '', hashTag);
     }
 
     // حفظ الشاشة النشطة
@@ -321,36 +319,13 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 2. إذا كان المستخدم في الرئيسية، أو وصل مسار السجل إلى نقطة البداية (#root أو #app):
-    if (!activeScreen || activeScreen === screenHome || location.hash === '#root') {
-      const now = Date.now();
-      if (now - lastExitAttemptTime < 2000) {
-        // الضغطة الثانية خلال ثانيتين: خروج فوري ونهائي
-        hideExitToast();
-        try { window.close(); } catch(e) {}
-        // الرجوع خطوة للخلف لخروج المتصفح فوراً دون أي تكرار
-        history.back();
-      } else {
-        // الضغطة الأولى: إظهار التنبيه + التمرير لأعلى الصفحة + تجديد مصد الأمان
-        lastExitAttemptTime = now;
-        history.pushState({ screenId: 'screen-home' }, '', '#app');
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        const appContainer = document.querySelector('.app-container');
-        if (appContainer) appContainer.scrollTo({ top: 0, behavior: 'smooth' });
-
-        showExitToast();
-      }
-      return;
-    }
-
-    // 3. إذا كان المستخدم في شاشات الإعدادات الفرعية (حول التطبيق، إعدادات أخرى)، الرجوع يعيده لشاشة الإعدادات
+    // 2. إذا كان المستخدم في شاشات الإعدادات الفرعية (حول التطبيق، إعدادات أخرى)، الرجوع يعيده لشاشة الإعدادات
     if (activeScreen === screenAboutApp || (typeof screenOtherSettings !== 'undefined' && activeScreen === screenOtherSettings)) {
       showScreen(screenGeneralSettings, false);
       return;
     }
 
-    // 4. إذا كان المستخدم في شاشة قراءة الأذكار: الرجوع بالإيماءة يعيده لمصدر الدخول
+    // 3. إذا كان المستخدم في شاشة قراءة الأذكار: الرجوع يعيده للشاشة التي دخل منها (المفضلة أو الأذكار)
     if (activeScreen === screenAzkarReader) {
       const category = azkarState.find(c => c.id === currentActiveCategoryId);
       if (category && category.items && category.items.length > 0) {
@@ -371,19 +346,45 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 5. إذا كان في شاشة المفضلة، الرجوع يعيده للشاشة التي دخل منها
+    // 4. إذا كان في شاشة المفضلة، الرجوع يعيده للشاشة التي دخل منها (الرئيسية أو أذكار المسلم)
     if (activeScreen === screenAzkarFavorites) {
-      if (typeof favoritesSourceScreen !== 'undefined' && favoritesSourceScreen === screenHome) {
-        showScreen(screenHome, false);
-      } else {
+      if (typeof favoritesSourceScreen !== 'undefined' && favoritesSourceScreen === screenAzkarCategories) {
         showScreen(screenAzkarCategories, false);
         renderAzkarCategories();
+      } else {
+        showScreen(screenHome, false);
       }
       return;
     }
 
-    // 6. أي شاشة أخرى (التقويم، المسبحة، القبلة، الإعدادات): الرجوع يعيد المستخدم إلى الشاشة الرئيسية مباشرة
-    showScreen(screenHome, false);
+    // 5. إذا كان المستخدم في أي شاشة أخرى غير الرئيسية (التقويم، المسبحة، القبلة، الأذكار، الإعدادات)، الرجوع يعيده للرئيسية بسلاسة
+    if (activeScreen && activeScreen !== screenHome) {
+      showScreen(screenHome, false);
+      return;
+    }
+
+    // 6. إذا كان المستخدم يقف فعلياً داخل "الشاشة الرئيسية": تفعيل خوارزمية الخروج المزدوج
+    if (!activeScreen || activeScreen === screenHome) {
+      const now = Date.now();
+      if (lastExitAttemptTime > 0 && (now - lastExitAttemptTime < 2000)) {
+        // الضغطة الثانية المؤكدة خلال ثانيتين: خروج فوري ونهائي
+        hideExitToast();
+        lastExitAttemptTime = 0;
+        try { window.close(); } catch(e) {}
+        history.back();
+      } else {
+        // الضغطة الأولى: إظهار التنبيه + التمرير لأعلى الصفحة + تثبيت مصد الخروج
+        lastExitAttemptTime = now;
+        history.pushState({ screenId: 'screen-home' }, '', '#app');
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) appContainer.scrollTo({ top: 0, behavior: 'smooth' });
+
+        showExitToast();
+      }
+      return;
+    }
   });
 
   let pendingExitTargetScreen = null;
@@ -2001,7 +2002,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.23', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.24', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
