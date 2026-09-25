@@ -1247,13 +1247,13 @@ const RAW_USER_SOURCE = `
 ----------------
 `;
 
-// محرك المعالجة والاستخراج الذكي الدقيق بنظام الحقول الصريحة
+// محرك المعالجة والاستخراج الذكي الدقيق بنظام الحقول الصريحة (نسخة مصححة 100% بدون أي رموز غير صالحة)
 function parseRawUserAzkar(raw) {
   const lines = raw.split('\n');
   const categories = [];
   let currentCat = null;
   let currentItem = null;
-  let currentField = null; // 'pre' | 'text' | 'fullNote' | 'alert' | null
+  let currentField = null;
 
   function commitCurrentItem() {
     if (currentItem && currentItem.text && currentCat) {
@@ -1269,7 +1269,7 @@ function parseRawUserAzkar(raw) {
     const nextItemIdx = (currentCat ? currentCat.items.length : 0) + 1;
     const catIdx = categories.length;
     currentItem = {
-      id: \`cat_\${catIdx}_item_\${nextItemIdx}\`,
+      id: 'cat_' + catIdx + '_item_' + nextItemIdx,
       pre: '',
       text: '',
       fullNote: '',
@@ -1319,27 +1319,26 @@ function parseRawUserAzkar(raw) {
       if (!currentItem) createNewItem();
       currentItem.count = parseInt(match[1], 10) || 1;
       currentField = null;
-      commitCurrentItem(); // اعتماد الذكر واكتماله فور تحديد عدده
+      commitCurrentItem();
     } else {
       // 3. سطر بدون نقطتين ولا يبدأ بحقل مفتاحي
       if (!currentField) {
-        // إذا كان الحقل الحالي فارغاً، فهذا عنوان مجموعة أذكار جديدة!
         commitCurrentItem();
         currentCat = {
-          id: \`cat_\${categories.length + 1}\`,
-          name: line.replace(/^[#*\\-_\\s]+/, '').trim(),
+          id: 'cat_' + (categories.length + 1),
+          name: line.replace(/^[#*\-_\s]+/, '').trim(),
           isCustom: false,
           items: []
         };
         categories.push(currentCat);
       } else {
-        // سطر تكميلي للسطر السابق (في حال كان متن الذكر أو الفضل يمتد لعدة أسطر)
+        // سطر تكميلي للسطر السابق
         if (currentField === 'text') {
-          currentItem.text += (currentItem.text ? '\\n' : '') + line;
+          currentItem.text += (currentItem.text ? '\n' : '') + line;
         } else if (currentField === 'fullNote') {
-          currentItem.fullNote += (currentItem.fullNote ? '\\n' : '') + line;
+          currentItem.fullNote += (currentItem.fullNote ? '\n' : '') + line;
         } else if (currentField === 'alert') {
-          currentItem.alert += (currentItem.alert ? '\\n' : '') + line;
+          currentItem.alert += (currentItem.alert ? '\n' : '') + line;
         } else if (currentField === 'pre') {
           currentItem.pre += (currentItem.pre ? ' ' : '') + line;
         }
