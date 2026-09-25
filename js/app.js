@@ -1995,9 +1995,38 @@ ${APP_CONFIG.url}`;
   // ==================== تسجيل Service Worker ونظام التحديث الذكي ====================
   const UPDATE_CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // عداد 7 أيام بالملي ثانية
 
-  // 1. فحص هل تم تحديث التطبيق للتو: قراءة رقم الإصدار الجديد مباشرة من APP_CONFIG.version
+  // 1. فحص حالات اكتمال التحديث أو الإصلاح الإجباري فور الإقلاع
+  const forcePurgeSuccess = localStorage.getItem('hayat_force_purge_success');
   const justUpdatedFlag = localStorage.getItem('hayat_just_updated_flag') || localStorage.getItem('hayat_just_updated_version');
-  if (justUpdatedFlag) {
+
+  // أ) في حال نجاح التحديث الإجباري وإصلاح الملفات: توجيه للإعدادات وإظهار الرسالة لمدة ثانيتين
+  if (forcePurgeSuccess) {
+    localStorage.removeItem('hayat_force_purge_success');
+
+    setTimeout(() => {
+      // توجيه المستخدم لشاشة الإعدادات
+      if (screenGeneralSettings) showScreen(screenGeneralSettings, false);
+
+      const modal = document.getElementById('upToDateModal');
+      const icon = document.getElementById('modalStatusIcon');
+      const title = document.getElementById('modalStatusTitle');
+      const text = document.getElementById('modalStatusText');
+
+      if (modal && title && text) {
+        if (icon) icon.textContent = '🛠️';
+        title.textContent = 'تم الإصلاح والتحديث';
+        text.innerHTML = `تمت عملية التحديث الإجباري وإصلاح ملفات التطبيق بنجاح.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
+        modal.classList.add('show');
+
+        // استمرار ظهور الرسالة لمدة ثانيتين ونصف ثم إغلاقها تلقائياً
+        setTimeout(() => {
+          modal.classList.remove('show');
+        }, 2500);
+      }
+    }, 450);
+  } 
+  // ب) في حال التحديث العادي عبر زر "تحديث الآن"
+  else if (justUpdatedFlag) {
     localStorage.removeItem('hayat_just_updated_flag');
     localStorage.removeItem('hayat_just_updated_version');
 
@@ -2010,11 +2039,8 @@ ${APP_CONFIG.url}`;
       if (modal && title && text) {
         if (icon) icon.textContent = '✨';
         title.textContent = 'تم التحديث بنجاح';
-        
-        // قراءة رقم الإصدار الجديد الحقيقي من الكود الفعلي الذي يعمل الآن
         const newVersionText = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) ? `v${APP_CONFIG.version}` : 'الجديد';
         text.innerHTML = `تم تحديث التطبيق بنجاح إلى الإصدار (<strong>${newVersionText}</strong>).<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
-        
         modal.classList.add('show');
       }
     }, 600);
@@ -2023,7 +2049,6 @@ ${APP_CONFIG.url}`;
   if ('serviceWorker' in navigator) {
     let refreshing = false;
 
-    // عند تفعيل التحديث، يعاد تحميل الصفحة مرة واحدة لتطبيق الملفات الجديدة
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
@@ -2045,7 +2070,7 @@ ${APP_CONFIG.url}`;
         });
       });
 
-      // 3. آلية الفحص التلقائي كل 7 أيام عند فتح التطبيق متصلاً بالإنترنت
+      // 3. آلية الفحص التلقائي كل 7 أيام
       function runPeriodicUpdateCheck() {
         const lastCheck = parseInt(localStorage.getItem('hayat_last_update_check_time') || '0', 10);
         const now = Date.now();
@@ -2071,49 +2096,10 @@ ${APP_CONFIG.url}`;
         closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
       }
 
-      // زر التحديث الإجباري وإصلاح كاش الملفات مع الحفاظ الكامل على بيانات وأذكار المستخدم
-      const forcePurgeBtn = document.getElementById('forceCachePurgeBtn');
-      if (forcePurgeBtn) {
-        forcePurgeBtn.onclick = async () => {
-          if (!navigator.onLine) {
-            const offlineModal = document.getElementById('offlineUpdateModal');
-            if (upToDateModal) upToDateModal.classList.remove('show');
-            if (offlineModal) offlineModal.classList.add('show');
-            return;
-          }
-
-          forcePurgeBtn.textContent = 'جاري مسح الكاش وتحديث الملفات... ⏳';
-
-          try {
-            // 1. مسح جميع ملفات الـ CacheStorage برمجياً (دون لمس LocalStorage نهائياً)
-            if ('caches' in window) {
-              const cacheKeys = await caches.keys();
-              await Promise.all(cacheKeys.map(key => caches.delete(key)));
-            }
-
-            // 2. إلغاء تسجيل السيرفر ووركر القديم لضمان سحب الملفات الجديدة مباشرة
-            if ('serviceWorker' in navigator) {
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              await Promise.all(registrations.map(reg => reg.unregister()));
-            }
-
-            // 3. وضع علامة لعرض رسالة التهنئة بالإصدار الجديد فور الإقلاع
-            localStorage.setItem('hayat_just_updated_flag', 'true');
-
-            // 4. إعادة تحميل إجبارية نظيفة تماماً (Bypass HTTP Cache) كأنها في متصفح خفي
-            const cleanUrl = window.location.origin + window.location.pathname + '?hard_reset=' + Date.now();
-            window.location.replace(cleanUrl);
-          } catch (err) {
-            window.location.reload();
-          }
-        };
-      }
-
       if (closeOfflineBtn && offlineModal) {
         closeOfflineBtn.onclick = () => offlineModal.classList.remove('show');
       }
 
-      // زر فتح إعدادات الواي فاي والإنترنت
       if (openWifiSettingsBtn) {
         openWifiSettingsBtn.onclick = () => {
           if (offlineModal) offlineModal.classList.remove('show');
@@ -2126,6 +2112,47 @@ ${APP_CONFIG.url}`;
           try {
             window.location.href = "intent:#Intent;action=android.settings.WIFI_SETTINGS;end";
           } catch (e) {}
+        };
+      }
+
+      // 5. زر التحديث الإجباري وإصلاح كاش الملفات مع التوجيه ورسائل التأكيد
+      const forcePurgeBtn = document.getElementById('forceCachePurgeBtn');
+      if (forcePurgeBtn) {
+        forcePurgeBtn.onclick = async () => {
+          if (!navigator.onLine) {
+            if (upToDateModal) upToDateModal.classList.remove('show');
+            if (offlineModal) offlineModal.classList.add('show');
+            return;
+          }
+
+          const originalPurgeText = forcePurgeBtn.textContent;
+          forcePurgeBtn.textContent = 'جاري مسح الكاش وتحديث الملفات... ⏳';
+
+          try {
+            // مسح ملفات الكاش برمجياً دون لمس LocalStorage
+            if ('caches' in window) {
+              const cacheKeys = await caches.keys();
+              await Promise.all(cacheKeys.map(key => caches.delete(key)));
+            }
+
+            // إلغاء تسجيل السيرفر ووركر لجلب النسخة النظيفة
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map(reg => reg.unregister()));
+            }
+
+            // تسجيل علامة نجاح الإصلاح وتوجيه المستخدم لشاشة الإعدادات
+            localStorage.setItem('hayat_force_purge_success', 'true');
+            localStorage.setItem('hayat_last_active_screen_id', 'screen-general-settings');
+
+            // إعادة تحميل إجبارية ونظيفة تماماً
+            const cleanUrl = window.location.origin + window.location.pathname + '?cache_cleared=' + Date.now();
+            window.location.replace(cleanUrl);
+          } catch (err) {
+            // معالجة حالة الفشل
+            forcePurgeBtn.textContent = originalPurgeText;
+            alert('تعذر إتمام عملية إصلاح الملفات، يرجى المحاولة مرة أخرى.');
+          }
         };
       }
 
@@ -2146,12 +2173,9 @@ ${APP_CONFIG.url}`;
               setTimeout(() => {
                 if (titleEl) titleEl.textContent = originalTitle;
 
-                // الحالة الأولى: يوجد تحديث قيد الانتظار
                 if (registration.waiting) {
                   showUpdateToast(registration.waiting);
-                } 
-                // الحالة الثانية: لا يوجد أي تحديث جديد (أنت على آخر إصدار)
-                else if (!registration.installing) {
+                } else if (!registration.installing) {
                   const icon = document.getElementById('modalStatusIcon');
                   const title = document.getElementById('modalStatusTitle');
                   const text = document.getElementById('modalStatusText');
@@ -2175,7 +2199,7 @@ ${APP_CONFIG.url}`;
     }).catch((err) => console.log('SW error:', err));
   }
 
-  // دالة إظهار إشعار التحديث الثابت (لا يختفي إلا بقرار المستخدم)
+  // دالة إظهار إشعار التحديث الثابت
   function showUpdateToast(newWorker) {
     const toast = document.getElementById('appUpdateToast');
     const updateBtn = document.getElementById('applyUpdateBtn');
@@ -2184,14 +2208,12 @@ ${APP_CONFIG.url}`;
     if (toast && updateBtn) {
       toast.classList.add('show');
 
-      // عند النقر على تحديث الآن: نضع علامة حدوث التحديث لتستقبلها النسخة الجديدة
       updateBtn.onclick = () => {
         updateBtn.textContent = 'جاري التحديث...';
         localStorage.setItem('hayat_just_updated_flag', 'true');
         newWorker.postMessage({ type: 'SKIP_WAITING' });
       };
 
-      // عند النقر على لاحقاً: إغلاق النافذة دون جلب أي شيء
       if (closeBtn) {
         closeBtn.onclick = () => {
           toast.classList.remove('show');
