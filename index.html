@@ -1477,17 +1477,28 @@
       </div>
     </div>
 
-  <!-- نافذة تأكيد استخدام أحدث إصدار الفاخرة (بديلة الـ alert) -->
+  <!-- نافذة تأكيد استخدام أحدث إصدار الفاخرة مع خيار الإصلاح الإجباري -->
     <div class="custom-modal-backdrop" id="upToDateModal">
-      <div class="custom-modal-card text-center" style="max-width: 320px;">
+      <div class="custom-modal-card text-center" style="max-width: 330px;">
         <div class="uptodate-icon-box" id="modalStatusIcon">✓</div>
         <h3 class="modal-card-title celebration-title" id="modalStatusTitle" style="margin-bottom: 6px;">أنت على أحدث إصدار</h3>
-        <p class="celebration-text" id="modalStatusText" style="font-size: 13.5px; line-height: 1.6; margin-bottom: 20px;">
+        <p class="celebration-text" id="modalStatusText" style="font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
           أنت تستخدم أحدث إصدار بالفعل، ولا يوجد أي تحديث جديد حالياً.<br>
           نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙
         </p>
-        <div class="modal-actions-row" style="justify-content: center;">
-          <button type="button" class="modal-btn-primary" id="closeUpToDateBtn" style="padding: 9px 36px;">إغلاق</button>
+
+        <div class="modal-actions-row" style="justify-content: center; margin-top: 0;">
+          <button type="button" class="modal-btn-primary" id="closeUpToDateBtn" style="padding: 8px 38px;">إغلاق</button>
+        </div>
+
+        <!-- قسم التحديث الإجباري لحل مشكلات الكاش العالقة دون مساس ببيانات المستخدم -->
+        <hr class="force-purge-divider">
+        <div class="force-purge-box">
+          <span class="force-purge-hint">هل تواجه مشكلة في ظهور التحديثات؟</span>
+          <button type="button" class="btn-force-purge" id="forceCachePurgeBtn">
+            <span>🔄 تحديث إجباري وإصلاح للملفات</span>
+          </button>
+          <span class="force-purge-subnote">سيتم جلب أحدث ملفات النظام فوراً، مع الحفاظ التام على أذكارك وموقعك بأمان.</span>
         </div>
       </div>
     </div>
