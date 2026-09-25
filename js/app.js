@@ -223,21 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
   // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
-  // إدارة الرجوع وسحب الحافة (History API) مع استعادة الشاشة النشطة
+  // إدارة الرجوع وسحب الحافة (History API)
   if (!history.state) {
     history.replaceState({ screenId: 'screen-home' }, '');
-  }
-
-  // استعادة الشاشة التي كان يقف عليها المستخدم تلقائياً لمنع طرده للرئيسية
-  const savedScreenId = localStorage.getItem('hayat_last_active_screen_id');
-  if (savedScreenId && savedScreenId !== 'screen-home') {
-    const targetScreenEl = document.getElementById(savedScreenId);
-    if (targetScreenEl) {
-      showScreen(targetScreenEl, false);
-      if (savedScreenId === 'screen-azkar-categories') renderAzkarCategories();
-      if (savedScreenId === 'screen-azkar-favorites') renderFavorites();
-      if (savedScreenId === 'screen-tasbeeh' && typeof initTasbeehEngine === 'function') initTasbeehEngine();
-    }
   }
 
   function showScreen(screen, pushToHistory = true) {
@@ -1832,10 +1820,23 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   // تم إلغاء تثبيت الهيدر ليتحرك وينسحب طبيعياً مع الصفحة
   
-  // تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
+  /// تشغيل جلب الأوقات وتشغيل العداد الحي وتفعيل مربعات الصلوات
   fetchPrayerTimes();
   startLiveCountdown();
   initPrayerChecklist();
+
+  // استعادة الشاشة النشطة بأمان تام بعد اكتمال تهيئة كافة عناصر النظام
+  const savedScreenId = localStorage.getItem('hayat_last_active_screen_id');
+  if (savedScreenId && savedScreenId !== 'screen-home') {
+    const targetScreenEl = document.getElementById(savedScreenId);
+    if (targetScreenEl) {
+      showScreen(targetScreenEl, false);
+      if (savedScreenId === 'screen-azkar-categories' && typeof renderAzkarCategories === 'function') renderAzkarCategories();
+      if (savedScreenId === 'screen-azkar-favorites' && typeof renderFavorites === 'function') renderFavorites();
+      if (savedScreenId === 'screen-tasbeeh' && typeof initTasbeehEngine === 'function') initTasbeehEngine();
+      if (savedScreenId === 'screen-calendar' && typeof window.initCalendarEngine === 'function') window.initCalendarEngine();
+    }
+  }
 
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
