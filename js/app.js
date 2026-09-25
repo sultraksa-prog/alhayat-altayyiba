@@ -20,23 +20,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function updateInstallButtonUI(installed) {
-    const badge = document.getElementById('installBadgeText');
-    const subtitle = document.getElementById('installBtnSubtitle');
-    if (installed) {
-      if (badge) {
-        badge.textContent = 'مثبت ✓';
-        badge.style.color = '#15803D';
-        badge.style.background = '#DCFCE7';
-        badge.style.borderColor = '#BBF7D0';
-      }
-      if (subtitle) subtitle.textContent = 'التطبيق مثبت على جهازك وتعمل به الآن كنسخة أصلية';
-    }
+  const installBtnCard = document.getElementById('installPwaBtn');
+  // إذا كان التطبيق مثبتاً أو يعمل كنسخة مستقلة، نقوم بإخفاء الزر بالكامل
+  if (installed && installBtnCard) {
+    installBtnCard.style.display = 'none';
   }
+}
 
-  // تحديث حالة الزر فور تشغيل التطبيق إذا كان مفتوحاً كتطبيق مثبت
-  if (isRunningStandalone || localStorage.getItem('hayat_pwa_installed') === 'true') {
-    updateInstallButtonUI(true);
-  }
+// إخفاء زر التثبيت فوراً وبشكل تلقائي إذا فُتح التطبيق كنسخة مثبتة (Standalone) سواء على الجوال أو الكمبيوتر
+if (isRunningStandalone) {
+  updateInstallButtonUI(true);
+} else if ('getInstalledRelatedApps' in navigator) {
+  // فحص إضافي للأجهزة المدعومة للتحقق مما إذا كان مثبتاً على الجهاز حتى لو فتح من المتصفح
+  navigator.getInstalledRelatedApps().then((relatedApps) => {
+    if (relatedApps.length > 0) {
+      updateInstallButtonUI(true);
+    }
+  }).catch(() => {});
+}
 
   function showPwaModal(type, title, desc) {
     const modal = document.getElementById('pwaInstallModal');
