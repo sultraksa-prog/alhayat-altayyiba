@@ -1308,23 +1308,64 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return base;
   }
 
-  // 1. جلب مواقيت الصلاة لليوم المحدد
+  // 1. المحرك الفلكي الشمسي الاحتياطي (يعمل 100% أوفلاين في حال انقطاع السيرفر أو النت)
+  function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3) {
+    const rad = Math.PI / 180, deg = 180 / Math.PI;
+    const d = (targetDate.getTime() / 86400000) + 2440587.5 - 2451545.0;
+    const M = (357.529 + 0.98560028 * d) % 360;
+    const L = (280.459 + 0.98564736 * d) % 360;
+    const lambda = (L + 1.915 * Math.sin(M * rad) + 0.020 * Math.sin(2 * M * rad)) % 360;
+    const epsilon = 23.439 - 0.00000036 * d;
+    const alpha = Math.atan2(Math.cos(epsilon * rad) * Math.sin(lambda * rad), Math.cos(lambda * rad)) * deg;
+    const delta = Math.asin(Math.sin(epsilon * rad) * Math.sin(lambda * rad)) * deg;
+    const EqT = (L / 15 - (alpha / 15)) * 60;
+    const solarNoon = 12 + timezone - (lng / 15) - (EqT / 60);
+
+    const getH = (alt) => {
+      const cosH = (Math.sin(alt * rad) - Math.sin(lat * rad) * Math.sin(delta * rad)) /
+                   (Math.cos(lat * rad) * Math.cos(delta * rad));
+      if (cosH > 1 || cosH < -1) return null;
+      return Math.acos(cosH) * deg / 15;
+    };
+
+    const fajrH = getH(-18.5);
+    const sunH = getH(-0.833);
+    const asrAlt = Math.atan(1 / (1 + Math.tan(Math.abs(lat - delta) * rad))) * deg;
+    const asrH = getH(asrAlt);
+    const maghribDec = solarNoon + (sunH || 1.05);
+
+    const fmt = (dec) => {
+      if (dec === null || isNaN(dec)) return '00:00';
+      dec = (dec + 24) % 24;
+      const h = Math.floor(dec), m = Math.floor((dec - h) * 60);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    return {
+      Fajr: fmt(solarNoon - (fajrH || 1.35)),
+      Sunrise: fmt(solarNoon - (sunH || 1.05)),
+      Dhuhr: fmt(solarNoon + (2 / 60)),
+      Asr: fmt(solarNoon + (asrH || 3.3)),
+      Maghrib: fmt(maghribDec),
+      Isha: fmt(maghribDec + 1.5)
+    };
+  }
+
+  // جلب مواقيت الصلاة (مباشر عبر الرابط الدقيق مع حماية أوفلاين كاملة)
   async function fetchPrayerTimes() {
     const cityNameEl = document.getElementById('cityNameText');
     if (cityNameEl) cityNameEl.textContent = userLocation.city;
 
     const targetDate = getTargetDateObject();
-    const dStr = `${String(targetDate.getDate()).padStart(2, '0')}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${targetDate.getFullYear()}`;
     const methodNum = userLocation.method || 4;
+    const timestamp = Math.floor(targetDate.getTime() / 1000);
     
-    let url = `https://api.aladhan.com/v1/timings?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
-    if (currentDayOffset !== 0) {
-      const timestamp = Math.floor(targetDate.getTime() / 1000);
-      url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
-    }
+    // استخدام المسار المباشر المرفق بالـ timestamp يمنع أي 301 Redirect ويحل مشكلة CORS نهائياً
+    const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
 
     try {
       const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response not ok');
       const data = await response.json();
 
       if (data && data.data) {
@@ -1345,12 +1386,33 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         updatePrayerUI(data.data);
       }
     } catch (err) {
-      console.log('استخدام البيانات المحفوظة...');
+      console.warn('جاري استخدام المحرك الفلكي الداخلي الأوفلاين...');
       const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
-      if (cached) {
+      
+      if (cached && cached.timings) {
         currentTimings = cached.timings;
         if (cached.timezone) userLocation.timezone = cached.timezone;
         updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
+      } else {
+        // حساب فلكي محلي فوري وشامل في حال تعثر الشبكة أو الكاش
+        const tz = (userLocation.lng > 40) ? 3 : 2;
+        currentTimings = calculateLocalSolarTimings(targetDate, userLocation.lat, userLocation.lng, tz);
+        
+        let localHijriData = null;
+        try {
+          const hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+          const parts = hf.formatToParts(targetDate);
+          let hd = 1, hm = 1, hy = 1448;
+          parts.forEach(p => {
+            if (p.type === 'day') hd = parseInt(p.value, 10);
+            if (p.type === 'month') hm = parseInt(p.value, 10);
+            if (p.type === 'year') hy = parseInt(p.value, 10);
+          });
+          const arMonths = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
+          localHijriData = { day: hd, month: { ar: arMonths[hm - 1] || 'رمضان' }, year: hy };
+        } catch(e) {}
+
+        updatePrayerUI({ timings: currentTimings, date: { hijri: localHijriData } });
       }
     }
   }
@@ -1889,7 +1951,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.15', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.16', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
