@@ -245,6 +245,22 @@
       </header>
 
       <div class="settings-list-menu">
+
+        <div class="settings-list-menu">
+        
+        <!-- 0. زر تثبيت التطبيق على الجهاز -->
+        <div class="settings-menu-card highlight-card" id="installPwaBtn" style="border-color: #86EFAC;">
+          <div class="settings-item-icon bg-icon-emerald">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div style="flex-grow: 1; text-align: right;">
+            <h4 class="settings-item-title" id="installBtnTitle" style="margin: 0; font-size: 15px;">تثبيت التطبيق على الجهاز</h4>
+            <span style="font-size: 11px; color: var(--text-secondary);" id="installBtnSubtitle">تثبيت مباشر وسريع لتجربة هاتف أصلية وأوفلاين</span>
+          </div>
+          <span class="settings-badge-lang" id="installBadgeText" style="color: #15803D; background: #DCFCE7; border-color: #BBF7D0;">تثبيت 📲</span>
+        </div>
+
+        <!-- 1. إعدادات الأذان -->
         
         <!-- 1. إعدادات الأذان -->
         <div class="settings-menu-card" onclick="alert('إعدادات الأذان ستتوفر قريباً')">
@@ -1516,6 +1532,35 @@
         <div class="modal-actions-row" style="justify-content: center; gap: 14px;">
           <button type="button" class="modal-btn-link text-muted" id="closeOfflineModalBtn">لاحقاً</button>
           <button type="button" class="modal-btn-primary" id="openWifiSettingsBtn" style="padding: 9px 24px;">فتح الإنترنت</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- نافذة التثبيت الشاملة (تأكيد التثبيت / إرشادات الآيفون / التطبيق مثبت بالفعل) -->
+    <div class="custom-modal-backdrop" id="pwaInstallModal">
+      <div class="custom-modal-card text-center" style="max-width: 330px;">
+        <div class="uptodate-icon-box" id="pwaModalIcon">📲</div>
+        <h3 class="modal-card-title celebration-title" id="pwaModalTitle" style="margin-bottom: 6px;">تثبيت التطبيق</h3>
+        <p class="celebration-text" id="pwaModalDesc" style="font-size: 13px; line-height: 1.6; margin-bottom: 16px;">--</p>
+        
+        <!-- خطوات التثبيت المرئية الخاصة بهواتف الآيفون (تظهر فقط لمستخدمي iOS) -->
+        <div id="iosStepsContainer" style="display: none; flex-direction: column; gap: 8px; margin-bottom: 16px; text-align: right;">
+          <div class="ios-step-row">
+            <span class="ios-step-num">1</span>
+            <span>اضغط على زر المشاركة <strong>(⎋ Share)</strong> في أسفل المتصفح.</span>
+          </div>
+          <div class="ios-step-row">
+            <span class="ios-step-num">2</span>
+            <span>مرر لأسفل واختر <strong>(إضافة إلى الصفحة الرئيسية ➕)</strong>.</span>
+          </div>
+          <div class="ios-step-row">
+            <span class="ios-step-num">3</span>
+            <span>اضغط على <strong>(إضافة / Add)</strong> أعلى الشاشة لفتح التطبيق من جوالك مباشرة!</span>
+          </div>
+        </div>
+
+        <div class="modal-actions-row" style="justify-content: center; margin-top: 0;">
+          <button type="button" class="modal-btn-primary" id="closePwaModalBtn" style="padding: 8px 38px;">حسناً</button>
         </div>
       </div>
     </div>
