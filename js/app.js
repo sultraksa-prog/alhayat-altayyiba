@@ -358,7 +358,7 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 4. إذا كان المستخدم في شاشة قراءة الأذكار
+    // 4. إذا كان المستخدم في شاشة قراءة الأذكار: الرجوع بالإيماءة يعيده لمصدر الدخول
     if (activeScreen === screenAzkarReader) {
       const category = azkarState.find(c => c.id === currentActiveCategoryId);
       if (category && category.items && category.items.length > 0) {
@@ -369,8 +369,13 @@ if (isRunningStandalone) {
           return;
         }
       }
-      showScreen(screenAzkarCategories, false);
-      renderAzkarCategories();
+      if (readerSourceScreen === screenAzkarFavorites) {
+        showScreen(screenAzkarFavorites, false);
+        renderFavorites();
+      } else {
+        showScreen(screenAzkarCategories, false);
+        renderAzkarCategories();
+      }
       return;
     }
 
@@ -541,7 +546,23 @@ if (isRunningStandalone) {
     });
   }
 
+  // تتبع مصدر الدخول لشاشة قراءة الأذكار (شاشة المفضلة أم شاشة مجموعات الأذكار)
+  let readerSourceScreen = screenAzkarCategories;
+
+  // دالة العودة الذكية للمصدر الذي فُتحت منه الأذكار مع تحديث نسب الإنجاز
+  function exitReaderToSource() {
+    if (readerSourceScreen === screenAzkarFavorites) {
+      showScreen(screenAzkarFavorites);
+      renderFavorites();
+    } else {
+      showScreen(screenAzkarCategories);
+      renderAzkarCategories();
+    }
+  }
+
   backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
+  
+  // زر الرجوع العلوي داخل شاشة قراءة الأذكار: يعود للشاشة التي دخلت منها
   backToCategoriesBtn.addEventListener('click', () => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (category && category.items && category.items.length > 0) {
@@ -551,8 +572,7 @@ if (isRunningStandalone) {
         return;
       }
     }
-    showScreen(screenAzkarCategories);
-    renderAzkarCategories();
+    exitReaderToSource();
   });
 
   // زر الرجوع العلوي في المفضلة: يعود بذكاء للشاشة التي دخلت منها
@@ -847,6 +867,12 @@ if (clearCategorySearchBtn) {
   let isReorderMode = false;
 
   function openCategoryReader(categoryId, resetCounters = false) {
+    // تسجيل الشاشة الحالية كمصدر قبل الانتقال لشاشة القراءة
+    const activeCurrentScreen = document.querySelector('.screen-view.active');
+    if (activeCurrentScreen && (activeCurrentScreen === screenAzkarFavorites || activeCurrentScreen === screenAzkarCategories)) {
+      readerSourceScreen = activeCurrentScreen;
+    }
+
     // مزامنة فورية مع LocalStorage لضمان ظهور الذكر المضاف حديثاً داخل بطاقات القسم
     try {
       azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
@@ -854,7 +880,7 @@ if (clearCategorySearchBtn) {
     } catch (e) {}
 
     currentActiveCategoryId = categoryId;
-    const category = azkarState.find(c => c.id === categoryId);
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
 
     if (resetCounters && category.items) {
@@ -1260,11 +1286,10 @@ if (clearCategorySearchBtn) {
 
   let targetCompletedCategoryId = null;
 
-// 1. زر "تم" عند إنهاء الأذكار لأول مرة (يرجعه لشاشة المجموعات)
+// 1. زر "تم" عند إنهاء الأذكار لأول مرة (يرجعه للشاشة التي بدأ منها بذكاء)
 document.getElementById('finishDoneBtn').addEventListener('click', () => {
   document.getElementById('finishModal').classList.remove('show');
-  showScreen(screenAzkarCategories);
-  renderAzkarCategories();
+  exitReaderToSource();
 });
 
 // 2. أزرار المجموعة المكتملة مسبقاً
@@ -1293,15 +1318,14 @@ document.getElementById('continueReadingBtn').addEventListener('click', () => {
 document.getElementById('confirmExitBtn').addEventListener('click', () => {
   document.getElementById('exitConfirmModal').classList.remove('show');
 
-  // إذا كان المستخدم قد نقر على أيقونة محددة من التبويب السفلي (كالرئيسية أو القبلة أو الإعدادات)
+  // إذا كان المستخدم قد نقر على أيقونة محددة من التبويب السفلي
   if (pendingExitTargetScreen) {
     showScreen(pendingExitTargetScreen.screen);
     if (pendingExitTargetScreen.cb) pendingExitTargetScreen.cb();
     pendingExitTargetScreen = null;
   } else {
-    // إذا كان الخروج عبر سهم الرجوع العلوي الافتراضي
-    showScreen(screenAzkarCategories);
-    renderAzkarCategories();
+    // الرجوع الذكي للشاشة التي فُتحت منها الأذكار
+    exitReaderToSource();
   }
 });
 
@@ -1994,7 +2018,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.21', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.22', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
