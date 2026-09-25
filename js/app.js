@@ -177,6 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
     screen.classList.add('active');
     window.scrollTo(0, 0);
 
+    // تفريغ مربع بحث المناسبات تلقائياً عند مغادرة شاشة التقويم
+    if (screen.id !== 'screen-calendar') {
+      const compSearch = document.getElementById('comprehensiveSearchInput');
+      if (compSearch && compSearch.value) {
+        compSearch.value = '';
+        if (typeof renderComprehensiveOccasions === 'function') renderComprehensiveOccasions();
+      }
+    }
+
     // إخفاء شريط التبويبات السفلي تلقائياً داخل المسبحة وإظهاره فوراً في باقي الشاشات
     const bottomNavEl = document.querySelector('.bottom-nav');
     if (bottomNavEl) {
@@ -1716,7 +1725,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.04', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.05', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
