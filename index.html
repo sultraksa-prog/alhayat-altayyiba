@@ -1491,14 +1491,16 @@
           <button type="button" class="modal-btn-primary" id="closeUpToDateBtn" style="padding: 8px 38px;">إغلاق</button>
         </div>
 
-        <!-- قسم التحديث الإجباري لحل مشكلات الكاش العالقة دون مساس ببيانات المستخدم -->
-        <hr class="force-purge-divider">
-        <div class="force-purge-box">
-          <span class="force-purge-hint">هل تواجه مشكلة في ظهور التحديثات؟</span>
-          <button type="button" class="btn-force-purge" id="forceCachePurgeBtn">
-            <span>🔄 تحديث إجباري وإصلاح للملفات</span>
-          </button>
-          <span class="force-purge-subnote">سيتم جلب أحدث ملفات النظام فوراً، مع الحفاظ التام على أذكارك وموقعك بأمان.</span>
+        <!-- قسم التحديث الإجباري (يظهر فقط عند فحص التحديثات ولا يظهر في رسالة نجاح الإصلاح) -->
+        <div id="modalPurgeSection">
+          <hr class="force-purge-divider">
+          <div class="force-purge-box">
+            <span class="force-purge-hint">هل تواجه مشكلة في ظهور التحديثات؟</span>
+            <button type="button" class="btn-force-purge" id="forceCachePurgeBtn">
+              <span>🔄 تحديث إجباري وإصلاح للملفات</span>
+            </button>
+            <span class="force-purge-subnote">سيتم جلب أحدث ملفات النظام فوراً، مع الحفاظ التام على أذكارك وموقعك بأمان.</span>
+          </div>
         </div>
       </div>
     </div>
