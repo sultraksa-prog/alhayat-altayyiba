@@ -226,6 +226,7 @@ if (isRunningStandalone) {
   // ==================== نظام التنقل المتوافق مع سحب حافة الجوال ومنطق الخروج الذكي ====================
   let lastExitAttemptTime = 0;
   let exitToastTimer = null;
+  let isExitingApp = false;
 
   function showExitToast() {
     const toast = document.getElementById('exitToastBanner');
@@ -242,11 +243,21 @@ if (isRunningStandalone) {
     if (toast) toast.classList.remove('show');
   }
 
-  // ضبط نقطة البداية للسجل لتفعيل التقاط الرجوع من الرئيسية
-  if (!history.state) {
+  // 1. تجهيز مصد الأمان فور فتح التطبيق لأول مرة (Cold Start)
+  function initExitSafetyAnchor() {
     history.replaceState({ screenId: 'screen-home', isRoot: true }, '');
     history.pushState({ screenId: 'screen-home' }, '');
   }
+  initExitSafetyAnchor();
+
+  // 2. تعزيز مصد الأمان مع أول لمسة للشاشة لتخطي سياسة الحماية في متصفحات الجوال
+  const primeAnchorOnFirstTouch = () => {
+    if (!isExitingApp && (!history.state || history.state.isRoot)) {
+      history.pushState({ screenId: 'screen-home' }, '');
+    }
+  };
+  window.addEventListener('touchstart', primeAnchorOnFirstTouch, { once: true, passive: true });
+  window.addEventListener('pointerdown', primeAnchorOnFirstTouch, { once: true, passive: true });
 
   function showScreen(screen, pushToHistory = true) {
     if (!screen) return;
@@ -304,6 +315,9 @@ if (isRunningStandalone) {
 
   // التقاط إيماءة الرجوع (سحب الحافة أو زر العودة في الجوال)
   window.addEventListener('popstate', () => {
+    // إذا كان التطبيق في مرحلة الخروج الفعلي المصرح بها، نترك المتصفح يخرج دون اعتراض
+    if (isExitingApp) return;
+
     const activeScreen = document.querySelector('.screen-view.active');
 
     // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، الرجوع يغلقها أولاً دون مغادرة الشاشة
@@ -314,15 +328,16 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 2. إذا كان المستخدم في الشاشة الرئيسية: تطبيق خوارزمية الخروج المزدوج الذكي (خلال ثانيتين)
+    // 2. إذا كان المستخدم في الشاشة الرئيسية: تطبيق خوارزمية الخروج المزدوج الذكي (حتى في الفتحة الأولى)
     if (!activeScreen || activeScreen === screenHome) {
       const now = Date.now();
       if (now - lastExitAttemptTime < 2000) {
-        // الضغطة الثانية خلال ثانيتين: السماح بالخروج التام من التطبيق
+        // الضغطة الثانية خلال ثانيتين: تفعيل وضع الخروج الفعلي والسماح للهاتف بالإغلاق
+        isExitingApp = true;
         hideExitToast();
         history.back();
       } else {
-        // الضغطة الأولى: إظهار التنبيه + التمرير التلقائي لقمة الصفحة الرئيسية
+        // الضغطة الأولى: إظهار التنبيه + التمرير التلقائي لقمة الصفحة الرئيسية + إعادة بناء المصد
         lastExitAttemptTime = now;
         history.pushState({ screenId: 'screen-home' }, '');
 
@@ -1881,7 +1896,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.11', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.12', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
