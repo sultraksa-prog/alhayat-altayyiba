@@ -374,10 +374,15 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 5. إذا كان في شاشة المفضلة، الرجوع يعيده لشاشة مجموعات الأذكار
+    // 5. إذا كان في شاشة المفضلة، الرجوع يعيده للشاشة التي دخل منها (الرئيسية أو الأذكار)
     if (activeScreen === screenAzkarFavorites) {
-      showScreen(screenAzkarCategories, false);
-      renderAzkarCategories();
+      if (favoritesSourceScreen === screenHome) {
+        showScreen(screenHome, false);
+        history.replaceState({ screenId: 'screen-home' }, '', '#app');
+      } else {
+        showScreen(screenAzkarCategories, false);
+        renderAzkarCategories();
+      }
       return;
     }
 
@@ -515,28 +520,50 @@ if (isRunningStandalone) {
     });
   }
   
+  // تتبع مصدر الدخول لشاشة المفضلة (الرئيسية أم الأذكار)
+  let favoritesSourceScreen = screenHome;
+
   openAzkarTileBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
-  openFavoritesBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
+  
+  // الدخول للمفضلة من شاشة أذكار المسلم (النجمة الذهبية)
+  openFavoritesBtn.addEventListener('click', () => { 
+    favoritesSourceScreen = screenAzkarCategories;
+    showScreen(screenAzkarFavorites); 
+    renderFavorites(); 
+  });
+
+  // الدخول للمفضلة من الشاشة الرئيسية (الأيقونة في شبكة الأدوات)
   if (openFavTileBtn) {
-  openFavTileBtn.addEventListener('click', () => { showScreen(screenAzkarFavorites); renderFavorites(); });
-}
+    openFavTileBtn.addEventListener('click', () => { 
+      favoritesSourceScreen = screenHome;
+      showScreen(screenAzkarFavorites); 
+      renderFavorites(); 
+    });
+  }
+
   backToHomeBtn.addEventListener('click', () => showScreen(screenHome));
   backToCategoriesBtn.addEventListener('click', () => {
-  const category = azkarState.find(c => c.id === currentActiveCategoryId);
-  if (category && category.items && category.items.length > 0) {
-    const isAllDone = category.items.every(it => it.currentCount === 0);
-    // إذا لم يكمل الأذكار بعد، نظهر له نافذة تأكيد الخروج
-    // إذا لم يكمل القراءة وخيار تأكيد الخروج مفعل
-    if (!isAllDone && dhikrSettings.confirmExit) {
-      document.getElementById('exitConfirmModal').classList.add('show');
-      return;
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
+    if (category && category.items && category.items.length > 0) {
+      const isAllDone = category.items.every(it => it.currentCount === 0);
+      if (!isAllDone && dhikrSettings.confirmExit) {
+        document.getElementById('exitConfirmModal').classList.add('show');
+        return;
+      }
     }
-  }
-  // إذا كانت مكتملة بالفعل، يرجع مباشرة دون إزعاج
-  showScreen(screenAzkarCategories);
-  renderAzkarCategories();
-});
-  backToCategoriesFromFavBtn.addEventListener('click', () => { showScreen(screenAzkarCategories); renderAzkarCategories(); });
+    showScreen(screenAzkarCategories);
+    renderAzkarCategories();
+  });
+
+  // زر الرجوع العلوي في المفضلة: يعود بذكاء للشاشة التي دخلت منها
+  backToCategoriesFromFavBtn.addEventListener('click', () => { 
+    if (favoritesSourceScreen === screenHome) {
+      showScreen(screenHome);
+    } else {
+      showScreen(screenAzkarCategories);
+      renderAzkarCategories();
+    }
+  });
 
   // ==================== 4. بناء شبكة مجموعات الأذكار ====================
   const azkarGroupsContainer = document.getElementById('azkarGroupsContainer');
@@ -1967,7 +1994,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.20', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.21', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
