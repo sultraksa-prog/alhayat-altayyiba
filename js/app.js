@@ -1725,7 +1725,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.06', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.07', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -2069,6 +2069,44 @@ ${APP_CONFIG.url}`;
 
       if (closeUpToDateBtn && upToDateModal) {
         closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
+      }
+
+      // زر التحديث الإجباري وإصلاح كاش الملفات مع الحفاظ الكامل على بيانات وأذكار المستخدم
+      const forcePurgeBtn = document.getElementById('forceCachePurgeBtn');
+      if (forcePurgeBtn) {
+        forcePurgeBtn.onclick = async () => {
+          if (!navigator.onLine) {
+            const offlineModal = document.getElementById('offlineUpdateModal');
+            if (upToDateModal) upToDateModal.classList.remove('show');
+            if (offlineModal) offlineModal.classList.add('show');
+            return;
+          }
+
+          forcePurgeBtn.textContent = 'جاري مسح الكاش وتحديث الملفات... ⏳';
+
+          try {
+            // 1. مسح جميع ملفات الـ CacheStorage برمجياً (دون لمس LocalStorage نهائياً)
+            if ('caches' in window) {
+              const cacheKeys = await caches.keys();
+              await Promise.all(cacheKeys.map(key => caches.delete(key)));
+            }
+
+            // 2. إلغاء تسجيل السيرفر ووركر القديم لضمان سحب الملفات الجديدة مباشرة
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map(reg => reg.unregister()));
+            }
+
+            // 3. وضع علامة لعرض رسالة التهنئة بالإصدار الجديد فور الإقلاع
+            localStorage.setItem('hayat_just_updated_flag', 'true');
+
+            // 4. إعادة تحميل إجبارية نظيفة تماماً (Bypass HTTP Cache) كأنها في متصفح خفي
+            const cleanUrl = window.location.origin + window.location.pathname + '?hard_reset=' + Date.now();
+            window.location.replace(cleanUrl);
+          } catch (err) {
+            window.location.reload();
+          }
+        };
       }
 
       if (closeOfflineBtn && offlineModal) {
