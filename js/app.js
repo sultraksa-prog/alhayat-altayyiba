@@ -1,5 +1,81 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+  // ==================== نظام التثبيت الذكي للتطبيق (PWA Installer Engine) ====================
+  let deferredPwaPrompt = null;
+  const isRunningStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // التقاط حدث المتصفح المدمج لأندرويد والكمبيوتر
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPwaPrompt = e;
+  });
+
+  // الاستماع لاكتمال التثبيت بنجاح
+  window.addEventListener('appinstalled', () => {
+    deferredPwaPrompt = null;
+    localStorage.setItem('hayat_pwa_installed', 'true');
+    showPwaModal('success', 'تم تثبيت التطبيق بنجاح! 🎉', 'أصبح تطبيق "الحياة الطيبة" الآن مثبتاً على جهازك. يمكنك فتحه مباشرة من شاشة هاتفك الرئيسية كأي تطبيق أصيل والاستمتاع بتجربة كاملة وسريعة بدون إنترنت.');
+    updateInstallButtonUI(true);
+  });
+
+  function updateInstallButtonUI(installed) {
+    const badge = document.getElementById('installBadgeText');
+    const subtitle = document.getElementById('installBtnSubtitle');
+    if (installed) {
+      if (badge) {
+        badge.textContent = 'مثبت ✓';
+        badge.style.color = '#15803D';
+        badge.style.background = '#DCFCE7';
+        badge.style.borderColor = '#BBF7D0';
+      }
+      if (subtitle) subtitle.textContent = 'التطبيق مثبت على جهازك وتعمل به الآن كنسخة أصلية';
+    }
+  }
+
+  // تحديث حالة الزر فور تشغيل التطبيق إذا كان مفتوحاً كتطبيق مثبت
+  if (isRunningStandalone || localStorage.getItem('hayat_pwa_installed') === 'true') {
+    updateInstallButtonUI(true);
+  }
+
+  function showPwaModal(type, title, desc) {
+    const modal = document.getElementById('pwaInstallModal');
+    const modalIcon = document.getElementById('pwaModalIcon');
+    const modalTitle = document.getElementById('pwaModalTitle');
+    const modalDesc = document.getElementById('pwaModalDesc');
+    const iosContainer = document.getElementById('iosStepsContainer');
+
+    if (!modal) return;
+    if (modalTitle) modalTitle.textContent = title;
+    if (modalDesc) modalDesc.textContent = desc;
+
+    if (type === 'installed') {
+      if (modalIcon) modalIcon.textContent = '✓';
+      if (iosContainer) iosContainer.style.display = 'none';
+    } else if (type === 'ios') {
+      if (modalIcon) modalIcon.textContent = '🍎';
+      if (iosContainer) iosContainer.style.display = 'flex';
+    } else if (type === 'success') {
+      if (modalIcon) modalIcon.textContent = '🎉';
+      if (iosContainer) iosContainer.style.display = 'none';
+    } else {
+      if (modalIcon) modalIcon.textContent = '📲';
+      if (iosContainer) iosContainer.style.display = 'none';
+    }
+
+    modal.classList.add('show');
+  }
+
+  const closePwaModalBtn = document.getElementById('closePwaModalBtn');
+  if (closePwaModalBtn) {
+    closePwaModalBtn.onclick = () => {
+      const modal = document.getElementById('pwaInstallModal');
+      if (modal) modal.classList.remove('show');
+    };
+  }
+
+// ==================== إعدادات الأذكار ====================
+
 // ==================== إعدادات الأذكار ====================
   const SETTINGS_KEY = 'hayat_dhikr_settings';
   const DEFAULT_SETTINGS = {
@@ -330,6 +406,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (backToHomeFromSettingsBtn) backToHomeFromSettingsBtn.addEventListener('click', () => showScreen(screenHome));
 
+  // زر تثبيت التطبيق في شاشة الإعدادات
+  const installPwaBtn = document.getElementById('installPwaBtn');
+  if (installPwaBtn) {
+    installPwaBtn.addEventListener('click', async () => {
+      // 1. فحص هل التطبيق مفتوح بالفعل كنسخة مثبتة (Standalone)
+      if (isRunningStandalone) {
+        showPwaModal('installed', 'التطبيق مثبت بالفعل ✓', 'تطبيق "الحياة الطيبة" مثبت بالفعل على جهازك وأنت تعمل به الآن كنسخة مستقلة وأصلية بكامل المزايا.');
+        return;
+      }
+
+      // 2. إذا كان الجهاز آيفون أو آيباد (iOS Safari)
+      if (isIOS) {
+        showPwaModal('ios', 'تثبيت التطبيق على الآيفون', 'لتثبيت التطبيق على هاتف الآيفون وإضافته للشاشة الرئيسية بجوار تطبيقاتك، اتبع الخطوات البسيطة التالية:');
+        return;
+      }
+
+      // 3. أجهزة أندرويد ومتصفحات الكمبيوتر (Chrome / Edge)
+      if (deferredPwaPrompt) {
+        // إطلاق نافذة التثبيت الرسمية للنظام بنقرة زر واحدة
+        deferredPwaPrompt.prompt();
+        const { outcome } = await deferredPwaPrompt.userChoice;
+        if (outcome === 'accepted') {
+          localStorage.setItem('hayat_pwa_installed', 'true');
+          updateInstallButtonUI(true);
+        }
+        deferredPwaPrompt = null;
+      } else {
+        // إذا كان مثبتاً مسبقاً أو لم يجهز المتصفح الطلب
+        if (localStorage.getItem('hayat_pwa_installed') === 'true') {
+          showPwaModal('installed', 'التطبيق مثبت مسبقاً', 'التطبيق مثبت بالفعل على جهازك، يمكنك فتحه مباشرة من شاشة هاتفك الرئيسية أو قائمة التطبيقات.');
+        } else {
+          showPwaModal('manual', 'تثبيت التطبيق', 'يمكنك تثبيت التطبيق بنقرة واحدة عبر الضغط على خيارات المتصفح (⋮) ثم اختيار "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية".');
+        }
+      }
+    });
+  }
+  
   if (openDhikrSettingsFromMenu) {
     openDhikrSettingsFromMenu.addEventListener('click', () => {
       syncSettingsUI();
@@ -1725,7 +1838,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.09', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.10', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
