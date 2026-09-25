@@ -2970,3 +2970,49 @@ body {
   box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
 }
 
+/* تنسيقات قسم التحديث الإجباري وإصلاح الكاش */
+.force-purge-divider {
+  border: 0;
+  height: 1px;
+  background-color: #F1F5F9;
+  margin: 16px 0 12px 0;
+}
+
+.force-purge-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.force-purge-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.btn-force-purge {
+  width: 100%;
+  background: #EEF6FC;
+  color: var(--primary-blue);
+  border: 1.5px dashed #BCD8F0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-force-purge:active {
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  transform: scale(0.97);
+}
+
+.force-purge-subnote {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-align: center;
+}
+
