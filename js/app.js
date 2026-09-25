@@ -223,10 +223,29 @@ if (isRunningStandalone) {
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
-  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال (History API) ====================
-  // إدارة الرجوع وسحب الحافة (History API)
+  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال ومنطق الخروج الذكي ====================
+  let lastExitAttemptTime = 0;
+  let exitToastTimer = null;
+
+  function showExitToast() {
+    const toast = document.getElementById('exitToastBanner');
+    if (!toast) return;
+    toast.classList.add('show');
+    clearTimeout(exitToastTimer);
+    exitToastTimer = setTimeout(() => {
+      hideExitToast();
+    }, 2000);
+  }
+
+  function hideExitToast() {
+    const toast = document.getElementById('exitToastBanner');
+    if (toast) toast.classList.remove('show');
+  }
+
+  // ضبط نقطة البداية للسجل لتفعيل التقاط الرجوع من الرئيسية
   if (!history.state) {
-    history.replaceState({ screenId: 'screen-home' }, '');
+    history.replaceState({ screenId: 'screen-home', isRoot: true }, '');
+    history.pushState({ screenId: 'screen-home' }, '');
   }
 
   function showScreen(screen, pushToHistory = true) {
@@ -234,7 +253,12 @@ if (isRunningStandalone) {
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
-      history.pushState({ screenId: screen.id }, '');
+      // عند التوجه للرئيسية لا نراكم سجل الصفحات السابقة بل نستبدله ليبقى السجل نظيفاً
+      if (screen === screenHome) {
+        history.replaceState({ screenId: 'screen-home' }, '');
+      } else {
+        history.pushState({ screenId: screen.id }, '');
+      }
     }
 
     // حفظ الشاشة النشطة
@@ -278,21 +302,37 @@ if (isRunningStandalone) {
     }
   }
 
-  // التقاط إيماءة السحب من حافة الشاشة (أو زر رجوع النظام في الأندرويد والآيفون)
+  // التقاط إيماءة الرجوع (سحب الحافة أو زر العودة في الجوال)
   window.addEventListener('popstate', () => {
     const activeScreen = document.querySelector('.screen-view.active');
 
-    // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، السحب يغلقها أولاً دون مغادرة الشاشة
+    // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، الرجوع يغلقها أولاً دون مغادرة الشاشة
     const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
     if (openModal) {
       openModal.classList.remove('show');
-      // الحفاظ على تاريخ الشاشة حتى لا يستهلك السحب خطوة الشاشة
       history.pushState({ screenId: activeScreen ? activeScreen.id : 'screen-home' }, '');
       return;
     }
 
-    // 2. إذا كان المستخدم في الشاشة الرئيسية، اتركه يخرج بشكل طبيعي
+    // 2. إذا كان المستخدم في الشاشة الرئيسية: تطبيق خوارزمية الخروج المزدوج الذكي (خلال ثانيتين)
     if (!activeScreen || activeScreen === screenHome) {
+      const now = Date.now();
+      if (now - lastExitAttemptTime < 2000) {
+        // الضغطة الثانية خلال ثانيتين: السماح بالخروج التام من التطبيق
+        hideExitToast();
+        history.back();
+      } else {
+        // الضغطة الأولى: إظهار التنبيه + التمرير التلقائي لقمة الصفحة الرئيسية
+        lastExitAttemptTime = now;
+        history.pushState({ screenId: 'screen-home' }, '');
+
+        // تمرير الصفحة للأعلى بسلاسة
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) appContainer.scrollTo({ top: 0, behavior: 'smooth' });
+
+        showExitToast();
+      }
       return;
     }
 
@@ -301,7 +341,6 @@ if (isRunningStandalone) {
       const category = azkarState.find(c => c.id === currentActiveCategoryId);
       if (category && category.items && category.items.length > 0) {
         const isAllDone = category.items.every(it => it.currentCount === 0);
-        // إذا لم يكمل وخيار تأكيد الخروج مفعل
         if (!isAllDone && dhikrSettings.confirmExit) {
           history.pushState({ screenId: 'screen-azkar-reader' }, '');
           document.getElementById('exitConfirmModal').classList.add('show');
@@ -313,20 +352,20 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 4. إذا كان في شاشة المفضلة، السحب يعيده إلى شاشة مجموعات الأذكار
+    // 4. إذا كان في شاشة المفضلة، الرجوع يعيده لشاشة مجموعات الأذكار
     if (activeScreen === screenAzkarFavorites) {
       showScreen(screenAzkarCategories, false);
       renderAzkarCategories();
       return;
     }
 
-    // 5. إذا كان في شاشة مجموعات الأذكار، السحب يعيده إلى الشاشة الرئيسية
+    // 5. إذا كان في شاشة مجموعات الأذكار أو أي شاشة فرعية، الرجوع يعيده للرئيسية
     if (activeScreen === screenAzkarCategories) {
       showScreen(screenHome, false);
       return;
     }
 
-    // افتراضياً
+    // افتراضياً: العودة للرئيسية
     showScreen(screenHome, false);
   });
 
@@ -1842,7 +1881,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.10', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.11', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
