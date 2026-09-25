@@ -538,28 +538,38 @@ body {
 }
 
 .tool-icon-box {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 4px 12px rgba(11, 37, 69, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bg-soft-blue   { background-color: #EBF3FA; }
-.bg-soft-teal   { background-color: #E6F7F8; }
-.bg-soft-sky    { background-color: #E0F2FE; }
-.bg-soft-mint   { background-color: #ECFDF5; }
-.bg-soft-amber  { background-color: #FEF3C7; }
-.bg-soft-emerald{ background-color: #DCFCE7; }
-.bg-soft-indigo { background-color: #EEF2FF; }
+.tool-card:active .tool-icon-box {
+  transform: scale(0.92);
+}
+
+/* تدرجات ألوان فاخرة ومتناغمة لكل قسم بنمط إسلامي هادئ */
+.box-adhkar   { background: #EEF6FC; color: #1D5D9B; border-color: #BCD8F0; }
+.box-fav      { background: #FFFBEB; color: #D97706; border-color: #FDE68A; }
+.box-tasbeeh  { background: #ECFDF5; color: #15803D; border-color: #BBF7D0; }
+.box-calendar { background: #F0F9FF; color: #0284C7; border-color: #BAE6FD; }
+.box-duas     { background: #F0FDF4; color: #16A34A; border-color: #BBF7D0; }
+.box-umrah    { background: #FFFBEB; color: #B45309; border-color: #FCD34D; }
+.box-hajj     { background: #FAF5FF; color: #7E22CE; border-color: #E9D5FF; }
+.box-library  { background: #EEF2FF; color: #4338CA; border-color: #C7D2FE; }
+.box-fasting  { background: #ECFDF5; color: #059669; border-color: #A7F3D0; }
 
 .tool-title {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--text-main);
+  margin-top: 3px;
+  text-align: center;
 }
 
 /* ==================== شبكة مجموعات الأذكار (أذكار المسلم) ==================== */
