@@ -275,7 +275,13 @@ if (isRunningStandalone) {
 
     document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
     screen.classList.add('active');
+    
+    // تصفير تمرير الصفحة لتبدأ الشاشة دائماً من أعلاها (على الجوال والكمبيوتر)
     window.scrollTo(0, 0);
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) {
+      appContainer.scrollTop = 0; // يحل مشكلة بدء الشاشة من الأسفل أو اختفاء الهيدر على متصفح الكمبيوتر
+    }
 
     // تفريغ مربع بحث المناسبات تلقائياً عند مغادرة شاشة التقويم
     if (screen.id !== 'screen-calendar') {
@@ -329,14 +335,11 @@ if (isRunningStandalone) {
     if (!activeScreen || activeScreen === screenHome || location.hash === '#root' || (history.state && history.state.isRoot)) {
       const now = Date.now();
       if (now - lastExitAttemptTime < 2000) {
-        // الضغطة الثانية المؤكدة خلال ثانيتين: خروج فوري وشامل يقفز خارج التطبيق دفعة واحدة
         isExitingApp = true;
         hideExitToast();
         try { window.close(); } catch(e) {}
-        // القفز بكامل مسافة السجل للخارج مباشرة دون الحاجة للضغط المتكرر
         history.go(-(history.length));
       } else {
-        // الضغطة الأولى: إظهار التنبيه + التمرير لأعلى الصفحة
         lastExitAttemptTime = now;
         history.replaceState({ screenId: 'screen-home' }, '', '#app');
 
@@ -349,7 +352,13 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 3. إذا كان المستخدم في شاشة قراءة الأذكار
+    // 3. إذا كان المستخدم في شاشات الإعدادات الفرعية (حول التطبيق، أو إعدادات أخرى)، الرجوع بالإيماءة يعيده لشاشة الإعدادات
+    if (activeScreen === screenAboutApp || (typeof screenOtherSettings !== 'undefined' && activeScreen === screenOtherSettings)) {
+      showScreen(screenGeneralSettings, false);
+      return;
+    }
+
+    // 4. إذا كان المستخدم في شاشة قراءة الأذكار
     if (activeScreen === screenAzkarReader) {
       const category = azkarState.find(c => c.id === currentActiveCategoryId);
       if (category && category.items && category.items.length > 0) {
@@ -365,14 +374,14 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 4. إذا كان في شاشة المفضلة، الرجوع يعيده لشاشة مجموعات الأذكار
+    // 5. إذا كان في شاشة المفضلة، الرجوع يعيده لشاشة مجموعات الأذكار
     if (activeScreen === screenAzkarFavorites) {
       showScreen(screenAzkarCategories, false);
       renderAzkarCategories();
       return;
     }
 
-    // 5. إذا كان في شاشة مجموعات الأذكار أو أي شاشة فرعية، الرجوع يعيده للرئيسية
+    // 6. إذا كان في شاشة مجموعات الأذكار أو أي شاشة فرعية، الرجوع يعيده للرئيسية
     if (activeScreen === screenAzkarCategories) {
       showScreen(screenHome, false);
       history.replaceState({ screenId: 'screen-home' }, '', '#app');
@@ -1958,7 +1967,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.18', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.19', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
