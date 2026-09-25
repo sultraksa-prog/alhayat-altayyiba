@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.10';
+const CACHE_NAME = 'alhayat-cache-v2.1.11';
 const ASSETS = [
   './',
   './index.html',
@@ -46,8 +46,10 @@ self.addEventListener('fetch', (e) => {
       // استراتيجية (Stale-While-Revalidate): نُرجع الكاش فوراً للسرعة، ونحدثه في الخلفية
       const fetchPromise = fetch(e.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
+          // استنساخ الاستجابة فورياً هنا يمنع خطأ Response body is already used تماماً
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, networkResponse.clone());
+            cache.put(e.request, responseToCache);
           });
         }
         return networkResponse;
