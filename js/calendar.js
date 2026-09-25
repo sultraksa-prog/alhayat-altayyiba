@@ -10,6 +10,8 @@
     'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
   ];
 
+  const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
   // 1. قاعدة بيانات المناسبات الدينية الإسلامية العامة الثابتة
   const ISLAMIC_RELIGIOUS_EVENTS = [
     { name: 'رأس السنة الهجرية', month: 1, day: 1, type: 'religious' },
@@ -101,9 +103,9 @@
   let currentViewingMonth = 4;
   let currentViewingGregYear = 2026;
   let currentViewingGregMonth = 8;
-  let currentOccFilter = 'all';
+  let currentOccFilter = 'all'; // تعريف وحيد ومضبوط بدون تكرار
 
-  // تجريد التشكيل للبحث السلس
+  // دالة تجريد النصوص من التشكيل للبحث الفوري
   function normalizeArabicText(text) {
     if (!text) return '';
     return text
@@ -115,6 +117,23 @@
       .toLowerCase();
   }
 
+  // كتابة التاريخ الميلادي بصيغة رقمية مريحة: DD/MM/YYYYم
+  function formatGregorianNumeric(dateObj) {
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const y = dateObj.getFullYear();
+    return `${d}/${m}/${y}م`;
+  }
+
+  // حصر عبارات التهنئة في المواسم الكبرى الثلاثة فقط عند حلول موعدها اليوم
+  function getSpecialCelebrationMessage(eventName, diffDays) {
+    if (diffDays !== 0) return null;
+    if (eventName.includes('رمضان')) return 'مبارك عليكم الشهر الكريم 🌙';
+    if (eventName.includes('الفطر')) return 'عيدكم مبارك، تقبل الله طاعتكم 🎉';
+    if (eventName.includes('الأضحى')) return 'عيد أضحى مبارك، تقبل الله طاعتكم 🐑';
+    return null;
+  }
+
   function getAdjustedDate(baseDate) {
     const d = new Date(baseDate);
     if (hijriOffset !== 0) {
@@ -123,7 +142,7 @@
     return d;
   }
 
-  // مستخرج الأرقام الفلكية القياسي الحصين ضد NaN
+  // مستخرج الأرقام القياسي الحصين ضد NaN
   function getHijriDetails(dateObj) {
     const adjusted = getAdjustedDate(dateObj);
     try {
@@ -155,7 +174,25 @@
     }
   }
 
-  // الدالة الأساسية لتشغيل التقويم وضمان حقن البيانات
+  // استخراج قائمة المناسبات الشاملة (دينية + وطنية لدولة المستخدم)
+  function getAllOccasionsList() {
+    let country = 'السعودية';
+    try {
+      const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location'));
+      if (userLoc && userLoc.country) country = userLoc.country;
+    } catch (e) {}
+
+    let nationalEvents = NATIONAL_EVENTS_DATABASE[country];
+    if (!nationalEvents) {
+      const cachedCustom = localStorage.getItem(`hayat_national_events_${country}`);
+      if (cachedCustom) {
+        try { nationalEvents = JSON.parse(cachedCustom); } catch (e) {}
+      }
+    }
+    return [...ISLAMIC_RELIGIOUS_EVENTS, ...(nationalEvents || [])];
+  }
+
+  // الدالة الأساسية لبناء وتشغيل التقويم
   window.initCalendarEngine = function () {
     const today = new Date();
     activeSelectedDate = new Date(today);
@@ -224,7 +261,7 @@
     return cursor;
   }
 
-  // فحص أيام الصيام المستحب
+  // فحص أيام الصيام المستحب شرعاً
   function isRecommendedFasting(dateObj, hDay, hMonth) {
     const dayOfWeek = dateObj.getDay();
     if (hMonth === 10 && hDay === 1) return false;
@@ -237,24 +274,6 @@
     if (hMonth === 10 && hDay >= 2 && hDay <= 7) return true;
 
     return false;
-  }
-
-  // جلب كافة المناسبات المعتمدة للدولة
-  function getAllOccasionsList() {
-    let country = 'السعودية';
-    try {
-      const userLoc = JSON.parse(localStorage.getItem('hayat_saved_location'));
-      if (userLoc && userLoc.country) country = userLoc.country;
-    } catch (e) {}
-
-    let nationalEvents = NATIONAL_EVENTS_DATABASE[country];
-    if (!nationalEvents) {
-      const cachedCustom = localStorage.getItem(`hayat_national_events_${country}`);
-      if (cachedCustom) {
-        try { nationalEvents = JSON.parse(cachedCustom); } catch (e) {}
-      }
-    }
-    return [...ISLAMIC_RELIGIOUS_EVENTS, ...(nationalEvents || [])];
   }
 
   function renderHijriMonthGrid(hYear, hMonth) {
@@ -282,7 +301,13 @@
       const isSelected = cellDate.toDateString() === activeSelectedDate.toDateString();
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
-      const hasEvent = allEvents.some(ev => !ev.isGreg && ev.month === hMonth && ev.day === day);
+      const hasEvent = allEvents.some(ev => {
+        if (ev.isGreg) {
+          return ev.gMonth === (cellDate.getMonth() + 1) && ev.gDay === cellDate.getDate();
+        } else {
+          return ev.month === hMonth && ev.day === day;
+        }
+      });
       const isFasting = isRecommendedFasting(cellDate, day, hMonth);
 
       cell.innerHTML = `
@@ -327,10 +352,13 @@
       const cell = document.createElement('div');
       cell.className = `cal-day-cell ${isSelected ? 'selected' : ''}`;
 
-      const hasEvent = allEvents.some(ev => 
-        (ev.isGreg && ev.gMonth === (gMonth + 1) && ev.gDay === day) ||
-        (!ev.isGreg && ev.month === hDetails.month && ev.day === hDetails.day)
-      );
+      const hasEvent = allEvents.some(ev => {
+        if (ev.isGreg) {
+          return ev.gMonth === (gMonth + 1) && ev.gDay === day;
+        } else {
+          return ev.month === hDetails.month && ev.day === hDetails.day;
+        }
+      });
       const isFasting = isRecommendedFasting(cellDate, hDetails.day, hDetails.month);
 
       cell.innerHTML = `
@@ -443,25 +471,6 @@
     });
   }
 
-  const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-
-  // كتابة التاريخ الميلادي بصيغة رقمية مريحة وموجزة: DD/MM/YYYYم
-  function formatGregorianNumeric(dateObj) {
-    const d = String(dateObj.getDate()).padStart(2, '0');
-    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const y = dateObj.getFullYear();
-    return `${d}/${m}/${y}م`;
-  }
-
-  // فحص وحصر عبارات التهنئة في المواسم الكبرى الثلاثة فقط عند حلول موعدها اليوم
-  function getSpecialCelebrationMessage(eventName, diffDays) {
-    if (diffDays !== 0) return null;
-    if (eventName.includes('رمضان')) return 'مبارك عليكم الشهر الكريم 🌙';
-    if (eventName.includes('الفطر')) return 'عيدكم مبارك، تقبل الله طاعتكم 🎉';
-    if (eventName.includes('الأضحى')) return 'عيد أضحى مبارك، تقبل الله طاعتكم 🐑';
-    return null;
-  }
-
   // 1. عرض تبويب "المناسبات القريبة" (الشهر المعروض أو ضمن نطاق ±30 يوماً من اليوم)
   function renderIslamicEvents() {
     const container = document.getElementById('calEventsListContainer');
@@ -496,7 +505,6 @@
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      // الشرط: إما تقع في الشهر المعروض حالياً أو ضمن نطاق ±30 يوماً
       const isInCurrentMonth = ev.isGreg 
         ? (calPerspective === 'gregorian' && ev.gMonth === (currentViewingGregMonth + 1))
         : (ev.month === currentViewingMonth);
@@ -518,7 +526,6 @@
   }
 
   // 2. عرض كرت المناسبات الشامل مع التصفية والبحث
-  let currentOccFilter = 'all';
   function renderComprehensiveOccasions() {
     const listEl = document.getElementById('comprehensiveEventsList');
     const badgeEl = document.getElementById('calCountryBadgeDisplay');
@@ -592,8 +599,9 @@
       nextBadge.textContent = nextUpcoming.days === 0 ? 'اليوم' : `بعد ${nextUpcoming.days} يوماً`;
     }
   }
+  window.renderComprehensiveOccasions = renderComprehensiveOccasions;
 
-  // بناء كرت المناسبة بحالاته الثلاث والتواريخ المتكاملة
+  // بناء كرت المناسبة بحالاته الثلاث وتكامل التواريخ
   function createEventCardElement(ev, targetDate, hDay, hMonth, hYear, diffDays) {
     const item = document.createElement('div');
     const dayName = DAY_NAMES[targetDate.getDay()];
@@ -652,8 +660,14 @@
     });
   }
 
-  // ربط جميع أحداث الشاشة
+  // ربط جميع أحداث الشاشة وتشغيل المحرك تلقائياً
   document.addEventListener('DOMContentLoaded', () => {
+    // تشغيل المحرك فوراً إذا كانت شاشة التقويم نشطة عند الفتح
+    const calScreen = document.getElementById('screen-calendar');
+    if (calScreen && calScreen.classList.contains('active')) {
+      window.initCalendarEngine();
+    }
+
     const prevBtn = document.getElementById('calPrevMonthBtn');
     const nextBtn = document.getElementById('calNextMonthBtn');
 
