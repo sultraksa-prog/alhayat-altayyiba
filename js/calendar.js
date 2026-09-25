@@ -443,7 +443,26 @@
     });
   }
 
-  // 1. عرض تبويب المناسبات الشهرية والقريبة (أقل من 30 يوماً)
+  const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+  // كتابة التاريخ الميلادي بصيغة رقمية مريحة وموجزة: DD/MM/YYYYم
+  function formatGregorianNumeric(dateObj) {
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const y = dateObj.getFullYear();
+    return `${d}/${m}/${y}م`;
+  }
+
+  // فحص وحصر عبارات التهنئة في المواسم الكبرى الثلاثة فقط عند حلول موعدها اليوم
+  function getSpecialCelebrationMessage(eventName, diffDays) {
+    if (diffDays !== 0) return null;
+    if (eventName.includes('رمضان')) return 'مبارك عليكم الشهر الكريم 🌙';
+    if (eventName.includes('الفطر')) return 'عيدكم مبارك، تقبل الله طاعتكم 🎉';
+    if (eventName.includes('الأضحى')) return 'عيد أضحى مبارك، تقبل الله طاعتكم 🐑';
+    return null;
+  }
+
+  // 1. عرض تبويب "المناسبات القريبة" (الشهر المعروض أو ضمن نطاق ±30 يوماً من اليوم)
   function renderIslamicEvents() {
     const container = document.getElementById('calEventsListContainer');
     if (!container) return;
@@ -457,67 +476,49 @@
 
     allEvents.forEach(ev => {
       let targetDate = new Date();
-      let dateDesc = '';
+      let hDay = 1, hMonth = 1, hYear = currentViewingYear;
 
       if (ev.isGreg) {
         targetDate = new Date(today.getFullYear(), ev.gMonth - 1, ev.gDay);
-        dateDesc = `${ev.gDay} ${GREG_MONTH_NAMES[ev.gMonth - 1]} م`;
+        const hEq = getHijriDetails(targetDate);
+        hDay = hEq.day;
+        hMonth = hEq.month;
+        hYear = hEq.year;
       } else {
+        hDay = ev.day;
+        hMonth = ev.month;
         const monthDiff = ev.month - todayH.month;
         const dayDiff = ev.day - todayH.day;
         targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + Math.round((monthDiff * 29.53) + dayDiff));
-        dateDesc = `${String(ev.day).padStart(2, '0')} ${HIJRI_MONTH_NAMES[ev.month - 1]} هـ`;
       }
 
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
+      // الشرط: إما تقع في الشهر المعروض حالياً أو ضمن نطاق ±30 يوماً
       const isInCurrentMonth = ev.isGreg 
         ? (calPerspective === 'gregorian' && ev.gMonth === (currentViewingGregMonth + 1))
         : (ev.month === currentViewingMonth);
 
-      const isUnder30Days = diffDays >= 0 && diffDays <= 30;
+      const isWithin30DaysRange = (diffDays >= -30 && diffDays <= 30);
 
-      if (isInCurrentMonth || isUnder30Days) {
+      if (isInCurrentMonth || isWithin30DaysRange) {
         countShown++;
-        let badgeClass = 'event-countdown-badge';
-        let badgeText = '';
-
-        if (diffDays === 0) {
-          badgeText = 'اليوم';
-          badgeClass += ' today';
-        } else if (diffDays === -1) {
-          badgeText = 'أمس';
-          badgeClass += ' past';
-        } else if (diffDays < -1) {
-          badgeText = `منذ ${Math.abs(diffDays)} أيام`;
-          badgeClass += ' past';
-        } else {
-          badgeText = `بعد ${diffDays} أيام`;
-        }
-
-        const item = document.createElement('div');
-        item.className = 'cal-event-item';
-        item.innerHTML = `
-          <div class="event-meta">
-            <h4>${ev.name} ${ev.type === 'national' ? '📍' : '🌙'}</h4>
-            <span>${dateDesc}</span>
-          </div>
-          <span class="${badgeClass}">${badgeText}</span>
-        `;
-        container.appendChild(item);
+        const cardHtml = createEventCardElement(ev, targetDate, hDay, hMonth, hYear, diffDays);
+        container.appendChild(cardHtml);
       }
     });
 
     if (countShown === 0) {
-      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات في هذا الشهر أو قريبة منه</div>`;
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات قريبة (الشهر الحالي أو ±30 يوماً)</div>`;
     }
 
     renderComprehensiveOccasions();
   }
 
-  // 2. عرض كرت المناسبات الدينية والاجتماعية الشامل
+  // 2. عرض كرت المناسبات الشامل مع التصفية والبحث
+  let currentOccFilter = 'all';
   function renderComprehensiveOccasions() {
     const listEl = document.getElementById('comprehensiveEventsList');
     const badgeEl = document.getElementById('calCountryBadgeDisplay');
@@ -552,17 +553,21 @@
       if (query && !cleanName.includes(query)) return;
 
       let targetDate = new Date();
-      let dateDesc = '';
+      let hDay = 1, hMonth = 1, hYear = currentViewingYear;
 
       if (ev.isGreg) {
         targetDate = new Date(today.getFullYear(), ev.gMonth - 1, ev.gDay);
-        dateDesc = `${ev.gDay} ${GREG_MONTH_NAMES[ev.gMonth - 1]} م`;
+        const hEq = getHijriDetails(targetDate);
+        hDay = hEq.day;
+        hMonth = hEq.month;
+        hYear = hEq.year;
       } else {
+        hDay = ev.day;
+        hMonth = ev.month;
         const monthDiff = ev.month - todayH.month;
         const dayDiff = ev.day - todayH.day;
         targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + Math.round((monthDiff * 29.53) + dayDiff));
-        dateDesc = `${String(ev.day).padStart(2, '0')} ${HIJRI_MONTH_NAMES[ev.month - 1]} هـ`;
       }
 
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
@@ -574,32 +579,8 @@
       }
 
       matchedCount++;
-      let badgeClass = 'event-countdown-badge';
-      let badgeText = '';
-
-      if (diffDays === 0) {
-        badgeText = 'اليوم';
-        badgeClass += ' today';
-      } else if (diffDays === -1) {
-        badgeText = 'أمس';
-        badgeClass += ' past';
-      } else if (diffDays < -1) {
-        badgeText = `منذ ${Math.abs(diffDays)} أيام`;
-        badgeClass += ' past';
-      } else {
-        badgeText = `بعد ${diffDays} أيام`;
-      }
-
-      const item = document.createElement('div');
-      item.className = 'cal-event-item';
-      item.innerHTML = `
-        <div class="event-meta">
-          <h4>${ev.name} ${ev.type === 'national' ? '📍' : '🌙'}</h4>
-          <span>${dateDesc}</span>
-        </div>
-        <span class="${badgeClass}">${badgeText}</span>
-      `;
-      listEl.appendChild(item);
+      const cardHtml = createEventCardElement(ev, targetDate, hDay, hMonth, hYear, diffDays);
+      listEl.appendChild(cardHtml);
     });
 
     if (matchedCount === 0) {
@@ -610,6 +591,48 @@
       nextTitle.textContent = nextUpcoming.name;
       nextBadge.textContent = nextUpcoming.days === 0 ? 'اليوم' : `بعد ${nextUpcoming.days} يوماً`;
     }
+  }
+
+  // بناء كرت المناسبة بحالاته الثلاث والتواريخ المتكاملة
+  function createEventCardElement(ev, targetDate, hDay, hMonth, hYear, diffDays) {
+    const item = document.createElement('div');
+    const dayName = DAY_NAMES[targetDate.getDay()];
+    const hijriDateStr = `${hDay} ${HIJRI_MONTH_NAMES[hMonth - 1]}، ${hYear} هـ`;
+    const gregNumericStr = formatGregorianNumeric(targetDate);
+    const celebrationMsg = getSpecialCelebrationMessage(ev.name, diffDays);
+
+    let stateClass = 'upcoming';
+    let badgeText = '';
+
+    if (celebrationMsg) {
+      stateClass = 'active-celebration';
+      badgeText = 'اليوم 🎉';
+    } else if (diffDays === 0) {
+      stateClass = 'upcoming';
+      badgeText = 'اليوم 📍';
+    } else if (diffDays < 0) {
+      stateClass = 'past';
+      badgeText = diffDays === -1 ? 'أمس' : `منذ ${Math.abs(diffDays)} أيام`;
+    } else {
+      stateClass = 'upcoming';
+      badgeText = `بعد ${diffDays} أيام`;
+    }
+
+    item.className = `cal-event-item ${stateClass}`;
+    item.innerHTML = `
+      <div class="event-top-row">
+        <h4>${ev.name} ${ev.type === 'national' ? '📍' : '🌙'}</h4>
+        <span class="event-countdown-badge ${diffDays < 0 ? 'past' : (diffDays === 0 ? 'today' : '')}">${badgeText}</span>
+      </div>
+      <div class="event-details-bar">
+        <span class="event-day-badge">${dayName}</span>
+        <span class="event-date-text">${hijriDateStr}</span>
+        <span>•</span>
+        <span class="event-greg-num">${gregNumericStr}</span>
+      </div>
+      ${celebrationMsg ? `<div class="event-celebration-banner">${celebrationMsg}</div>` : ''}
+    `;
+    return item;
   }
 
   function updateHijriAdjustmentStatusUI() {
