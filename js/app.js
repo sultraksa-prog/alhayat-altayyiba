@@ -2214,7 +2214,7 @@ ${APP_CONFIG.url}`;
   const forcePurgeSuccess = localStorage.getItem('hayat_force_purge_success');
   const justUpdatedFlag = localStorage.getItem('hayat_just_updated_flag') || localStorage.getItem('hayat_just_updated_version');
 
-  // أ) في حال نجاح التحديث الإجباري وإصلاح الملفات: نافذة دائمة وبدون زر التحديث الإجباري وتوجيه للإعدادات عند الإغلاق
+  // أ) في حال نجاح التحديث الإجباري وإصلاح الملفات
   if (forcePurgeSuccess) {
     localStorage.removeItem('hayat_force_purge_success');
 
@@ -2231,14 +2231,13 @@ ${APP_CONFIG.url}`;
         title.textContent = 'تم الإصلاح والتحديث';
         text.innerHTML = `تمت عملية التحديث الإجباري وإصلاح ملفات التطبيق بنجاح.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
         
-        // إخفاء قسم وسؤال التحديث الإجباري تماماً في نافذة التهنئة
+        // إخفاء قسم التحديث الإجباري في رسالة النجاح
         if (purgeSec) purgeSec.style.display = 'none';
 
-        // ضبط زر الإغلاق ليقوم بإغلاق النافذة وتوجيه المستخدم لشاشة الإعدادات
+        // إغلاق النافذة فقط والبقاء في نفس شاشة المستخدم الحالية دون أي توجيه إجباري
         if (closeBtn) {
           closeBtn.onclick = () => {
             modal.classList.remove('show');
-            if (screenGeneralSettings) showScreen(screenGeneralSettings, false);
           };
         }
 
@@ -2267,10 +2266,10 @@ ${APP_CONFIG.url}`;
         
         if (purgeSec) purgeSec.style.display = 'none';
 
+        // إغلاق النافذة فقط والبقاء في نفس شاشة المستخدم الحالية (سواء كان في الأذكار أو الرئيسية أو القبلة)
         if (closeBtn) {
           closeBtn.onclick = () => {
             modal.classList.remove('show');
-            if (screenGeneralSettings) showScreen(screenGeneralSettings, false);
           };
         }
 
