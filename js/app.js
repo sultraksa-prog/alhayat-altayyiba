@@ -223,7 +223,7 @@ if (isRunningStandalone) {
   const backToCategoriesBtn = document.getElementById('backToCategoriesBtn');
   const backToCategoriesFromFavBtn = document.getElementById('backToCategoriesFromFavBtn');
 
-  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال ومنطق الخروج الذكي ====================
+  // ==================== نظام التنقل المتوافق مع سحب حافة الجوال ومنطق الخروج الذكي الفوري ====================
   let lastExitAttemptTime = 0;
   let exitToastTimer = null;
   let isExitingApp = false;
@@ -243,7 +243,7 @@ if (isRunningStandalone) {
     if (toast) toast.classList.remove('show');
   }
 
-  // 1. تثبيت مصد الأمان الفوري عبر الهاش المزدوج (#root و #app) لفرض التقاط الرجوع حتى بدون أي لمس
+  // 1. تثبيت مصد الأمان الفوري عبر الهاش (#root و #app)
   function initColdStartHashAnchor() {
     if (location.hash !== '#app') {
       history.replaceState({ screenId: 'screen-home', isRoot: true }, '', '#root');
@@ -252,15 +252,20 @@ if (isRunningStandalone) {
   }
   initColdStartHashAnchor();
 
+  // قائمة التبويبات الرئيسية (التنقل بينها يستبدل الحالة ولا يراكم السجل)
+  const PRIMARY_TABS = ['screen-home', 'screen-azkar-categories', 'screen-qibla', 'screen-general-settings'];
+
   function showScreen(screen, pushToHistory = true) {
     if (!screen) return;
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
-      if (screen === screenHome) {
-        history.replaceState({ screenId: 'screen-home' }, '', '#app');
+      const hashTag = screen === screenHome ? '#app' : '#' + screen.id.replace('screen-', '');
+      
+      // التبويبات الرئيسية لا تراكم السجل بل تستبدله لتفادي فخ الضغط المتكرر للخروج
+      if (PRIMARY_TABS.includes(screen.id) || screen === screenHome) {
+        history.replaceState({ screenId: screen.id }, '', hashTag);
       } else {
-        const hashTag = '#' + screen.id.replace('screen-', '');
         history.pushState({ screenId: screen.id }, '', hashTag);
       }
     }
@@ -324,14 +329,16 @@ if (isRunningStandalone) {
     if (!activeScreen || activeScreen === screenHome || location.hash === '#root' || (history.state && history.state.isRoot)) {
       const now = Date.now();
       if (now - lastExitAttemptTime < 2000) {
-        // الضغطة الثانية خلال ثانيتين: السماح بالخروج التام
+        // الضغطة الثانية المؤكدة خلال ثانيتين: خروج فوري وشامل يقفز خارج التطبيق دفعة واحدة
         isExitingApp = true;
         hideExitToast();
-        history.back();
+        try { window.close(); } catch(e) {}
+        // القفز بكامل مسافة السجل للخارج مباشرة دون الحاجة للضغط المتكرر
+        history.go(-(history.length));
       } else {
-        // الضغطة الأولى: إظهار التنبيه + التمرير لأعلى الصفحة + إعادة الحماية فوراً إلى #app
+        // الضغطة الأولى: إظهار التنبيه + التمرير لأعلى الصفحة
         lastExitAttemptTime = now;
-        history.pushState({ screenId: 'screen-home' }, '', '#app');
+        history.replaceState({ screenId: 'screen-home' }, '', '#app');
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
         const appContainer = document.querySelector('.app-container');
@@ -1951,7 +1958,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.16', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.17', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
