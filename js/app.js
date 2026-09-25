@@ -1,15 +1,15 @@
+// ==================== التقاط حدث التثبيت فوراً في السطر الأول ====================
+let deferredPwaPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+});
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // ==================== نظام التثبيت الذكي للتطبيق (PWA Installer Engine) ====================
-  let deferredPwaPrompt = null;
   const isRunningStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-  // التقاط حدث المتصفح المدمج لأندرويد والكمبيوتر
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPwaPrompt = e;
-  });
 
   // الاستماع لاكتمال التثبيت بنجاح
   window.addEventListener('appinstalled', () => {
@@ -1841,7 +1841,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.10', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.11', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -2078,33 +2078,6 @@ ${APP_CONFIG.url}`;
         alert('تم نسخ رسالة الدعوة والرابط بنجاح لمشاركتها مع أصدقائك!');
       }
       shareModalBackdrop.classList.remove('show');
-    });
-  }
-
-  // ==================== معالج أزرار النقر المطوّل ====================
-  window.handleLongPressAction = function(actionType) {
-    const targetId = window.activeLongPressedGroupId;
-    const groupLongPressModal = document.getElementById('groupLongPressModal');
-
-    if (actionType === 'start' || actionType === 'resume') {
-      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
-      if (targetId && window.openCategoryReader) {
-        window.openCategoryReader(targetId, false);
-      }
-    } else if (actionType === 'reset') {
-      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
-      if (targetId && window.openCategoryReader) {
-        window.openCategoryReader(targetId, true);
-      }
-    } else if (actionType === 'cancel') {
-      if (groupLongPressModal) groupLongPressModal.classList.remove('show');
-    }
-  };
-
-  const groupLongPressModalEl = document.getElementById('groupLongPressModal');
-  if (groupLongPressModalEl) {
-    groupLongPressModalEl.addEventListener('click', (e) => {
-      if (e.target === groupLongPressModalEl) groupLongPressModalEl.classList.remove('show');
     });
   }
 
