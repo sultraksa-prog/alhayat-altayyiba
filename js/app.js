@@ -243,32 +243,25 @@ if (isRunningStandalone) {
     if (toast) toast.classList.remove('show');
   }
 
-  // 1. تجهيز مصد الأمان فور فتح التطبيق لأول مرة (Cold Start)
-  function initExitSafetyAnchor() {
-    history.replaceState({ screenId: 'screen-home', isRoot: true }, '');
-    history.pushState({ screenId: 'screen-home' }, '');
-  }
-  initExitSafetyAnchor();
-
-  // 2. تعزيز مصد الأمان مع أول لمسة للشاشة لتخطي سياسة الحماية في متصفحات الجوال
-  const primeAnchorOnFirstTouch = () => {
-    if (!isExitingApp && (!history.state || history.state.isRoot)) {
-      history.pushState({ screenId: 'screen-home' }, '');
+  // 1. تثبيت مصد الأمان الفوري عبر الهاش المزدوج (#root و #app) لفرض التقاط الرجوع حتى بدون أي لمس
+  function initColdStartHashAnchor() {
+    if (location.hash !== '#app') {
+      history.replaceState({ screenId: 'screen-home', isRoot: true }, '', '#root');
+      history.pushState({ screenId: 'screen-home' }, '', '#app');
     }
-  };
-  window.addEventListener('touchstart', primeAnchorOnFirstTouch, { once: true, passive: true });
-  window.addEventListener('pointerdown', primeAnchorOnFirstTouch, { once: true, passive: true });
+  }
+  initColdStartHashAnchor();
 
   function showScreen(screen, pushToHistory = true) {
     if (!screen) return;
     const activeScreen = document.querySelector('.screen-view.active');
     
     if (pushToHistory && activeScreen && activeScreen !== screen) {
-      // عند التوجه للرئيسية لا نراكم سجل الصفحات السابقة بل نستبدله ليبقى السجل نظيفاً
       if (screen === screenHome) {
-        history.replaceState({ screenId: 'screen-home' }, '');
+        history.replaceState({ screenId: 'screen-home' }, '', '#app');
       } else {
-        history.pushState({ screenId: screen.id }, '');
+        const hashTag = '#' + screen.id.replace('screen-', '');
+        history.pushState({ screenId: screen.id }, '', hashTag);
       }
     }
 
@@ -315,33 +308,31 @@ if (isRunningStandalone) {
 
   // التقاط إيماءة الرجوع (سحب الحافة أو زر العودة في الجوال)
   window.addEventListener('popstate', () => {
-    // إذا كان التطبيق في مرحلة الخروج الفعلي المصرح بها، نترك المتصفح يخرج دون اعتراض
     if (isExitingApp) return;
 
     const activeScreen = document.querySelector('.screen-view.active');
 
-    // 1. إذا كانت هناك نافذة منبثقة أو شاشة إعدادات مفتوحة، الرجوع يغلقها أولاً دون مغادرة الشاشة
+    // 1. إذا كانت هناك نافذة منبثقة مفتوحة، الرجوع يغلقها أولاً
     const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
     if (openModal) {
       openModal.classList.remove('show');
-      history.pushState({ screenId: activeScreen ? activeScreen.id : 'screen-home' }, '');
+      history.pushState({ screenId: activeScreen ? activeScreen.id : 'screen-home' }, '', location.hash || '#app');
       return;
     }
 
-    // 2. إذا كان المستخدم في الشاشة الرئيسية: تطبيق خوارزمية الخروج المزدوج الذكي (حتى في الفتحة الأولى)
-    if (!activeScreen || activeScreen === screenHome) {
+    // 2. إذا كان المستخدم في الرئيسية، أو وصل السجل إلى نقطة البداية (#root):
+    if (!activeScreen || activeScreen === screenHome || location.hash === '#root' || (history.state && history.state.isRoot)) {
       const now = Date.now();
       if (now - lastExitAttemptTime < 2000) {
-        // الضغطة الثانية خلال ثانيتين: تفعيل وضع الخروج الفعلي والسماح للهاتف بالإغلاق
+        // الضغطة الثانية خلال ثانيتين: السماح بالخروج التام
         isExitingApp = true;
         hideExitToast();
         history.back();
       } else {
-        // الضغطة الأولى: إظهار التنبيه + التمرير التلقائي لقمة الصفحة الرئيسية + إعادة بناء المصد
+        // الضغطة الأولى: إظهار التنبيه + التمرير لأعلى الصفحة + إعادة الحماية فوراً إلى #app
         lastExitAttemptTime = now;
-        history.pushState({ screenId: 'screen-home' }, '');
+        history.pushState({ screenId: 'screen-home' }, '', '#app');
 
-        // تمرير الصفحة للأعلى بسلاسة
         window.scrollTo({ top: 0, behavior: 'smooth' });
         const appContainer = document.querySelector('.app-container');
         if (appContainer) appContainer.scrollTo({ top: 0, behavior: 'smooth' });
@@ -357,7 +348,7 @@ if (isRunningStandalone) {
       if (category && category.items && category.items.length > 0) {
         const isAllDone = category.items.every(it => it.currentCount === 0);
         if (!isAllDone && dhikrSettings.confirmExit) {
-          history.pushState({ screenId: 'screen-azkar-reader' }, '');
+          history.pushState({ screenId: 'screen-azkar-reader' }, '', '#azkar-reader');
           document.getElementById('exitConfirmModal').classList.add('show');
           return;
         }
@@ -377,11 +368,13 @@ if (isRunningStandalone) {
     // 5. إذا كان في شاشة مجموعات الأذكار أو أي شاشة فرعية، الرجوع يعيده للرئيسية
     if (activeScreen === screenAzkarCategories) {
       showScreen(screenHome, false);
+      history.replaceState({ screenId: 'screen-home' }, '', '#app');
       return;
     }
 
     // افتراضياً: العودة للرئيسية
     showScreen(screenHome, false);
+    history.replaceState({ screenId: 'screen-home' }, '', '#app');
   });
 
   let pendingExitTargetScreen = null;
@@ -1896,7 +1889,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.12', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.13', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
