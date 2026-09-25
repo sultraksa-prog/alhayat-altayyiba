@@ -183,68 +183,68 @@
   cursor: pointer;
 }
 
-/* شبكة أيام التقويم */
+/* شبكة أيام التقويم المرنة على كافة الشاشات */
 .cal-grid-wrapper {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 18px;
-  padding: 12px 10px 8px 10px;
+  padding: 10px 4px 6px 4px; /* تقليص الهوامش الجانبية لاستيعاب الشاشات الصغيرة */
   box-shadow: var(--shadow-card);
   position: relative;
+  overflow: hidden;
 }
 
-/* شريط أيام الأسبوع العصري ذو الخلفية الهادئة */
 .cal-weekdays-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   text-align: center;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #15803D;
   background: #ECFDF5;
   border-radius: 12px;
   padding: 8px 0;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .cal-days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(7, minmax(0, 1fr)); /* توزيع متساوٍ يمنع خروج الأيام عن الحافة */
+  gap: 2px;
   padding-top: 4px;
   transition: all 0.3s ease;
 }
 
 .cal-day-cell {
   aspect-ratio: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   position: relative;
   transition: all 0.15s;
-  padding-bottom: 6px;
+  padding: 2px 0 4px 0;
 }
 
 .cal-day-cell:active { transform: scale(0.92); }
 
 .cal-day-primary {
-  font-size: 15px;
+  font-size: clamp(12.5px, 3.8vw, 15px);
   font-weight: 800;
   color: var(--text-main);
   line-height: 1.1;
 }
 
 .cal-day-secondary {
-  font-size: 10px;
+  font-size: clamp(9px, 2.5vw, 10.5px);
   font-weight: 600;
   color: var(--text-muted);
   margin-top: 1px;
 }
 
-/* حاوية نقاط التنبيه أسفل أرقام اليوم */
 .cal-cell-dots-row {
   display: flex;
   align-items: center;
@@ -255,14 +255,13 @@
 }
 
 .cell-dot {
-  width: 5px;
-  height: 5px;
+  width: 4.5px;
+  height: 4.5px;
   border-radius: 50%;
 }
-.cell-dot.dot-event { background-color: #059669; } /* أخضر للمناسبات */
-.cell-dot.dot-fasting { background-color: #D97706; } /* ذهبي للصيام المستحب */
+.cell-dot.dot-event { background-color: #059669; }
+.cell-dot.dot-fasting { background-color: #D97706; }
 
-/* اليوم المختار */
 .cal-day-cell.selected {
   background: #15803D;
 }
@@ -275,7 +274,7 @@
 }
 
 .cal-day-cell.other-month {
-  opacity: 0.3;
+  opacity: 0.25;
 }
 
 /* دليل دلالات الألوان تحت التقويم */
@@ -440,40 +439,91 @@
 
 .cal-event-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: #F8FAFC;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #FFFFFF;
   border: 1px solid #E2E8F0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
 }
 
-.event-meta h4 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-main);
-  margin-bottom: 2px;
+/* 1. المناسبات القادمة: مبهجة ونابضة بالحياة */
+.cal-event-item.upcoming {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%);
+  border-color: #BBF7D0;
 }
-.event-meta span {
-  font-size: 11.5px;
+
+/* 2. المناسبات المنقضية: مطفأة وخافتة */
+.cal-event-item.past {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+  opacity: 0.65;
+  filter: grayscale(0.2);
+}
+
+/* 3. الاحتفال بالأعياد الكبرى اليوم (رمضان، الفطر، الأضحى) */
+.cal-event-item.active-celebration {
+  background: linear-gradient(135deg, #FEF3C7 0%, #DCFCE7 100%);
+  border: 1.5px solid #F59E0B;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.22);
+  transform: scale(1.01);
+}
+
+.event-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.event-top-row h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+/* صف تفاصيل التاريخ المتكامل (اسم اليوم + هجري + ميلادي رقمي) */
+.event-details-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
-.event-countdown-badge {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 3px 12px;
-  border-radius: 20px;
+.event-day-badge {
   background: #EEF6FC;
   color: var(--primary-blue);
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
-.event-countdown-badge.past {
-  background: #F1F5F9;
+
+.event-date-text {
+  font-weight: 700;
+  color: #334155;
+}
+
+.event-greg-num {
+  direction: ltr;
+  font-weight: 700;
   color: var(--text-muted);
 }
-.event-countdown-badge.today {
-  background: #DCFCE7;
-  color: #15803D;
+
+.event-celebration-banner {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin-top: 4px;
+  text-align: center;
 }
 
 /* كرت المناسبة القادمة الفاخر في الأسفل */
