@@ -525,13 +525,11 @@
     renderComprehensiveOccasions();
   }
 
-  // 2. عرض كرت المناسبات الشامل مع التصفية والبحث
+  // 2. عرض كرت المناسبات الشامل مع التصفية والبحث (نسخة منقحة بدون الكرت المكرر)
   function renderComprehensiveOccasions() {
     const listEl = document.getElementById('comprehensiveEventsList');
     const badgeEl = document.getElementById('calCountryBadgeDisplay');
     const searchInput = document.getElementById('comprehensiveSearchInput');
-    const nextTitle = document.getElementById('nextEventTitleDisplay');
-    const nextBadge = document.getElementById('nextEventCountdownDisplay');
 
     if (!listEl) return;
     listEl.innerHTML = '';
@@ -549,8 +547,6 @@
     const todayH = getHijriDetails(today);
     const allEvents = getAllOccasionsList();
 
-    let nextUpcoming = null;
-    let minDays = Infinity;
     let matchedCount = 0;
 
     allEvents.forEach(ev => {
@@ -580,11 +576,6 @@
       const diffTime = targetDate.setHours(0,0,0,0) - today.setHours(0,0,0,0);
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays >= 0 && diffDays < minDays) {
-        minDays = diffDays;
-        nextUpcoming = { name: ev.name, days: diffDays };
-      }
-
       matchedCount++;
       const cardHtml = createEventCardElement(ev, targetDate, hDay, hMonth, hYear, diffDays);
       listEl.appendChild(cardHtml);
@@ -592,11 +583,6 @@
 
     if (matchedCount === 0) {
       listEl.innerHTML = `<div style="text-align:center; padding:18px; color:var(--text-muted); font-size:13px;">لا توجد مناسبات مطابقة للبحث أو التصفية</div>`;
-    }
-
-    if (nextTitle && nextBadge && nextUpcoming) {
-      nextTitle.textContent = nextUpcoming.name;
-      nextBadge.textContent = nextUpcoming.days === 0 ? 'اليوم' : `بعد ${nextUpcoming.days} يوماً`;
     }
   }
   window.renderComprehensiveOccasions = renderComprehensiveOccasions;
