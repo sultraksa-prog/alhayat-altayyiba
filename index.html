@@ -695,17 +695,28 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
       <h2 class="section-page-title">أذكار المسلم</h2>
-      <div class="header-actions">
-        <!-- زر البحث الجديد -->
-        <button class="header-action-btn-circle" id="toggleCategorySearchBtn" title="بحث في الأذكار">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
-        <!-- زر النجمة الذهبية -->
+      <div class="header-actions" style="position: relative;">
+        <!-- زر النجمة الذهبية للمفضلة -->
         <button class="header-star-btn" id="openFavoritesBtn" title="الأذكار المفضلة">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="#F59E0B" stroke="#D97706" stroke-width="1.5">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
           </svg>
         </button>
+        <!-- زر الثلاث نقاط المنسدل المطور -->
+        <div class="header-icon-btn" id="categoryMenuBtn" title="خيارات إضافية" style="width: 36px; height: 36px; background: #EEF6FC; border: 1px solid #BCD8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--primary-blue);">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </div>
+        <!-- القائمة المنسدلة لشاشة الأذكار -->
+        <div class="dropdown-menu" id="categoryDropdownMenu" style="width: 195px; top: 44px; left: 0;">
+          <div class="dropdown-item" id="menuSearchAzkarBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>بحث في الأذكار</span>
+          </div>
+          <div class="dropdown-item" id="menuResetAllAzkarBtn" style="color: #DC2626;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>تصفير جميع العدادات</span>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -737,13 +748,16 @@
           <div class="header-icon-btn" id="favMenuBtn" title="خيارات">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </div>
-          <div class="dropdown-menu" id="favDropdownMenu">
+          <div class="dropdown-menu" id="favDropdownMenu" style="width: 195px;">
             <div class="dropdown-item" id="toggleFavReorderBtn">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 5 17 10"/><polyline points="17 14 12 19 7 14"/></svg>
               <span>ترتيب المفضلة</span>
             </div>
+            <div class="dropdown-item" id="favResetAllAzkarBtn" style="color: #DC2626;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>تصفير جميع العدادات</span>
+            </div>
           </div>
-        </div>
       </header>
 
       <!-- شبكة بطاقات الأذكار المفضلة -->
@@ -1720,18 +1734,19 @@
       </div>
     </div>
 
-    <!-- مودال البحث واختيار الأذكار لإضافتها للمفضلة ⭐ -->
-    <div class="custom-modal-backdrop" id="searchFavModal">
-      <div class="custom-modal-card" style="max-height: 85vh; display: flex; flex-direction: column;">
-        <h3 class="modal-card-title">إضافة أذكار للمفضلة</h3>
-        <div class="search-input-box">
-          <input type="text" id="favSearchInput" placeholder="ابحث عن اسم القسم أو الذكر...">
-        </div>
-        <div class="fav-search-results-list" id="favSearchResultsList">
-          <!-- تظهر نتائج البحث هنا مع زر إضافة/إزالة -->
-        </div>
-        <div class="modal-actions-row">
-          <button class="modal-btn-primary" id="closeSearchFavBtn">تم</button>
+    <!-- نافذة تأكيد تصفير جميع عدادات الأذكار (الخيار الافتراضي هو التراجع) -->
+    <div class="custom-modal-backdrop" id="resetAllAzkarConfirmModal">
+      <div class="custom-modal-card text-center" style="max-width: 320px;">
+        <div style="font-size: 38px; margin-bottom: 8px;">🔄</div>
+        <h3 class="modal-card-title" style="margin-bottom: 8px;">تصفير جميع العدادات</h3>
+        <p class="celebration-text" style="font-size: 13.5px; line-height: 1.6; margin-bottom: 22px;">
+          هل أنت متأكد من تصفير كافة عدادات الأذكار والبدء من جديد لهذا اليوم؟
+        </p>
+        <div class="modal-actions-row" style="justify-content: center; gap: 14px;">
+          <!-- الزر الافتراضي الآمن ذو اللون الأزرق: تراجع -->
+          <button type="button" class="modal-btn-primary" id="cancelResetAllAzkarBtn" style="background: var(--primary-blue); padding: 10px 28px;">تراجع</button>
+          <!-- زر التصفير الأحمر -->
+          <button type="button" class="modal-btn-link" id="confirmResetAllAzkarBtn" style="color: #DC2626; font-weight: 700;">تصفير العدادات</button>
         </div>
       </div>
     </div>
