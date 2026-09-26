@@ -75,10 +75,6 @@ if (isRunningStandalone) {
     };
   }
 
-  // ==================== إعدادات الأذكار ====================
-
-// ==================== إعدادات الأذكار ====================
-
 // ==================== إعدادات الأذكار ====================
   const SETTINGS_KEY = 'hayat_dhikr_settings';
   const DEFAULT_SETTINGS = {
@@ -88,6 +84,7 @@ if (isRunningStandalone) {
     vibrateOnZero: true,
     vibrateOnClick: false,
     hideOnZero: true,
+    dismissAnimation: 'slide-up', // 'slide-up' | 'fade' | 'fold-in' | 'ascend-glow' | 'roll-up'
     tapAnywhere: true,
     confirmExit: true
   };
@@ -992,14 +989,46 @@ if (isRunningStandalone) {
   }
   window.openCategoryReader = openCategoryReader;
 
+  // دالة استخراج عدد الحروف الخام وتجريد الذكر من التشكيل والمسافات
+  function getRawArabicCharCount(text) {
+    if (!text) return 0;
+    return text.replace(/[\u064B-\u065F\u0670\u0640\s]/g, '').length;
+  }
+
+  // تحديث شريط التقدم العلوي بناءً على ميزان: (حروف الذكر الخام × عدد مرات التكرار)
+  function updateReaderProgressBar() {
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
+    const bar = document.getElementById('readerProgressBar');
+    const percentEl = document.getElementById('readerProgressPercent');
+    if (!category || !category.items || category.items.length === 0) return;
+
+    let totalWeight = 0;
+    let completedWeight = 0;
+
+    category.items.forEach(it => {
+      const charCount = Math.max(1, getRawArabicCharCount(it.text));
+      const totalReps = it.count || 1;
+      const remainingReps = Math.max(0, it.currentCount);
+      const doneReps = Math.max(0, totalReps - remainingReps);
+
+      totalWeight += (totalReps * charCount);
+      completedWeight += (doneReps * charCount);
+    });
+
+    const percent = totalWeight > 0 ? Math.min(100, Math.round((completedWeight / totalWeight) * 100)) : 0;
+    if (bar) bar.style.width = `${percent}%`;
+    if (percentEl) percentEl.textContent = `${percent}%`;
+  }
+
   function renderDhikrCards() {
     dhikrCardsContainer.innerHTML = '';
+    updateReaderProgressBar(); // تحديث فوري لميزان القراءة مع فتح الشاشة
     
     if (dhikrSettings.displayMode === 'horizontal') {
-    dhikrCardsContainer.classList.add('horizontal-mode');
-  } else {
-    dhikrCardsContainer.classList.remove('horizontal-mode');
-  }
+      dhikrCardsContainer.classList.add('horizontal-mode');
+    } else {
+      dhikrCardsContainer.classList.remove('horizontal-mode');
+    }
     
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category || !category.items || category.items.length === 0) {
@@ -1014,6 +1043,7 @@ if (isRunningStandalone) {
     category.items.forEach((item, index) => {
       const card = document.createElement('div');
       card.className = 'dhikr-card';
+      card.setAttribute('data-item-id', item.id);
       const isDone = item.currentCount === 0;
 
       const hasLongNote = item.fullNote && item.fullNote.length > 70;
@@ -1084,7 +1114,7 @@ if (isRunningStandalone) {
     });
   }
 
-  // تقليص عداد الذكر
+  // تقليص عداد الذكر وتنفيذ حركة الاختفاء الانسيابية وميزان الحروف
   window.decrementDhikr = (itemId) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
@@ -1093,28 +1123,60 @@ if (isRunningStandalone) {
 
     item.currentCount--;
 
-  // 1. ارتجاج عند كل ضغطة
-  if (dhikrSettings.vibrateOnClick && navigator.vibrate) {
-    navigator.vibrate(30);
-  }
+    // 1. ارتجاج عند كل ضغطة
+    if (dhikrSettings.vibrateOnClick && navigator.vibrate) {
+      navigator.vibrate(30);
+    }
 
-  // 2. ارتجاج أطول عند وصول العداد للصفر
-  if (item.currentCount === 0 && dhikrSettings.vibrateOnZero && navigator.vibrate) {
-    navigator.vibrate([120, 60, 150]);
-  }
-
+    // 2. تحديث شريط ميزان الحروف فورياً
     saveAzkarState();
-    renderDhikrCards();
+    updateReaderProgressBar();
 
-    const allDone = category.items.every(it => it.currentCount === 0);
-  if (allDone) {
-    // إظهار نافذة التهنئة الأولى "لقد انهيت الأذكار" مع زر "تم"
-    setTimeout(() => {
-      document.getElementById('finishModal').classList.add('show');
-    }, 350);
-  }
+    // 3. عند وصول العداد للصفر
+    if (item.currentCount === 0) {
+      if (dhikrSettings.vibrateOnZero && navigator.vibrate) {
+        navigator.vibrate([120, 60, 150]);
+      }
+
+      // إذا كان خيار الإخفاء مفعلاً: تنفيذ الحركة الانسيابية المختارة
+      if (dhikrSettings.hideOnZero) {
+        const cardEl = document.querySelector(`.dhikr-card[data-item-id="${itemId}"]`);
+        const animStyle = dhikrSettings.dismissAnimation || 'slide-up';
+        
+        if (cardEl) {
+          const btn = cardEl.querySelector('.dhikr-counter-btn');
+          if (btn) {
+            btn.classList.add('done');
+            btn.textContent = '✓ تم';
+          }
+
+          // تطبيق تأثير الحركة الانسيابية المختار
+          cardEl.classList.add(`anim-dismissing-${animStyle}`);
+
+          // إزالة الكرت بهدوء بعد انتهاء الحركة وصعود الكروت التالية بسلاسة
+          setTimeout(() => {
+            renderDhikrCards();
+            checkCategoryCompletion(category);
+          }, 380);
+          return;
+        }
+      }
+    }
+
+    renderDhikrCards();
+    checkCategoryCompletion(category);
   };
 
+  function checkCategoryCompletion(category) {
+    const allDone = category.items.every(it => it.currentCount === 0);
+    if (allDone) {
+      setTimeout(() => {
+        const finishModal = document.getElementById('finishModal');
+        if (finishModal) finishModal.classList.add('show');
+      }, 400);
+    }
+  }
+  
   // ==================== 7. عزل معرفات الإضافة اليدوية للمستخدم ====================
   // 1. إضافة مجموعة خاصة بمعرف user_cat_
   const addCategoryModal = document.getElementById('addCategoryModal');
@@ -1297,7 +1359,7 @@ if (isRunningStandalone) {
     if (e.target === azkarSettingsModal) azkarSettingsModal.classList.remove('show');
   });
 
-  // مزامنة واجهة الإعدادات مع القيم المحفوظة
+  // مزامنة واجهة الإعدادات مع القيم المحفوظة بما فيها حركة الاختفاء
   function syncSettingsUI() {
     if (dhikrSettings.displayMode === 'vertical') {
       document.getElementById('radioVertical').checked = true;
@@ -1313,7 +1375,27 @@ if (isRunningStandalone) {
     document.getElementById('toggleHideOnZero').checked = dhikrSettings.hideOnZero;
     document.getElementById('toggleTapAnywhere').checked = dhikrSettings.tapAnywhere;
     document.getElementById('toggleConfirmExit').checked = dhikrSettings.confirmExit;
+
+    // مزامنة النمط المختار لحركة اختفاء الذكر
+    const curAnim = dhikrSettings.dismissAnimation || 'slide-up';
+    document.querySelectorAll('.anim-chip-item').forEach(chip => {
+      const isSelected = chip.getAttribute('data-anim') === curAnim;
+      chip.classList.toggle('active', isSelected);
+      const radio = chip.querySelector('input');
+      if (radio) radio.checked = isSelected;
+    });
   }
+
+  // ربط النقر لاختيار نمط حركة الاختفاء
+  document.querySelectorAll('.anim-chip-item').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.anim-chip-item').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const val = chip.getAttribute('data-anim');
+      dhikrSettings.dismissAnimation = val;
+      saveSettings();
+    });
+  });
 
   // التفاعل وتطبيق الإعدادات فوراً
   document.querySelectorAll('input[name="displayModeRadio"]').forEach(r => {
@@ -2111,7 +2193,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.37', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.38', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
