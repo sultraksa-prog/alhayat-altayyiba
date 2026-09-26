@@ -102,8 +102,35 @@ body {
   background-color: var(--bg-app);
   margin: 0 auto;
   position: relative;
-  overflow-x: hidden; /* هنا فقط لمنع الإزاحة الأفقية دون خنق التمرير الرأسي للـ body */
+  overflow-x: hidden;
   padding-bottom: 80px;
+}
+
+/* ==================== طبقة الزخارف الإسلامية الهندسية الثابتة (نمط الأرابيسك الراقي) ==================== */
+.app-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px; /* متطابق مع إطار الجوال في الكمبيوتر وممتد بالكامل على الهواتف */
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.038; /* رقة ونعومة متناهية تريح العين كعلامة مائية جدارية فخمة */
+  background-repeat: repeat;
+  background-size: 110px 110px;
+  /* نمط النجمة الثمانية والزخرفة الإسلامية المتداخلة vector 100% بدون أي صور خارجية */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100' height='100'%3E%3Cg fill='none' stroke='%2309203F' stroke-width='1.4'%3E%3Crect x='28' y='28' width='44' height='44' rx='3'/%3E%3Crect x='28' y='28' width='44' height='44' rx='3' transform='rotate(45 50 50)'/%3E%3Ccircle cx='50' cy='50' r='10'/%3E%3Cpolygon points='50,0 58,10 50,18 42,10'/%3E%3Cpolygon points='50,100 58,90 50,82 42,90'/%3E%3Cpolygon points='0,50 10,58 18,50 10,42'/%3E%3Cpolygon points='100,50 90,58 82,50 90,42'/%3E%3Cline x1='14' y1='14' x2='32' y2='32'/%3E%3Cline x1='86' y1='14' x2='68' y2='32'/%3E%3Cline x1='14' y1='86' x2='32' y2='68'/%3E%3Cline x1='86' y1='86' x2='68' y2='68'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+@media (max-width: 500px) {
+  .app-container::before {
+    max-width: 100%;
+    left: 0;
+    transform: none;
+  }
 }
 
 @media (min-width: 500px) {
@@ -283,12 +310,15 @@ body {
 
 .mosque-watermark {
   position: absolute;
-  top: 15px;
-  left: 0;
+  top: 14px;
+  left: -12px;
   width: 220px;
-  height: 180px;
-  opacity: 0.15;
+  height: 220px;
+  opacity: 0.22;
   pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 0 16px rgba(252, 211, 77, 0.25));
+  transition: opacity 0.3s ease;
 }
 
 .hero-content {
