@@ -891,29 +891,36 @@ if (isRunningStandalone) {
     renderFavorites();
   }
 
-  // نافذة البحث واختيار الأذكار للمفضلة
+  // نافذة البحث واختيار الأذكار للمفضلة (محمية بشروط أمان دفاعية تمنع أي انهيار)
   const searchFavModal = document.getElementById('searchFavModal');
   const openSearchFavModalBtn = document.getElementById('openSearchFavModalBtn');
   const closeSearchFavBtn = document.getElementById('closeSearchFavBtn');
   const favSearchInput = document.getElementById('favSearchInput');
   const favSearchResultsList = document.getElementById('favSearchResultsList');
 
-  openSearchFavModalBtn.addEventListener('click', () => {
-    favSearchInput.value = '';
-    renderSearchResults('');
-    searchFavModal.classList.add('show');
-  });
+  if (openSearchFavModalBtn && searchFavModal) {
+    openSearchFavModalBtn.addEventListener('click', () => {
+      if (favSearchInput) favSearchInput.value = '';
+      renderSearchResults('');
+      searchFavModal.classList.add('show');
+    });
+  }
 
-  closeSearchFavBtn.addEventListener('click', () => {
-    searchFavModal.classList.remove('show');
-    renderFavorites();
-  });
+  if (closeSearchFavBtn && searchFavModal) {
+    closeSearchFavBtn.addEventListener('click', () => {
+      searchFavModal.classList.remove('show');
+      renderFavorites();
+    });
+  }
 
-  favSearchInput.addEventListener('input', (e) => {
-    renderSearchResults(e.target.value.trim());
-  });
+  if (favSearchInput) {
+    favSearchInput.addEventListener('input', (e) => {
+      renderSearchResults(e.target.value.trim());
+    });
+  }
 
   function renderSearchResults(query) {
+    if (!favSearchResultsList) return;
     favSearchResultsList.innerHTML = '';
     const filtered = azkarState.filter(g => g.name.includes(query));
 
@@ -927,18 +934,20 @@ if (isRunningStandalone) {
       `;
 
       const btn = row.querySelector('.fav-toggle-btn');
-      btn.addEventListener('click', () => {
-        if (favoritesIds.includes(g.id)) {
-          favoritesIds = favoritesIds.filter(id => id !== g.id);
-          btn.classList.remove('active');
-          btn.textContent = '☆';
-        } else {
-          favoritesIds.push(g.id);
-          btn.classList.add('active');
-          btn.textContent = '★';
-        }
-        saveFavorites();
-      });
+      if (btn) {
+        btn.addEventListener('click', () => {
+          if (favoritesIds.includes(g.id)) {
+            favoritesIds = favoritesIds.filter(id => id !== g.id);
+            btn.classList.remove('active');
+            btn.textContent = '☆';
+          } else {
+            favoritesIds.push(g.id);
+            btn.classList.add('active');
+            btn.textContent = '★';
+          }
+          saveFavorites();
+        });
+      }
 
       favSearchResultsList.appendChild(row);
     });
@@ -2102,7 +2111,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.36', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.37', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
