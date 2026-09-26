@@ -799,6 +799,17 @@
         </div>
       </header>
 
+      <!-- شريط التقدم التراكمي الموزون بحجم الحروف والتكرار -->
+      <div class="reader-progress-wrapper" id="readerProgressWrapper">
+        <div class="reader-progress-track">
+          <div class="reader-progress-fill" id="readerProgressBar"></div>
+        </div>
+        <div class="reader-progress-meta">
+          <span class="progress-lbl">ميزان القراءة</span>
+          <span class="progress-percent" id="readerProgressPercent">0%</span>
+        </div>
+      </div>
+
       <div class="dhikr-cards-container" id="dhikrCardsContainer"></div>
 
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
@@ -1684,6 +1695,33 @@
             <input type="checkbox" id="toggleHideOnZero" checked>
             <span class="switch-slider"></span>
           </label>
+        </div>
+
+        <!-- 7. حركة اختفاء الذكر المكتمل (5 أنماط راقية بأسماء طبيعية) -->
+        <div class="setting-block" id="dismissAnimationBlock" style="margin-top: 10px; margin-bottom: 12px;">
+          <h4 class="setting-label" style="font-size: 13.5px; margin-bottom: 8px;">حركة اختفاء الذكر المكتمل</h4>
+          <div class="anim-chips-grid">
+            <label class="anim-chip-item active" data-anim="slide-up">
+              <input type="radio" name="dismissAnimRadio" value="slide-up" checked>
+              <span>السحب للأعلى (افتراضي)</span>
+            </label>
+            <label class="anim-chip-item" data-anim="fade">
+              <input type="radio" name="dismissAnimRadio" value="fade">
+              <span>التلاشي التدريجي</span>
+            </label>
+            <label class="anim-chip-item" data-anim="fold-in">
+              <input type="radio" name="dismissAnimRadio" value="fold-in">
+              <span>الطي للداخل</span>
+            </label>
+            <label class="anim-chip-item" data-anim="ascend-glow">
+              <input type="radio" name="dismissAnimRadio" value="ascend-glow">
+              <span>الصعود المضيء</span>
+            </label>
+            <label class="anim-chip-item" data-anim="roll-up">
+              <input type="radio" name="dismissAnimRadio" value="roll-up">
+              <span>طي الصحيفة</span>
+            </label>
+          </div>
         </div>
 
         <!-- 7. العد بالضغط على الذكر (مفعل افتراضياً) -->
