@@ -90,6 +90,9 @@ if (isRunningStandalone) {
   };
 
   let dhikrSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
+  if (!dhikrSettings.dismissAnimation) {
+    dhikrSettings.dismissAnimation = 'slide-up';
+  }
 
   function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(dhikrSettings));
@@ -1138,7 +1141,7 @@ if (isRunningStandalone) {
         navigator.vibrate([120, 60, 150]);
       }
 
-      // إذا كان خيار الإخفاء مفعلاً: تنفيذ الحركة الانسيابية المختارة
+      // إذا كان خيار الإخفاء مفعلاً: تشغيل الرسم المتحرك المختار لمدة 440ms
       if (dhikrSettings.hideOnZero) {
         const cardEl = document.querySelector(`.dhikr-card[data-item-id="${itemId}"]`);
         const animStyle = dhikrSettings.dismissAnimation || 'slide-up';
@@ -1150,14 +1153,14 @@ if (isRunningStandalone) {
             btn.textContent = '✓ تم';
           }
 
-          // تطبيق تأثير الحركة الانسيابية المختار
-          cardEl.classList.add(`anim-dismissing-${animStyle}`);
+          // تطبيق رسم الكي-فريم الإجباري
+          cardEl.classList.add(`anim-dismiss-${animStyle}`);
 
-          // إزالة الكرت بهدوء بعد انتهاء الحركة وصعود الكروت التالية بسلاسة
+          // انتظار اكتمال الحركة بالكامل (440ms) ثم إزالة الكرت وصعود باقي الأذكار بسلاسة
           setTimeout(() => {
             renderDhikrCards();
             checkCategoryCompletion(category);
-          }, 380);
+          }, 440);
           return;
         }
       }
@@ -2193,7 +2196,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.38', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.39', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
