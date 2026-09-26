@@ -2002,7 +2002,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.28', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.29', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -2103,7 +2103,7 @@ ${APP_CONFIG.url}`;
     });
   }
 
-  // ==================== محرك تخصيص وتوليد بطاقة المشاركة ذو اللونين ====================
+  // ==================== محرك تخصيص وتوليد بطاقات المشاركة الفاخرة ====================
   let shareCardSettings = JSON.parse(localStorage.getItem('hayat_share_card_settings')) || {
     template: 'royal-navy', // 'royal-navy' | 'emerald-ivory' | 'sand-bronze' | 'midnight-gold' | 'classic-blue'
     withText: true,
@@ -2154,7 +2154,149 @@ ${APP_CONFIG.url}`;
     }
   }
 
-  // 2. توليد ومشاركة بطاقة الصورة بنظام اللونين وفق الهيكل التحريري الجديد
+  // دالة رسم الشعار المعماري المذهب الحقيقي (المئذنة والقبة مع الأجنحة الزخرفية)
+  function drawRealBrandEmblem(ctx, cx, cy, scale = 1, goldColor = '#FCD34D') {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = goldColor;
+    ctx.strokeStyle = goldColor;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // 1. الهلال ودرة النور العلوية
+    ctx.beginPath();
+    ctx.arc(0, -60, 9, 0.4 * Math.PI, 1.8 * Math.PI, false);
+    ctx.arc(2, -60, 6.5, 1.7 * Math.PI, 0.5 * Math.PI, true);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(-1.5, -46, 3, 10);
+
+    // 2. القبة الملكية المضلعة
+    ctx.beginPath();
+    ctx.moveTo(0, -36);
+    ctx.bezierCurveTo(12, -26, 20, -14, 18, 0);
+    ctx.lineTo(-18, 0);
+    ctx.bezierCurveTo(-20, -14, -12, -26, 0, -36);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. شرفة الأذان العلوية
+    ctx.fillRect(-22, 0, 44, 6);
+
+    // 4. الغرفة النورانية العلوية (نوافذ المحراب)
+    ctx.fillRect(-17, 6, 34, 22);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    // أقواس النوافذ الثلاث
+    ctx.beginPath(); ctx.arc(0, 16, 3.5, Math.PI, 0); ctx.lineTo(3.5, 28); ctx.lineTo(-3.5, 28); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(-10, 18, 2.5, Math.PI, 0); ctx.lineTo(-7.5, 28); ctx.lineTo(-12.5, 28); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(10, 18, 2.5, Math.PI, 0); ctx.lineTo(12.5, 28); ctx.lineTo(7.5, 28); ctx.closePath(); ctx.fill();
+
+    // 5. الشرفة الكبرى ومقرنصاتها
+    ctx.fillStyle = goldColor;
+    ctx.fillRect(-25, 28, 50, 7);
+    ctx.beginPath();
+    ctx.moveTo(-23, 35); ctx.lineTo(23, 35); ctx.lineTo(18, 42); ctx.lineTo(-18, 42);
+    ctx.closePath(); ctx.fill();
+
+    // 6. جسد البرج الأوسط
+    ctx.fillRect(-18, 42, 36, 24);
+    // نجمة العمارة في منتصف البرج
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(0, 48); ctx.lineTo(4, 54); ctx.lineTo(0, 60); ctx.lineTo(-4, 54);
+    ctx.closePath(); ctx.fill();
+
+    // 7. إفريز القاعدة
+    ctx.fillStyle = goldColor;
+    ctx.fillRect(-26, 66, 52, 6);
+
+    // 8. البهو السفلي والمحراب الأندلسي
+    ctx.fillRect(-23, 72, 46, 22);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.beginPath();
+    ctx.arc(0, 81, 7, Math.PI, 0);
+    ctx.lineTo(7, 94); ctx.lineTo(-7, 94);
+    ctx.closePath(); ctx.fill();
+
+    // 9. الأجنحة الزخرفية الإسلامية (Arabesque Base)
+    ctx.fillStyle = goldColor;
+    // الجناح الأيمن
+    ctx.beginPath();
+    ctx.moveTo(23, 94);
+    ctx.bezierCurveTo(45, 94, 70, 84, 85, 68);
+    ctx.bezierCurveTo(74, 62, 62, 70, 56, 78);
+    ctx.bezierCurveTo(42, 74, 30, 86, 23, 92);
+    ctx.closePath(); ctx.fill();
+
+    // الجناح الأيسر
+    ctx.beginPath();
+    ctx.moveTo(-23, 94);
+    ctx.bezierCurveTo(-45, 94, -70, 84, -85, 68);
+    ctx.bezierCurveTo(-74, 62, -62, 70, -56, 78);
+    ctx.bezierCurveTo(-42, 74, -30, 86, -23, 92);
+    ctx.closePath(); ctx.fill();
+
+    // 10. خط الأساس
+    ctx.fillRect(-90, 94, 180, 4);
+
+    ctx.restore();
+  }
+
+  // دالة رسم الخطوط الفاصلة الأنيقة ذات المعين الهندسي (مثل منار)
+  function drawTaperedDivider(ctx, y, color = '#D4AF37', maxWidth = 540) {
+    const cx = ctx.canvas.width / 2;
+    const grad = ctx.createLinearGradient(cx - maxWidth / 2, y, cx + maxWidth / 2, y);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    grad.addColorStop(0.5, color);
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+    ctx.save();
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx - maxWidth / 2, y);
+    ctx.lineTo(cx + maxWidth / 2, y);
+    ctx.stroke();
+
+    // المعين الهندسي الإسلامي في المنتصف
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx, y - 6);
+    ctx.lineTo(cx + 6, y);
+    ctx.lineTo(cx, y + 6);
+    ctx.lineTo(cx - 6, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // دالة رسم الزخارف الهندسية الإسلامية المائية في الخلفية
+  function drawIslamicWatermarkPattern(ctx, color = '#FFFFFF', opacity = 0.04) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.4;
+
+    const size = 120;
+    for (let x = 0; x < ctx.canvas.width + size; x += size) {
+      for (let y = 0; y < ctx.canvas.height + size; y += size) {
+        ctx.save();
+        ctx.translate(x, y);
+        // النجمة الثمانية المتداخلة
+        ctx.strokeRect(-22, -22, 44, 44);
+        ctx.rotate(45 * Math.PI / 180);
+        ctx.strokeRect(-22, -22, 44, 44);
+        ctx.beginPath();
+        ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  // توليد بطاقة الصورة بنظام الهوية الجديدة
   if (btnShareAsImage) {
     btnShareAsImage.addEventListener('click', async () => {
       btnShareAsImage.innerHTML = '<span>جاري إنشاء البطاقة الفاخرة... 🎨</span>';
@@ -2166,182 +2308,213 @@ ${APP_CONFIG.url}`;
 
       const tmpl = shareCardSettings.template;
 
-      // إعدادات ألوان نظام اللونين لكل قالب
+      // ضبط لوحة الألوان لكل قالب
       let tConfig = {
-        headerBg: '#061933',
-        headerDayColor: '#FCD34D',
-        headerCityColor: '#E2E8F0',
-        headerHijriColor: '#FFFFFF',
-        headerGregColor: '#93C5FD',
-        bodyBg: '#0B254A',
-        cardRowBg: 'rgba(255, 255, 255, 0.08)',
+        isTwoTone: false,
+        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // التدرج الأزرق الملكي الأصلي المريح
+        patternColor: '#FCD34D',
+        patternOpacity: 0.045,
+        dayColor: '#FDE68A',
+        cityColor: '#E2E8F0',
+        hijriColor: '#FFFFFF',
+        gregColor: '#93C5FD',
+        cardRowBg: 'rgba(255, 255, 255, 0.09)',
+        cardRowBorder: 'rgba(255, 255, 255, 0.1)',
         prayerNameColor: '#FFFFFF',
         prayerTimeColor: '#FCD34D',
-        borderStroke: '#D4AF37',
+        dividerColor: '#D4AF37',
+        emblemGold: '#FCD34D',
         footerTextColor: '#FCD34D',
         footerSubColor: '#E2E8F0'
       };
 
       if (tmpl === 'emerald-ivory') {
-        // طراز تطبيق منار الفاخر (هيدر زمردي + أرضية عاجية)
+        // الزمردي والعاجي الفاخر (طراز منار المتقن)
         tConfig = {
+          isTwoTone: true,
           headerBg: '#064E3B',
-          headerDayColor: '#FEF3C7',
-          headerCityColor: '#D1FAE5',
-          headerHijriColor: '#FFFFFF',
-          headerGregColor: '#A7F3D0',
-          bodyBg: '#FBF8F2',
+          bodyBg: '#FAF7F0',
+          patternColor: '#064E3B',
+          patternOpacity: 0.035,
+          dayColor: '#FEF3C7',
+          cityColor: '#D1FAE5',
+          hijriColor: '#FFFFFF',
+          gregColor: '#A7F3D0',
           cardRowBg: '#FFFFFF',
+          cardRowBorder: 'rgba(6, 78, 59, 0.12)',
           prayerNameColor: '#1E293B',
           prayerTimeColor: '#064E3B',
-          borderStroke: '#10B981',
+          dividerColor: '#10B981',
+          emblemGold: '#064E3B',
           footerTextColor: '#064E3B',
           footerSubColor: '#64748B'
         };
       } else if (tmpl === 'sand-bronze') {
-        // طراز العقيق والرملي التراثي
+        // العقيق والرملي التراثي
         tConfig = {
+          isTwoTone: true,
           headerBg: '#7C2D12',
-          headerDayColor: '#FEF3C7',
-          headerCityColor: '#FED7AA',
-          headerHijriColor: '#FFFFFF',
-          headerGregColor: '#FFEDD5',
-          bodyBg: '#FFFBEB',
+          bodyBg: '#FFFDF7',
+          patternColor: '#9A3412',
+          patternOpacity: 0.035,
+          dayColor: '#FEF3C7',
+          cityColor: '#FED7AA',
+          hijriColor: '#FFFFFF',
+          gregColor: '#FFEDD5',
           cardRowBg: '#FFFFFF',
+          cardRowBorder: 'rgba(124, 45, 18, 0.12)',
           prayerNameColor: '#451A03',
           prayerTimeColor: '#C2410C',
-          borderStroke: '#EA580C',
-          footerTextColor: '#9A3412',
+          dividerColor: '#EA580C',
+          emblemGold: '#7C2D12',
+          footerTextColor: '#7C2D12',
           footerSubColor: '#78350F'
         };
       } else if (tmpl === 'midnight-gold') {
-        // طراز الأسود المذهب فائق التباين
+        // الأسود الفاحم والذهب الخالص
         tConfig = {
-          headerBg: '#000000',
-          headerDayColor: '#FBBF24',
-          headerCityColor: '#D1D5DB',
-          headerHijriColor: '#FFFFFF',
-          headerGregColor: '#9CA3AF',
-          bodyBg: '#0B0F19',
+          isTwoTone: false,
+          bgGradient: ['#020408', '#070C15', '#0E1726', '#162032'],
+          patternColor: '#F59E0B',
+          patternOpacity: 0.05,
+          dayColor: '#FBBF24',
+          cityColor: '#D1D5DB',
+          hijriColor: '#FFFFFF',
+          gregColor: '#9CA3AF',
           cardRowBg: 'rgba(255, 255, 255, 0.05)',
+          cardRowBorder: 'rgba(245, 158, 11, 0.25)',
           prayerNameColor: '#FFFFFF',
           prayerTimeColor: '#F59E0B',
-          borderStroke: '#F59E0B',
-          footerTextColor: '#F59E0B',
+          dividerColor: '#F59E0B',
+          emblemGold: '#FBBF24',
+          footerTextColor: '#FBBF24',
           footerSubColor: '#9CA3AF'
         };
       } else if (tmpl === 'classic-blue') {
-        // النمط الكلاسيكي الأصلي
+        // الكلاسيكي الأصلي
         tConfig = {
-          headerBg: '#09203F',
-          headerDayColor: '#FFFFFF',
-          headerCityColor: '#FCD34D',
-          headerHijriColor: '#E2E8F0',
-          headerGregColor: '#E2E8F0',
-          bodyBg: '#113F67',
-          cardRowBg: 'rgba(255, 255, 255, 0.1)',
+          isTwoTone: false,
+          bgGradient: ['#09203F', '#113F67', '#1D5D9B'],
+          patternColor: '#FFFFFF',
+          patternOpacity: 0.04,
+          dayColor: '#FFFFFF',
+          cityColor: '#FCD34D',
+          hijriColor: '#E2E8F0',
+          gregColor: '#93C5FD',
+          cardRowBg: 'rgba(255, 255, 255, 0.12)',
+          cardRowBorder: 'rgba(255, 255, 255, 0.15)',
           prayerNameColor: '#FFFFFF',
           prayerTimeColor: '#FCD34D',
-          borderStroke: '#FCD34D',
+          dividerColor: '#FCD34D',
+          emblemGold: '#FCD34D',
           footerTextColor: '#FFFFFF',
           footerSubColor: '#93C5FD'
         };
       }
 
-      // رسم خلفية الجسم السفلي
-      ctx.fillStyle = tConfig.bodyBg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // ==================== 1. رسم الخلفية والنقش الإسلامي (بدون أي إطار صندوقي) ====================
+      if (tConfig.isTwoTone) {
+        // رسم الجسم السفلي
+        ctx.fillStyle = tConfig.bodyBg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // رسم نقش الخلفية السفلي
+        drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
+        // رسم كتلة الهيدر العلوية
+        ctx.fillStyle = tConfig.headerBg;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, canvas.width, 420, [0, 0, 48, 48]);
+        ctx.fill();
+      } else {
+        // رسم التدرج اللوني الكامل الأصلي المريح
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        tConfig.bgGradient.forEach((color, idx) => {
+          grad.addColorStop(idx / (tConfig.bgGradient.length - 1), color);
+        });
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // رسم نقش الزخرفة الإسلامية الكامل
+        drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
+      }
 
-      // رسم هيدر البيانات الأساسية (اللون الأول في الأعلى: 430px)
-      ctx.fillStyle = tConfig.headerBg;
-      ctx.beginPath();
-      ctx.roundRect(0, 0, canvas.width, 430, [0, 0, 44, 44]);
-      ctx.fill();
-
-      // الإطار الذهبي المزدوج المحيط بالبطاقة
-      ctx.strokeStyle = tConfig.borderStroke;
-      ctx.lineWidth = 6;
-      ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
-
-      // ==================== 1. نصوص الهيدر العلوي وفق الترتيب الجديد ====================
+      // ضبط اتجاه النصوص للغة العربية من اليمين لليسار إجبارياً
+      ctx.direction = 'rtl';
       ctx.textAlign = 'center';
 
-      // أ) اسم اليوم في القمة منفرداً بخط عريض
+      // ==================== 2. نصوص الهيدر العلوي وفق الترتيب الجديد المتقن ====================
+      // أ) اسم اليوم في القمة عريضاً
       ctx.font = 'bold 64px "Cairo", sans-serif';
-      ctx.fillStyle = tConfig.headerDayColor;
-      ctx.fillText(currentDayName || 'السبت', canvas.width / 2, 120);
+      ctx.fillStyle = tConfig.dayColor;
+      ctx.fillText(currentDayName || 'السبت', canvas.width / 2, 115);
 
       // ب) مواقيت الصلاة - اسم المنطقة
       ctx.font = 'bold 36px "Cairo", sans-serif';
-      ctx.fillStyle = tConfig.headerCityColor;
-      ctx.fillText(`مواقيت الصلاة - ${userLocation.city}`, canvas.width / 2, 195);
+      ctx.fillStyle = tConfig.cityColor;
+      ctx.fillText(`مواقيت الصلاة - ${userLocation.city}`, canvas.width / 2, 185);
 
-      // ج) خط زخرفي فاصل رفيع
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2 - 180, 230);
-      ctx.lineTo(canvas.width / 2 + 180, 230);
-      ctx.stroke();
+      // ج) خط فاصل رقيق أنيق في الهيدر
+      drawTaperedDivider(ctx, 225, tConfig.dividerColor, 360);
 
-      // د) التاريخ الهجري منفرداً
-      ctx.font = 'bold 34px "Cairo", sans-serif';
-      ctx.fillStyle = tConfig.headerHijriColor;
-      ctx.fillText(currentHijriText || '', canvas.width / 2, 290);
+      // د) التاريخ الهجري مع ضمان ظهور اليوم على اليمين أولاً
+      ctx.font = 'bold 36px "Cairo", sans-serif';
+      ctx.fillStyle = tConfig.hijriColor;
+      const cleanHijri = '\u200F' + (currentHijriText || '').trim();
+      ctx.fillText(cleanHijri, canvas.width / 2, 290);
 
       // هـ) التاريخ الميلادي منفرداً في سطر مستقل
-      ctx.font = '600 29px "Cairo", sans-serif';
-      ctx.fillStyle = tConfig.headerGregColor;
-      ctx.fillText(currentGregorianText || '', canvas.width / 2, 345);
+      ctx.font = '600 28px "Cairo", sans-serif';
+      ctx.fillStyle = tConfig.gregColor;
+      const cleanGreg = '\u200F' + (currentGregorianText || '').trim();
+      ctx.fillText(cleanGreg, canvas.width / 2, 345);
 
-      // ==================== 2. جدول الصلوات الست في جسم البطاقة ====================
+      // خط فاصل علوي أنيق يفصل الهيدر عن الصلوات
+      drawTaperedDivider(ctx, 420, tConfig.dividerColor, 720);
+
+      // ==================== 3. جدول الصلوات الست بمظهر مريح وأنيق ====================
       let startY = 495;
       PRAYER_KEYS.forEach((p) => {
-        // خلفية صف الصلاة
+        // كرت صف الصلاة
         ctx.fillStyle = tConfig.cardRowBg;
         ctx.beginPath();
-        ctx.roundRect(110, startY - 48, canvas.width - 220, 82, 18);
+        ctx.roundRect(100, startY - 48, canvas.width - 200, 84, 18);
         ctx.fill();
 
-        // حدود خفيفة للصفوف في القوالب الفاتحة
-        if (tmpl === 'emerald-ivory' || tmpl === 'sand-bronze') {
-          ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
+        ctx.strokeStyle = tConfig.cardRowBorder;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
 
-        // اسم الصلاة
+        // اسم الصلاة على اليمين
         ctx.font = 'bold 36px "Cairo", sans-serif';
         ctx.fillStyle = tConfig.prayerNameColor;
         ctx.textAlign = 'right';
-        ctx.fillText(p.name, canvas.width - 160, startY + 6);
+        ctx.fillText(p.name, canvas.width - 150, startY + 8);
 
-        // وقت الصلاة
+        // وقت الصلاة على اليسار
         ctx.fillStyle = tConfig.prayerTimeColor;
         ctx.textAlign = 'left';
         const formattedT = currentTimings ? formatTo12Hour(currentTimings[p.key]) : '--:--';
-        ctx.fillText(formattedT, 160, startY + 6);
+        ctx.fillText(formattedT, 150, startY + 8);
 
-        startY += 106;
+        startY += 108;
       });
 
-      // ==================== 3. الفوتر الملكي وشعار التطبيق (بدون رابط) ====================
+      // ==================== 4. الفوتر وشعار الصرح المذهب الحقيقي (بدون أي روابط) ====================
       if (shareCardSettings.withBranding) {
-        ctx.textAlign = 'center';
-        
-        // رسم رمز الصرح التعبيري المذهب
-        ctx.font = '46px "Cairo", sans-serif';
-        ctx.fillText('🕌', canvas.width / 2, canvas.height - 180);
+        // خط فاصل رفيع أنيق يفصل جدول الصلوات عن الفوتر
+        drawTaperedDivider(ctx, 1175, tConfig.dividerColor, 700);
 
+        // رسم الصرح المعماري المذهب الحقيقي للتطبيق (المئذنة والقبة والأجنحة)
+        drawRealBrandEmblem(ctx, canvas.width / 2, 1245, 0.72, tConfig.emblemGold);
+
+        ctx.textAlign = 'center';
         // اسم التطبيق
-        ctx.font = 'bold 36px "Cairo", sans-serif';
+        ctx.font = 'bold 34px "Cairo", sans-serif';
         ctx.fillStyle = tConfig.footerTextColor;
-        ctx.fillText('الحياة الطيبة', canvas.width / 2, canvas.height - 125);
+        ctx.fillText('الحياة الطيبة', canvas.width / 2, 1362);
 
         // الشعار اللفظي الوقور
-        ctx.font = '600 25px "Cairo", sans-serif';
+        ctx.font = '600 23px "Cairo", sans-serif';
         ctx.fillStyle = tConfig.footerSubColor;
-        ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', canvas.width / 2, canvas.height - 82);
+        ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', canvas.width / 2, 1405);
       }
 
       // تحويل الـ Canvas إلى ملف صورة ومشاركته
@@ -2349,7 +2522,7 @@ ${APP_CONFIG.url}`;
         btnShareAsImage.innerHTML = '<span>مشاركة كصورة 🖼️</span>';
         const file = new File([blob], `مواقيت-${userLocation.city}.png`, { type: 'image/png' });
 
-        // صياغة الرسالة النصية
+        // صياغة الرسالة النصية المرافقة متضمنة اسم اليوم صراحة
         let timingsText = '';
         if (currentTimings) {
           PRAYER_KEYS.forEach(p => {
@@ -2357,14 +2530,14 @@ ${APP_CONFIG.url}`;
           });
         }
         const fullShareMessage = `🕌 مواقيت الصلاة - ${userLocation.city}
-📅 ${currentHijriText}
-📆 ${currentGregorianText}
+🗓️ يوم: ${currentDayName || 'السبت'}
+📅 التاريخ الهجري: ${currentHijriText}
+📆 التاريخ الميلادي: ${currentGregorianText}
 
 ${timingsText}
 ✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
 📲 الرابط: ${APP_CONFIG.url}`;
 
-        // فحص هل المستخدم يريد إرفاق نص ورابط مع الصورة
         const sharePayload = {
           files: [file],
           title: `مواقيت الصلاة - ${userLocation.city}`
