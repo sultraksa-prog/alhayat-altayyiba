@@ -2271,32 +2271,80 @@ ${APP_CONFIG.url}`;
     ctx.restore();
   }
 
-  // دالة رسم الزخارف الهندسية الإسلامية المائية في الخلفية
-  function drawIslamicWatermarkPattern(ctx, color = '#FFFFFF', opacity = 0.04) {
+  // دالة رسم التطريز والزخارف الهندسية الإسلامية الواضحة في الخلفية
+  function drawIslamicWatermarkPattern(ctx, color = '#FCD34D', opacity = 0.14) {
     ctx.save();
     ctx.globalAlpha = opacity;
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.4;
+    ctx.lineWidth = 2.6; // سماكة واضحة تضمن ظهور النقش بعد ضغط وحفظ الصورة
 
-    const size = 120;
-    for (let x = 0; x < ctx.canvas.width + size; x += size) {
-      for (let y = 0; y < ctx.canvas.height + size; y += size) {
+    const step = 135;
+    for (let x = 0; x <= ctx.canvas.width + step; x += step) {
+      for (let y = 0; y <= ctx.canvas.height + step; y += step) {
         ctx.save();
         ctx.translate(x, y);
-        // النجمة الثمانية المتداخلة
-        ctx.strokeRect(-22, -22, 44, 44);
+
+        // نجمة الأرابيسك الإسلامية الثمانية المتداخلة
+        ctx.strokeRect(-24, -24, 48, 48);
         ctx.rotate(45 * Math.PI / 180);
-        ctx.strokeRect(-22, -22, 44, 44);
+        ctx.strokeRect(-24, -24, 48, 48);
+
+        // دائرة النور المركزية
         ctx.beginPath();
-        ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+        ctx.arc(0, 0, 11, 0, 2 * Math.PI);
         ctx.stroke();
+
+        // خطوط التعشيق والربط الهندسي بين النجوم لإعطاء مظهر السجادة والتطريز المتصل
+        ctx.beginPath();
+        ctx.moveTo(34, 0); ctx.lineTo(44, 0);
+        ctx.moveTo(-34, 0); ctx.lineTo(-44, 0);
+        ctx.moveTo(0, 34); ctx.lineTo(0, 44);
+        ctx.moveTo(0, -34); ctx.lineTo(0, -44);
+        ctx.stroke();
+
         ctx.restore();
       }
     }
+
+    // رسم حليات التطريز الركنية الإسلامية الفخمة في زوايا البطاقة
+    drawCornerArabesque(ctx, 45, 45, 0, color);
+    drawCornerArabesque(ctx, ctx.canvas.width - 45, 45, 90, color);
+    drawCornerArabesque(ctx, ctx.canvas.width - 45, ctx.canvas.height - 45, 180, color);
+    drawCornerArabesque(ctx, 45, ctx.canvas.height - 45, 270, color);
+
     ctx.restore();
   }
 
-  // توليد بطاقة الصورة بنظام الهوية الجديدة
+  // رسم حلية إسلامية ركنية فائقة الرقة لزوايا البطاقة
+  function drawCornerArabesque(ctx, x, y, rotationDeg, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotationDeg * Math.PI / 180);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.4;
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(60, 0);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 60);
+    ctx.stroke();
+
+    // القوس الزخرفي الركني
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, 0, 0.5 * Math.PI);
+    ctx.stroke();
+
+    // نقطة التذهيب الركنية
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(18, 18, 4, 0, 2 * Math.PI);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // توليد بطاقة الصورة بنظام الهوية المحدثة والتطريز الإسلامي البارز
   if (btnShareAsImage) {
     btnShareAsImage.addEventListener('click', async () => {
       btnShareAsImage.innerHTML = '<span>جاري إنشاء البطاقة الفاخرة... 🎨</span>';
@@ -2308,18 +2356,18 @@ ${APP_CONFIG.url}`;
 
       const tmpl = shareCardSettings.template;
 
-      // ضبط لوحة الألوان لكل قالب
+      // ضبط لوحة الألوان لكل قالب والتطريز الملائم له
       let tConfig = {
         isTwoTone: false,
-        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // التدرج الأزرق الملكي الأصلي المريح
+        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // 1. الكحلي الملكي المريح الأصلي
         patternColor: '#FCD34D',
-        patternOpacity: 0.045,
+        patternOpacity: 0.15,
         dayColor: '#FDE68A',
         cityColor: '#E2E8F0',
         hijriColor: '#FFFFFF',
         gregColor: '#93C5FD',
         cardRowBg: 'rgba(255, 255, 255, 0.09)',
-        cardRowBorder: 'rgba(255, 255, 255, 0.1)',
+        cardRowBorder: 'rgba(255, 255, 255, 0.12)',
         prayerNameColor: '#FFFFFF',
         prayerTimeColor: '#FCD34D',
         dividerColor: '#D4AF37',
@@ -2329,19 +2377,19 @@ ${APP_CONFIG.url}`;
       };
 
       if (tmpl === 'emerald-ivory') {
-        // الزمردي والعاجي الفاخر (طراز منار المتقن)
+        // 2. الزمردي والعاجي الفاخر (طراز منار المتقن)
         tConfig = {
           isTwoTone: true,
           headerBg: '#064E3B',
           bodyBg: '#FAF7F0',
           patternColor: '#064E3B',
-          patternOpacity: 0.035,
+          patternOpacity: 0.10,
           dayColor: '#FEF3C7',
           cityColor: '#D1FAE5',
           hijriColor: '#FFFFFF',
           gregColor: '#A7F3D0',
           cardRowBg: '#FFFFFF',
-          cardRowBorder: 'rgba(6, 78, 59, 0.12)',
+          cardRowBorder: 'rgba(6, 78, 59, 0.14)',
           prayerNameColor: '#1E293B',
           prayerTimeColor: '#064E3B',
           dividerColor: '#10B981',
@@ -2350,19 +2398,19 @@ ${APP_CONFIG.url}`;
           footerSubColor: '#64748B'
         };
       } else if (tmpl === 'sand-bronze') {
-        // العقيق والرملي التراثي
+        // 3. العقيق والرملي التراثي
         tConfig = {
           isTwoTone: true,
           headerBg: '#7C2D12',
           bodyBg: '#FFFDF7',
           patternColor: '#9A3412',
-          patternOpacity: 0.035,
+          patternOpacity: 0.10,
           dayColor: '#FEF3C7',
           cityColor: '#FED7AA',
           hijriColor: '#FFFFFF',
           gregColor: '#FFEDD5',
           cardRowBg: '#FFFFFF',
-          cardRowBorder: 'rgba(124, 45, 18, 0.12)',
+          cardRowBorder: 'rgba(124, 45, 18, 0.14)',
           prayerNameColor: '#451A03',
           prayerTimeColor: '#C2410C',
           dividerColor: '#EA580C',
@@ -2371,76 +2419,79 @@ ${APP_CONFIG.url}`;
           footerSubColor: '#78350F'
         };
       } else if (tmpl === 'midnight-gold') {
-        // الأسود الفاحم والذهب الخالص
+        // 4. الأسود الفاحم والذهب الخالص (OLED)
         tConfig = {
           isTwoTone: false,
           bgGradient: ['#020408', '#070C15', '#0E1726', '#162032'],
           patternColor: '#F59E0B',
-          patternOpacity: 0.05,
+          patternOpacity: 0.16,
           dayColor: '#FBBF24',
           cityColor: '#D1D5DB',
           hijriColor: '#FFFFFF',
           gregColor: '#9CA3AF',
           cardRowBg: 'rgba(255, 255, 255, 0.05)',
-          cardRowBorder: 'rgba(245, 158, 11, 0.25)',
+          cardRowBorder: 'rgba(245, 158, 11, 0.28)',
           prayerNameColor: '#FFFFFF',
           prayerTimeColor: '#F59E0B',
           dividerColor: '#F59E0B',
           emblemGold: '#FBBF24',
-          footerTextColor: '#FBBF24',
+          footerTextColor: '#F59E0B',
           footerSubColor: '#9CA3AF'
         };
-      } else if (tmpl === 'classic-blue') {
-        // الكلاسيكي الأصلي
+      } else if (tmpl === 'emerald-gold' || tmpl === 'classic-blue') {
+        // 5. القالب الجديد: الأخضر الزمردي الملكي المتدرج بالكامل مع التذهيب الفاخر
         tConfig = {
           isTwoTone: false,
-          bgGradient: ['#09203F', '#113F67', '#1D5D9B'],
-          patternColor: '#FFFFFF',
-          patternOpacity: 0.04,
-          dayColor: '#FFFFFF',
-          cityColor: '#FCD34D',
-          hijriColor: '#E2E8F0',
-          gregColor: '#93C5FD',
-          cardRowBg: 'rgba(255, 255, 255, 0.12)',
-          cardRowBorder: 'rgba(255, 255, 255, 0.15)',
+          bgGradient: ['#02231A', '#043A2B', '#064E3B', '#0D6D53'],
+          patternColor: '#FDE68A',
+          patternOpacity: 0.16,
+          dayColor: '#FDE68A',
+          cityColor: '#D1FAE5',
+          hijriColor: '#FFFFFF',
+          gregColor: '#A7F3D0',
+          cardRowBg: 'rgba(255, 255, 255, 0.09)',
+          cardRowBorder: 'rgba(253, 230, 138, 0.25)',
           prayerNameColor: '#FFFFFF',
-          prayerTimeColor: '#FCD34D',
-          dividerColor: '#FCD34D',
-          emblemGold: '#FCD34D',
-          footerTextColor: '#FFFFFF',
-          footerSubColor: '#93C5FD'
+          prayerTimeColor: '#FDE68A',
+          dividerColor: '#FDE68A',
+          emblemGold: '#FDE68A',
+          footerTextColor: '#FDE68A',
+          footerSubColor: '#D1FAE5'
         };
       }
 
-      // ==================== 1. رسم الخلفية والنقش الإسلامي (بدون أي إطار صندوقي) ====================
+      // ==================== 1. رسم الخلفية والنقش والتطريز الإسلامي البارز ====================
       if (tConfig.isTwoTone) {
         // رسم الجسم السفلي
         ctx.fillStyle = tConfig.bodyBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // رسم نقش الخلفية السفلي
-        drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
-        // رسم كتلة الهيدر العلوية
+        
+        // رسم هيدر البطاقة العلوي
         ctx.fillStyle = tConfig.headerBg;
         ctx.beginPath();
         ctx.roundRect(0, 0, canvas.width, 420, [0, 0, 48, 48]);
         ctx.fill();
+
+        // رسم التطريز الإسلامي ليعم كامل البطاقة (الجسم والهيدر) بوضوح
+        drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
       } else {
-        // رسم التدرج اللوني الكامل الأصلي المريح
+        // رسم التدرج اللوني الكامل
         const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
         tConfig.bgGradient.forEach((color, idx) => {
           grad.addColorStop(idx / (tConfig.bgGradient.length - 1), color);
         });
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // رسم نقش الزخرفة الإسلامية الكامل
+
+        // رسم التطريز والزخارف الهندسية الإسلامية الواضحة
         drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
       }
 
-      // ضبط اتجاه النصوص للغة العربية من اليمين لليسار إجبارياً
+      // ضبط اتجاه النصوص للغة العربية من اليمين لليسار
       ctx.direction = 'rtl';
       ctx.textAlign = 'center';
 
-      // ==================== 2. نصوص الهيدر العلوي وفق الترتيب الجديد المتقن ====================
+      // ==================== 2. نصوص الهيدر العلوي ====================
       // أ) اسم اليوم في القمة عريضاً
       ctx.font = 'bold 64px "Cairo", sans-serif';
       ctx.fillStyle = tConfig.dayColor;
