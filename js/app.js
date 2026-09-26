@@ -2002,7 +2002,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.33', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.34', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -2071,7 +2071,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // 1. مشاركة مواقيت اليوم كنص
+  // 1. مشاركة مواقيت اليوم كنص (متضمنة اسم اليوم والتاريخين بدقة)
   if (btnShareAsText) {
     btnShareAsText.addEventListener('click', async () => {
       let timingsText = '';
@@ -2083,13 +2083,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
       const fullShareMessage = 
 `🕌 مواقيت الصلاة - ${userLocation.city}
-📅 ${currentHijriText}
-📆 ${currentGregorianText}
+🗓️ يوم: ${currentDayName || 'السبت'}
+📅 التاريخ الهجري: ${currentHijriText}
+📆 التاريخ الميلادي: ${currentGregorianText}
 
 ${timingsText}
-✨ تم استخراج المواقيت عبر تطبيق: ${APP_CONFIG.name}
-📲 جرّب التطبيق الآن:
-${APP_CONFIG.url}`;
+✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
+📲 الرابط: ${APP_CONFIG.url}`;
 
       if (navigator.share) {
         try {
