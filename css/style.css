@@ -3304,23 +3304,19 @@ body {
   line-height: 1.2;
 }
 
-/* ==================== شريط التقدم التراكمي الموزون بحجم الحروف ==================== */
-.reader-progress-wrapper {
+/* ==================== شريط الإنجاز بتصميم السنارة المدمجة ==================== */
+.reader-progress-container {
   background: #FFFFFF;
-  padding: 8px 16px;
-  border-bottom: 1px solid #E2E8F0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  padding: 8px 16px 0 16px;
   position: sticky;
   top: 57px;
   z-index: 40;
-  box-shadow: 0 2px 8px rgba(11, 37, 69, 0.03);
+  border-bottom: 1px solid #F1F5F9;
 }
 
 .reader-progress-track {
   width: 100%;
-  height: 6px;
+  height: 8px; /* شريط أسمك وأوضح */
   background: #E2E8F0;
   border-radius: 9999px;
   overflow: hidden;
@@ -3330,97 +3326,138 @@ body {
 .reader-progress-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #10B981, #16A34A);
+  /* تدرج ملكي يجمع بين الزمردي والكحلي المتناسق مع هوية التطبيق */
+  background: linear-gradient(90deg, #10B981 0%, #1D5D9B 60%, #09203F 100%);
   border-radius: 9999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.reader-progress-meta {
+/* تصميم لسان السنارة المتدلي في أقصى اليسار تحت الشريط */
+.reader-hook-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  font-weight: 700;
+  justify-content: flex-start; /* أقصى اليسار في صفحات الـ RTL */
+  padding-top: 2px;
+  padding-bottom: 4px;
 }
 
-.progress-lbl {
-  color: var(--text-secondary);
-}
-
-.progress-percent {
-  color: #15803D;
+.reader-hook-pill {
+  background: linear-gradient(135deg, #1D5D9B, #09203F);
+  color: #FFFFFF;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 1.5px 8px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  box-shadow: 0 2px 5px rgba(9, 32, 63, 0.18);
   direction: ltr;
 }
 
-/* ==================== حركات اختفاء الذكر المكتمل الانسيابية الخمس ==================== */
-.dhikr-card {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-              opacity 0.35s ease, 
-              max-height 0.4s ease, 
-              margin 0.4s ease, 
-              padding 0.4s ease, 
-              box-shadow 0.3s ease;
-  will-change: transform, opacity;
-}
+/* ==================== رسوم متحركة حقيقية إجبارية لاختفاء الكروت (CSS @keyframes) ==================== */
 
 /* 1. السحب للأعلى (افتراضي) */
-.dhikr-card.anim-dismissing-slide-up {
-  transform: translateY(-40px) scale(0.96);
-  opacity: 0;
-  max-height: 0 !important;
-  margin-top: -16px !important;
-  margin-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  overflow: hidden;
-  border-color: transparent !important;
+@keyframes animSlideUpDismiss {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    opacity: 0.85;
+    transform: translateY(-18px) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-55px) scale(0.92);
+  }
+}
+.dhikr-card.anim-dismiss-slide-up {
+  animation: animSlideUpDismiss 0.44s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
 }
 
 /* 2. التلاشي التدريجي */
-.dhikr-card.anim-dismissing-fade {
-  transform: scale(0.92);
-  opacity: 0;
-  max-height: 0 !important;
-  margin-top: -16px !important;
-  margin-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  overflow: hidden;
-  border-color: transparent !important;
+@keyframes animFadeDismiss {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+}
+.dhikr-card.anim-dismiss-fade {
+  animation: animFadeDismiss 0.4s ease forwards !important;
+  pointer-events: none;
 }
 
 /* 3. الطي للداخل */
-.dhikr-card.anim-dismissing-fold-in {
-  transform: scale(0.1) rotate(14deg) translateY(-50px);
-  opacity: 0;
-  filter: blur(5px);
-  max-height: 0 !important;
-  margin-top: -16px !important;
-  margin-bottom: 0 !important;
-  overflow: hidden;
+@keyframes animFoldInDismiss {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.6) rotate(6deg) translateY(-20px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.1) rotate(15deg) translateY(-60px);
+    filter: blur(5px);
+  }
+}
+.dhikr-card.anim-dismiss-fold-in {
+  animation: animFoldInDismiss 0.46s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+  pointer-events: none;
 }
 
 /* 4. الصعود المضيء */
-.dhikr-card.anim-dismissing-ascend-glow {
-  box-shadow: 0 0 30px rgba(245, 158, 11, 0.5) !important;
-  border-color: #FCD34D !important;
-  transform: translateY(-60px) scale(0.95);
-  opacity: 0;
-  max-height: 0 !important;
-  margin-top: -16px !important;
-  margin-bottom: 0 !important;
-  overflow: hidden;
+@keyframes animAscendGlowDismiss {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(11, 37, 69, 0.04);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 0 28px rgba(245, 158, 11, 0.6) !important;
+    border-color: #FCD34D !important;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70px) scale(0.92);
+    box-shadow: 0 0 35px rgba(245, 158, 11, 0);
+  }
+}
+.dhikr-card.anim-dismiss-ascend-glow {
+  animation: animAscendGlowDismiss 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
 }
 
 /* 5. طي الصحيفة */
-.dhikr-card.anim-dismissing-roll-up {
-  transform-origin: top center;
-  transform: rotateX(82deg) translateY(-30px);
-  opacity: 0;
-  max-height: 0 !important;
-  margin-top: -16px !important;
-  margin-bottom: 0 !important;
-  overflow: hidden;
+@keyframes animRollUpDismiss {
+  0% {
+    opacity: 1;
+    transform-origin: top center;
+    transform: perspective(600px) rotateX(0deg);
+  }
+  60% {
+    opacity: 0.75;
+    transform-origin: top center;
+    transform: perspective(600px) rotateX(60deg) translateY(-20px);
+  }
+  100% {
+    opacity: 0;
+    transform-origin: top center;
+    transform: perspective(600px) rotateX(90deg) translateY(-50px);
+  }
+}
+.dhikr-card.anim-dismiss-roll-up {
+  animation: animRollUpDismiss 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+  pointer-events: none;
 }
 
 /* شبكة خيارات حركة الاختفاء داخل الإعدادات */
@@ -3455,4 +3492,5 @@ body {
   color: var(--primary-blue);
   box-shadow: 0 2px 6px rgba(29, 93, 155, 0.1);
 }
+
 
