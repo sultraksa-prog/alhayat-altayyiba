@@ -1271,14 +1271,19 @@
             </div>
           </div>
 
-          <!-- خيارات المشاركة: كنص أو كصورة -->
+          <!-- خيارات المشاركة: كنص أو كصورة مع زر إعدادات وتخصيص القوالب -->
           <div class="share-actions-dual">
             <button type="button" class="sheet-action-btn" id="btnShareAsText">
               <span>مشاركة كنص 📝</span>
             </button>
-            <button type="button" class="sheet-action-btn-secondary" id="btnShareAsImage">
-              <span>مشاركة كصورة 🖼️</span>
-            </button>
+            <div class="share-image-btn-row">
+              <button type="button" class="sheet-action-btn-secondary" id="btnShareAsImage">
+                <span>مشاركة كصورة 🖼️</span>
+              </button>
+              <button type="button" class="share-settings-trigger-btn" id="openShareImageSettingsBtn" title="تخصيص قالب وإعدادات الصورة">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83-2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1292,14 +1297,119 @@
           </div>
 
           <button type="button" class="sheet-action-btn" id="btnShareInvite">
-            <span>إرسال دعوة للأصدقاء 💌</span>
-          </button>
+          <span>إرسال دعوة للأصدقاء 💌</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- نافذة تخصيص قوالب وإعدادات مشاركة الصورة -->
+  <div class="bottom-sheet-backdrop" id="shareImageSettingsModal">
+    <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title" style="margin: 0;">تخصيص بطاقة المشاركة</h3>
+        <button type="button" class="modal-btn-link" id="closeShareImageSettingsBtn" style="font-size: 18px; cursor: pointer;">✕</button>
+      </div>
+
+      <!-- 1. معرض اختيار القوالب الخمسة ذو اللونين -->
+      <span class="other-settings-sec-label" style="display: block; margin-bottom: 8px;">اختر تصميم القالب (نظام اللونين):</span>
+      <div class="share-templates-grid" id="shareTemplatesGrid">
+        
+        <!-- القالب 1: كحلي ملكي مذهب -->
+        <div class="template-card active" data-template="royal-navy">
+          <div class="template-preview-box preview-two-tone-navy">
+            <div class="prev-top-band">السبت • الخرج</div>
+            <div class="prev-body-band">
+              <span>11:41 الظهر</span>
+              <span class="prev-mini-logo">🕌</span>
+            </div>
+          </div>
+          <span class="template-card-title">كحلي ملكي</span>
+        </div>
+
+        <!-- القالب 2: زمردي وعاجي (طراز منار) -->
+        <div class="template-card" data-template="emerald-ivory">
+          <div class="template-preview-box preview-two-tone-emerald">
+            <div class="prev-top-band">السبت • الخرج</div>
+            <div class="prev-body-band">
+              <span>11:41 الظهر</span>
+              <span class="prev-mini-logo">🕌</span>
+            </div>
+          </div>
+          <span class="template-card-title">زمردي وعاجي</span>
+        </div>
+
+        <!-- القالب 3: عقيق ورملي دافئ -->
+        <div class="template-card" data-template="sand-bronze">
+          <div class="template-preview-box preview-two-tone-sand">
+            <div class="prev-top-band">السبت • الخرج</div>
+            <div class="prev-body-band">
+              <span>11:41 الظهر</span>
+              <span class="prev-mini-logo">🕌</span>
+            </div>
+          </div>
+          <span class="template-card-title">عقيق ورملي</span>
+        </div>
+
+        <!-- القالب 4: أسود مذهب فخم (OLED) -->
+        <div class="template-card" data-template="midnight-gold">
+          <div class="template-preview-box preview-two-tone-midnight">
+            <div class="prev-top-band">السبت • الخرج</div>
+            <div class="prev-body-band">
+              <span>11:41 الظهر</span>
+              <span class="prev-mini-logo">🕌</span>
+            </div>
+          </div>
+          <span class="template-card-title">أسود مذهب</span>
+        </div>
+
+        <!-- القالب 5: النمط الكلاسيكي الأصلي -->
+        <div class="template-card" data-template="classic-blue">
+          <div class="template-preview-box preview-classic-blue">
+            <div class="prev-top-band" style="background:#09203F; border-bottom:1px solid #FCD34D;">الحياة الطيبة</div>
+            <div class="prev-body-band" style="background:#113F67;">
+              <span>11:41 الظهر</span>
+            </div>
+          </div>
+          <span class="template-card-title">الكلاسيكي</span>
         </div>
 
       </div>
-    </div>
 
-    <!-- مودال إضافة مجموعة خاصة -->
+      <hr class="setting-divider" style="margin: 16px 0 12px 0;">
+
+      <!-- 2. خيارات التخصيص التفاعلية -->
+      <div class="setting-toggle-row">
+        <div class="setting-text-col">
+          <h4 class="setting-title">إرفاق رسالة نصية ورابط مع الصورة</h4>
+          <p class="setting-desc">إرسال جدول المواقيت ورابط التطبيق في نص الرسالة المرافق للصورة</p>
+        </div>
+        <label class="ios-switch">
+          <input type="checkbox" id="toggleShareWithText" checked>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-toggle-row">
+        <div class="setting-text-col">
+          <h4 class="setting-title">إظهار شعار واسم التطبيق في الصورة</h4>
+          <p class="setting-desc">وضع الصرح المذهب مع عبارة "الحياة الطيبة • رفيقك في الطاعة" أسفل الصورة</p>
+        </div>
+        <label class="ios-switch">
+          <input type="checkbox" id="toggleShareWithBranding" checked>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="modal-actions-row" style="justify-content: center; margin-top: 18px;">
+        <button type="button" class="modal-btn-primary" id="saveShareSettingsBtn" style="width: 100%; padding: 12px 0;">حفظ الإعدادات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال إضافة مجموعة خاصة -->
     <div class="custom-modal-backdrop" id="addCategoryModal">
       <div class="custom-modal-card">
         <h3 class="modal-card-title">اضافة مجموعة أذكار خاصة</h3>
