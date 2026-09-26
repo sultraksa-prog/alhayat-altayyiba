@@ -1103,12 +1103,20 @@ if (isRunningStandalone) {
       card.style.display = 'none';
     }
 
-    // ميزة العد بالضغط على أي مكان في البطاقة
+    // ميزة العد بالضغط على أي مكان في البطاقة (شاملة مساحة نص الأجر وفضل الذكر)
     if (dhikrSettings.tapAnywhere && !isDone) {
       card.style.cursor = 'pointer';
       card.addEventListener('click', (e) => {
-        // تجنب العد المزدوج إذا ضغط على زر المشاركة أو التعديل
-        if (e.target.closest('.dhikr-card-top-actions') || e.target.closest('.dhikr-counter-btn') || e.target.closest('.dhikr-note-wrapper')) return;
+        // حصر الاستثناء فقط في: أزرار المشاركة والتعديل، زر العداد السفلي، وزر التعجب (!)، وزر التنبيه (⚠️)
+        if (
+          e.target.closest('.dhikr-card-top-actions') || 
+          e.target.closest('.dhikr-counter-btn') ||
+          e.target.closest('.virtue-info-btn') ||
+          e.target.closest('.alert-badge-btn')
+        ) {
+          return;
+        }
+
         decrementDhikr(item.id);
       });
     }
@@ -2196,7 +2204,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.39', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.40', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
