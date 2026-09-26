@@ -3239,3 +3239,68 @@ body {
 .preview-emerald-gold .prev-top-band { background: #02231A; color: #FDE68A; }
 .preview-emerald-gold .prev-body-band { background: #064E3B; color: #FFFFFF; }
 
+/* شبكة اختيار الزخارف الإسلامية الخمس */
+.share-motifs-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 440px) {
+  .share-motifs-grid {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .motif-card {
+    min-width: 74px;
+    flex-shrink: 0;
+  }
+}
+
+.motif-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 8px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.motif-card.active {
+  border-color: #D4AF37;
+  background: #FFFDF5;
+  box-shadow: 0 3px 10px rgba(212, 175, 55, 0.22);
+}
+
+.motif-preview-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #F8FAFC;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.motif-card.active .motif-preview-box {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.motif-card-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  text-align: center;
+  line-height: 1.2;
+}
+
