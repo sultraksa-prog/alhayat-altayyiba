@@ -2002,7 +2002,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.32', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.33', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -2328,17 +2328,40 @@ ${APP_CONFIG.url}`;
     else drawMotifPattern1(ctx, cx, cy, r, color, strokeW);
   }
 
-  // دالة توزيع الزخرفة باحترافية (شمسة مركزية كبرى + حليتان مرافقتان على الهوامش دون تكرار عشوائي)
-  function applyCuratedMotifComposition(ctx, motifId, color, opacity = 0.08) {
+  // دالة التوزيع الفني الجديد للزخارف: تناظر قطري بالهيدر + زخرفة كبرى محورية بالصلوات وحليات متفرقة
+  function applyCuratedMotifComposition(ctx, motifId, tConfig) {
+    // 1. زخارف الهيدر العلوي بنظام التناظر القطري (أعلى اليمين + أسفل اليسار)
     ctx.save();
-    ctx.globalAlpha = opacity;
+    const headerColor = tConfig.isTwoTone ? tConfig.headerDayColor : tConfig.motifColor;
+    const headerOpacity = tConfig.isTwoTone ? 0.14 : (tConfig.motifOpacity * 1.15);
+    ctx.globalAlpha = headerOpacity;
 
-    // 1. الزخرفة المحورية الكبرى (Hero Medallion): تتوسط خلفية الهيدر العلوي بنعومة وفخامة
-    renderChosenIslamicMotif(ctx, motifId, ctx.canvas.width / 2, 220, 215, color, 3.2);
+    // أ) الزخرفة الأولى: في أعلى اليمين من الهيدر
+    renderChosenIslamicMotif(ctx, motifId, 925, 110, 85, headerColor, 2.5);
 
-    // 2. حليتان مرافقتان على جانبي الفوتر لإحداث توازن معماري دون لمس نصوص الصلوات
-    renderChosenIslamicMotif(ctx, motifId, 105, 1260, 68, color, 2.2);
-    renderChosenIslamicMotif(ctx, motifId, ctx.canvas.width - 105, 1260, 68, color, 2.2);
+    // ب) الزخرفة الثانية: في أسفل اليسار من الهيدر
+    renderChosenIslamicMotif(ctx, motifId, 155, 335, 78, headerColor, 2.5);
+    ctx.restore();
+
+    // 2. منطقة جدول مواقيت الصلاة (الزخرفة الكبرى وحلياتها المحيطة)
+    ctx.save();
+    const bodyColor = tConfig.isTwoTone ? tConfig.dividerColor : tConfig.motifColor;
+    const bodyOpacity = tConfig.isTwoTone ? 0.08 : tConfig.motifOpacity;
+
+    // أ) الزخرفة الكبرى المحورية: تتوسط خلفية جدول الصلوات بحجم كبير مهيب كعلامة مائية ناعمة
+    ctx.globalAlpha = bodyOpacity;
+    renderChosenIslamicMotif(ctx, motifId, ctx.canvas.width / 2, 810, 285, bodyColor, 3.2);
+
+    // ب) أربع زخارف متفرقة صغيرة مرافقة حول الزخرفة الكبرى في أركان منطقة الصلوات
+    ctx.globalAlpha = bodyOpacity * 0.95;
+    // أعلى يمين منطقة الصلوات
+    renderChosenIslamicMotif(ctx, motifId, 160, 560, 42, bodyColor, 2.0);
+    // أعلى يسار منطقة الصلوات
+    renderChosenIslamicMotif(ctx, motifId, ctx.canvas.width - 160, 560, 42, bodyColor, 2.0);
+    // أسفل يمين منطقة الصلوات
+    renderChosenIslamicMotif(ctx, motifId, 160, 1060, 46, bodyColor, 2.0);
+    // أسفل يسار منطقة الصلوات
+    renderChosenIslamicMotif(ctx, motifId, ctx.canvas.width - 160, 1060, 46, bodyColor, 2.0);
 
     ctx.restore();
   }
@@ -2492,7 +2515,7 @@ ${APP_CONFIG.url}`;
     ctx.restore();
   }
 
-  // ==================== توليد صورة المشاركة بالزخرفة والتوزيع المتقن ====================
+  // ==================== توليد صورة المشاركة بالتوزيع الجديد ====================
   if (btnShareAsImage) {
     btnShareAsImage.addEventListener('click', async () => {
       btnShareAsImage.innerHTML = '<span>جاري إنشاء البطاقة الفاخرة... 🎨</span>';
@@ -2505,12 +2528,12 @@ ${APP_CONFIG.url}`;
       const tmpl = shareCardSettings.template;
       const chosenMotif = shareCardSettings.motif || 'motif-1';
 
-      // ألوان القوالب الخمسة
+      // إعدادات ألوان القوالب الخمسة
       let tConfig = {
         isTwoTone: false,
-        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // 1. الكحلي الملكي الأصلي
+        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // 1. الكحلي الملكي
         motifColor: '#FCD34D',
-        motifOpacity: 0.09,
+        motifOpacity: 0.08,
         dayColor: '#FDE68A',
         cityColor: '#E2E8F0',
         hijriColor: '#FFFFFF',
@@ -2532,7 +2555,7 @@ ${APP_CONFIG.url}`;
           headerBg: '#064E3B',
           bodyBg: '#FAF7F0',
           motifColor: '#FEF3C7',
-          motifOpacity: 0.12,
+          motifOpacity: 0.08,
           dayColor: '#FEF3C7',
           cityColor: '#D1FAE5',
           hijriColor: '#FFFFFF',
@@ -2553,7 +2576,7 @@ ${APP_CONFIG.url}`;
           headerBg: '#7C2D12',
           bodyBg: '#FFFDF7',
           motifColor: '#FEF3C7',
-          motifOpacity: 0.12,
+          motifOpacity: 0.08,
           dayColor: '#FEF3C7',
           cityColor: '#FED7AA',
           hijriColor: '#FFFFFF',
@@ -2573,7 +2596,7 @@ ${APP_CONFIG.url}`;
           isTwoTone: false,
           bgGradient: ['#020408', '#070C15', '#0E1726', '#162032'],
           motifColor: '#F59E0B',
-          motifOpacity: 0.10,
+          motifOpacity: 0.08,
           dayColor: '#FBBF24',
           cityColor: '#D1D5DB',
           hijriColor: '#FFFFFF',
@@ -2588,12 +2611,12 @@ ${APP_CONFIG.url}`;
           footerSubColor: '#9CA3AF'
         };
       } else if (tmpl === 'emerald-gold' || tmpl === 'classic-blue') {
-        // 5. الأخضر الزمردي الملكي المتدرج بالكامل مع التذهيب الفاخر
+        // 5. الأخضر الزمردي الملكي الكامل
         tConfig = {
           isTwoTone: false,
           bgGradient: ['#02231A', '#043A2B', '#064E3B', '#0D6D53'],
           motifColor: '#FDE68A',
-          motifOpacity: 0.11,
+          motifOpacity: 0.08,
           dayColor: '#FDE68A',
           cityColor: '#D1FAE5',
           hijriColor: '#FFFFFF',
@@ -2609,7 +2632,7 @@ ${APP_CONFIG.url}`;
         };
       }
 
-      // ==================== 1. رسم الخلفية والتوزيع الفني الراقي للزخرفة المختارة ====================
+      // ==================== 1. رسم الخلفية وتطبيق التوزيع الفني الجديد ====================
       if (tConfig.isTwoTone) {
         ctx.fillStyle = tConfig.bodyBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2619,8 +2642,8 @@ ${APP_CONFIG.url}`;
         ctx.roundRect(0, 0, canvas.width, 425, [0, 0, 48, 48]);
         ctx.fill();
 
-        // تطبيق الزخرفة المختارة بالتوزيع المتوازن (شمسة كبرى بالهيدر + حليتان مرافقتان)
-        applyCuratedMotifComposition(ctx, chosenMotif, tConfig.motifColor, tConfig.motifOpacity);
+        // تطبيق التوزيع الفني الجديد (قطري بالهيدر + مركزي كبير بالصلوات مع الحليات)
+        applyCuratedMotifComposition(ctx, chosenMotif, tConfig);
       } else {
         const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
         tConfig.bgGradient.forEach((color, idx) => {
@@ -2629,8 +2652,8 @@ ${APP_CONFIG.url}`;
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // تطبيق الزخرفة المختارة
-        applyCuratedMotifComposition(ctx, chosenMotif, tConfig.motifColor, tConfig.motifOpacity);
+        // تطبيق التوزيع الفني الجديد
+        applyCuratedMotifComposition(ctx, chosenMotif, tConfig);
       }
 
       ctx.direction = 'rtl';
