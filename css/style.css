@@ -3233,6 +3233,9 @@ body {
 .preview-two-tone-sand .prev-top-band { background: #7C2D12; color: #FEF3C7; }
 .preview-two-tone-sand .prev-body-band { background: #FFFBEB; color: #451A03; border-top: 1px solid #FDE68A; }
 
-.preview-two-tone-midnight .prev-top-band { background: #000000; color: #F59E0B; }
+..preview-two-tone-midnight .prev-top-band { background: #000000; color: #F59E0B; }
 .preview-two-tone-midnight .prev-body-band { background: #111827; color: #F9FAFB; }
+
+.preview-emerald-gold .prev-top-band { background: #02231A; color: #FDE68A; }
+.preview-emerald-gold .prev-body-band { background: #064E3B; color: #FFFFFF; }
 
