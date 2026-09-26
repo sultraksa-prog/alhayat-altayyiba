@@ -603,37 +603,134 @@ if (isRunningStandalone) {
     });
   }
 
-// أحداث فتح وإغلاق والبحث المباشر
-const toggleCategorySearchBtn = document.getElementById('toggleCategorySearchBtn');
-const categorySearchBar = document.getElementById('categorySearchBar');
-const categorySearchInput = document.getElementById('categorySearchInput');
-const clearCategorySearchBtn = document.getElementById('clearCategorySearchBtn');
+// ==================== محرك التصفير التلقائي واليدوي لجميع عدادات الأذكار ====================
+  
+  // 1. دالة التصفير الشامل لجميع عدادات الأذكار
+  function performGlobalAzkarReset(updateUI = true) {
+    try {
+      azkarState = JSON.parse(localStorage.getItem('hayat_azkar_data')) || DEFAULT_AZKAR_DATA;
+    } catch (e) {}
 
-if (toggleCategorySearchBtn) {
-  toggleCategorySearchBtn.addEventListener('click', () => {
-    categorySearchBar.classList.toggle('active');
-    if (categorySearchBar.classList.contains('active')) {
-      categorySearchInput.focus();
-    } else {
+    azkarState.forEach(cat => {
+      if (cat.items && Array.isArray(cat.items)) {
+        cat.items.forEach(it => {
+          it.currentCount = it.count;
+        });
+      }
+    });
+    saveAzkarState();
+
+    if (updateUI) {
+      const activeScreen = document.querySelector('.screen-view.active');
+      if (activeScreen === screenAzkarFavorites && typeof renderFavorites === 'function') {
+        renderFavorites();
+      } else if (typeof renderAzkarCategories === 'function') {
+        renderAzkarCategories();
+      }
+    }
+  }
+
+  // 2. فحص وتطبيق التصفير التلقائي عند منتصف الليل بتوقيت مدينة المستخدم
+  function checkAndPerformDailyAzkarReset() {
+    let now = new Date();
+    if (userLocation && userLocation.timezone) {
+      try {
+        now = new Date(new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
+      } catch (e) {}
+    }
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const lastResetDay = localStorage.getItem('hayat_last_azkar_reset_day');
+
+    if (lastResetDay !== todayStr) {
+      performGlobalAzkarReset(true);
+      localStorage.setItem('hayat_last_azkar_reset_day', todayStr);
+    }
+  }
+
+  // تشغيل فحص منتصف الليل فور فتح التطبيق وكل دقيقة أثناء استخدامه
+  checkAndPerformDailyAzkarReset();
+  setInterval(checkAndPerformDailyAzkarReset, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkAndPerformDailyAzkarReset();
+  });
+
+  // ==================== أحداث القائمة المنسدلة (⋮) والبحث وتأكيد التصفير ====================
+  const categoryMenuBtn = document.getElementById('categoryMenuBtn');
+  const categoryDropdownMenu = document.getElementById('categoryDropdownMenu');
+  const menuSearchAzkarBtn = document.getElementById('menuSearchAzkarBtn');
+  const menuResetAllAzkarBtn = document.getElementById('menuResetAllAzkarBtn');
+  const favResetAllAzkarBtn = document.getElementById('favResetAllAzkarBtn');
+
+  const categorySearchBar = document.getElementById('categorySearchBar');
+  const categorySearchInput = document.getElementById('categorySearchInput');
+  const clearCategorySearchBtn = document.getElementById('clearCategorySearchBtn');
+
+  const resetAllAzkarConfirmModal = document.getElementById('resetAllAzkarConfirmModal');
+  const cancelResetAllAzkarBtn = document.getElementById('cancelResetAllAzkarBtn');
+  const confirmResetAllAzkarBtn = document.getElementById('confirmResetAllAzkarBtn');
+
+  // فتح وإغلاق القائمة المنسدلة لشاشة الأذكار
+  if (categoryMenuBtn && categoryDropdownMenu) {
+    categoryMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      categoryDropdownMenu.classList.toggle('show');
+    });
+    document.addEventListener('click', () => categoryDropdownMenu.classList.remove('show'));
+  }
+
+  // زر البحث من القائمة المنسدلة
+  if (menuSearchAzkarBtn && categorySearchBar) {
+    menuSearchAzkarBtn.addEventListener('click', () => {
+      if (categoryDropdownMenu) categoryDropdownMenu.classList.remove('show');
+      categorySearchBar.classList.toggle('active');
+      if (categorySearchBar.classList.contains('active') && categorySearchInput) {
+        categorySearchInput.focus();
+      } else if (categorySearchInput) {
+        categorySearchInput.value = '';
+        renderAzkarCategories('');
+      }
+    });
+  }
+
+  if (categorySearchInput) {
+    categorySearchInput.addEventListener('input', (e) => {
+      renderAzkarCategories(e.target.value);
+    });
+  }
+
+  if (clearCategorySearchBtn && categorySearchInput) {
+    clearCategorySearchBtn.addEventListener('click', () => {
       categorySearchInput.value = '';
       renderAzkarCategories('');
-    }
-  });
-}
+      categorySearchInput.focus();
+    });
+  }
 
-if (categorySearchInput) {
-  categorySearchInput.addEventListener('input', (e) => {
-    renderAzkarCategories(e.target.value);
-  });
-}
+  // فتح نافذة تأكيد التصفير من أذكار المسلم أو المفضلة
+  const openResetConfirmHandler = () => {
+    if (categoryDropdownMenu) categoryDropdownMenu.classList.remove('show');
+    const favDropdownMenuEl = document.getElementById('favDropdownMenu');
+    if (favDropdownMenuEl) favDropdownMenuEl.classList.remove('show');
+    if (resetAllAzkarConfirmModal) resetAllAzkarConfirmModal.classList.add('show');
+  };
 
-if (clearCategorySearchBtn) {
-  clearCategorySearchBtn.addEventListener('click', () => {
-    categorySearchInput.value = '';
-    renderAzkarCategories('');
-    categorySearchInput.focus();
-  });
-}
+  if (menuResetAllAzkarBtn) menuResetAllAzkarBtn.addEventListener('click', openResetConfirmHandler);
+  if (favResetAllAzkarBtn) favResetAllAzkarBtn.addEventListener('click', openResetConfirmHandler);
+
+  // زر التراجع الافتراضي (إغلاق النافذة والبقاء في نفس المكان)
+  if (cancelResetAllAzkarBtn && resetAllAzkarConfirmModal) {
+    cancelResetAllAzkarBtn.addEventListener('click', () => {
+      resetAllAzkarConfirmModal.classList.remove('show');
+    });
+  }
+
+  // زر تأكيد التصفير (تصفير جميع العدادات والبقاء في نفس الشاشة)
+  if (confirmResetAllAzkarBtn && resetAllAzkarConfirmModal) {
+    confirmResetAllAzkarBtn.addEventListener('click', () => {
+      performGlobalAzkarReset(true);
+      resetAllAzkarConfirmModal.classList.remove('show');
+    });
+  }
 
   // بطاقة المجموعة المشتركة
   function createCategoryCard(group) {
@@ -2002,7 +2099,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.34', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.35', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
