@@ -2271,80 +2271,134 @@ ${APP_CONFIG.url}`;
     ctx.restore();
   }
 
-  // دالة رسم التطريز والزخارف الهندسية الإسلامية الواضحة في الخلفية
-  function drawIslamicWatermarkPattern(ctx, color = '#FCD34D', opacity = 0.14) {
+  // 1. دالة رسم وردة فاصل الآيات القرآنية المذهبة (مستوحاة من فواصل مصحف المدينة المنورة)
+  function drawQuranicAyahRosette(ctx, cx, cy, radius = 26, color = '#FCD34D') {
     ctx.save();
-    ctx.globalAlpha = opacity;
+    ctx.translate(cx, cy);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2.6; // سماكة واضحة تضمن ظهور النقش بعد ضغط وحفظ الصورة
+    ctx.fillStyle = color;
+    ctx.lineWidth = 1.9;
 
-    const step = 135;
-    for (let x = 0; x <= ctx.canvas.width + step; x += step) {
-      for (let y = 0; y <= ctx.canvas.height + step; y += step) {
-        ctx.save();
-        ctx.translate(x, y);
+    // الدائرة المركزية للفاصلة
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.38, 0, 2 * Math.PI);
+    ctx.stroke();
 
-        // نجمة الأرابيسك الإسلامية الثمانية المتداخلة
-        ctx.strokeRect(-24, -24, 48, 48);
-        ctx.rotate(45 * Math.PI / 180);
-        ctx.strokeRect(-24, -24, 48, 48);
+    // النقطة المركزية
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.14, 0, 2 * Math.PI);
+    ctx.fill();
 
-        // دائرة النور المركزية
+    // الفصوص والوريقات المشعة (12 وريقة قرآنية تذهيبية متناظرة)
+    const petals = 12;
+    for (let i = 0; i < petals; i++) {
+      const angle = (i * 2 * Math.PI) / petals;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const tipX = cos * radius;
+      const tipY = sin * radius;
+
+      const baseAngle1 = angle - (Math.PI / petals) * 0.75;
+      const baseAngle2 = angle + (Math.PI / petals) * 0.75;
+      const b1X = Math.cos(baseAngle1) * (radius * 0.55);
+      const b1Y = Math.sin(baseAngle1) * (radius * 0.55);
+      const b2X = Math.cos(baseAngle2) * (radius * 0.55);
+      const b2Y = Math.sin(baseAngle2) * (radius * 0.55);
+
+      ctx.beginPath();
+      ctx.moveTo(b1X, b1Y);
+      ctx.quadraticCurveTo(cos * (radius * 0.76), sin * (radius * 0.76), tipX, tipY);
+      ctx.quadraticCurveTo(cos * (radius * 0.76), sin * (radius * 0.76), b2X, b2Y);
+      ctx.stroke();
+
+      // حبات تذهيب رقيقة عند رؤوس الوريقات
+      if (i % 2 === 0) {
         ctx.beginPath();
-        ctx.arc(0, 0, 11, 0, 2 * Math.PI);
-        ctx.stroke();
-
-        // خطوط التعشيق والربط الهندسي بين النجوم لإعطاء مظهر السجادة والتطريز المتصل
-        ctx.beginPath();
-        ctx.moveTo(34, 0); ctx.lineTo(44, 0);
-        ctx.moveTo(-34, 0); ctx.lineTo(-44, 0);
-        ctx.moveTo(0, 34); ctx.lineTo(0, 44);
-        ctx.moveTo(0, -34); ctx.lineTo(0, -44);
-        ctx.stroke();
-
-        ctx.restore();
+        ctx.arc(tipX * 0.85, tipY * 0.85, 1.8, 0, 2 * Math.PI);
+        ctx.fill();
       }
     }
 
-    // رسم حليات التطريز الركنية الإسلامية الفخمة في زوايا البطاقة
-    drawCornerArabesque(ctx, 45, 45, 0, color);
-    drawCornerArabesque(ctx, ctx.canvas.width - 45, 45, 90, color);
-    drawCornerArabesque(ctx, ctx.canvas.width - 45, ctx.canvas.height - 45, 180, color);
-    drawCornerArabesque(ctx, 45, ctx.canvas.height - 45, 270, color);
-
     ctx.restore();
   }
 
-  // رسم حلية إسلامية ركنية فائقة الرقة لزوايا البطاقة
-  function drawCornerArabesque(ctx, x, y, rotationDeg, color) {
+  // 2. دالة رسم الخطوط الفاصلة الرقيقة ذات النهايات المتلاشية التي تتوسطها وردة فاصل الآيات
+  function drawTaperedDividerWithRosette(ctx, y, color = '#D4AF37', maxWidth = 700, rosetteRadius = 26) {
+    const cx = ctx.canvas.width / 2;
+    const gap = rosetteRadius + 6;
+
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotationDeg * Math.PI / 180);
+    // الخط الفاصل الأيمن
+    const gradRight = ctx.createLinearGradient(cx + gap, y, cx + maxWidth / 2, y);
+    gradRight.addColorStop(0, color);
+    gradRight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.strokeStyle = gradRight;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx + gap, y);
+    ctx.lineTo(cx + maxWidth / 2, y);
+    ctx.stroke();
+
+    // الخط الفاصل الأيسر
+    const gradLeft = ctx.createLinearGradient(cx - gap, y, cx - maxWidth / 2, y);
+    gradLeft.addColorStop(0, color);
+    gradLeft.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.strokeStyle = gradLeft;
+    ctx.beginPath();
+    ctx.moveTo(cx - gap, y);
+    ctx.lineTo(cx - maxWidth / 2, y);
+    ctx.stroke();
+    ctx.restore();
+
+    // رسم وردة فاصلة الآيات المذهبة الكبيرة في المنتصف
+    drawQuranicAyahRosette(ctx, cx, y, rosetteRadius, color);
+  }
+
+  // 3. دالة رسم "الشمسة القرآنية الكبرى" في خلفية الهيدر العلوي
+  function drawGrandQuranicShamsah(ctx, cx, cy, radius = 210, color = '#FCD34D', opacity = 0.08) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.globalAlpha = opacity;
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2.4;
-
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(60, 0);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 60);
-    ctx.stroke();
-
-    // القوس الزخرفي الركني
-    ctx.beginPath();
-    ctx.arc(0, 0, 35, 0, 0.5 * Math.PI);
-    ctx.stroke();
-
-    // نقطة التذهيب الركنية
     ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(18, 18, 4, 0, 2 * Math.PI);
-    ctx.fill();
+    ctx.lineWidth = 2.2;
+
+    // الدوائر الزخرفية المتراكبة
+    ctx.beginPath(); ctx.arc(0, 0, radius * 0.22, 0, 2 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, radius * 0.45, 0, 2 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, radius * 0.72, 0, 2 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, radius * 0.95, 0, 2 * Math.PI); ctx.stroke();
+
+    // النجمة الثمانية المركزية
+    ctx.strokeRect(-radius * 0.3, -radius * 0.3, radius * 0.6, radius * 0.6);
+    ctx.save();
+    ctx.rotate(45 * Math.PI / 180);
+    ctx.strokeRect(-radius * 0.3, -radius * 0.3, radius * 0.6, radius * 0.6);
+    ctx.restore();
+
+    // أشعة الشمسة القرآنية المشعة (16 شعاعاً تذهيبياً كبيراً)
+    const rays = 16;
+    for (let i = 0; i < rays; i++) {
+      ctx.save();
+      ctx.rotate((i * 2 * Math.PI) / rays);
+      ctx.beginPath();
+      ctx.moveTo(0, radius * 0.45);
+      ctx.lineTo(radius * 0.09, radius * 0.75);
+      ctx.lineTo(0, radius);
+      ctx.lineTo(-radius * 0.09, radius * 0.75);
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, radius * 0.75, 3.5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
+    }
 
     ctx.restore();
   }
 
-  // توليد بطاقة الصورة بنظام الهوية المحدثة والتطريز الإسلامي البارز
+  // توليد بطاقة الصورة بنظام التذهيب القرآني والشمسة الكبرى
   if (btnShareAsImage) {
     btnShareAsImage.addEventListener('click', async () => {
       btnShareAsImage.innerHTML = '<span>جاري إنشاء البطاقة الفاخرة... 🎨</span>';
@@ -2356,12 +2410,12 @@ ${APP_CONFIG.url}`;
 
       const tmpl = shareCardSettings.template;
 
-      // ضبط لوحة الألوان لكل قالب والتطريز الملائم له
+      // ضبط إعدادات الألوان لكل قالب
       let tConfig = {
         isTwoTone: false,
-        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // 1. الكحلي الملكي المريح الأصلي
-        patternColor: '#FCD34D',
-        patternOpacity: 0.15,
+        bgGradient: ['#06152B', '#09203F', '#113F67', '#1D5D9B'], // 1. الكحلي الملكي الأصلي المريح
+        shamsahColor: '#FCD34D',
+        shamsahOpacity: 0.09,
         dayColor: '#FDE68A',
         cityColor: '#E2E8F0',
         hijriColor: '#FFFFFF',
@@ -2377,19 +2431,19 @@ ${APP_CONFIG.url}`;
       };
 
       if (tmpl === 'emerald-ivory') {
-        // 2. الزمردي والعاجي الفاخر (طراز منار المتقن)
+        // 2. الزمردي والعاجي الفاخر (طراز منار)
         tConfig = {
           isTwoTone: true,
           headerBg: '#064E3B',
           bodyBg: '#FAF7F0',
-          patternColor: '#064E3B',
-          patternOpacity: 0.10,
+          shamsahColor: '#FEF3C7',
+          shamsahOpacity: 0.12,
           dayColor: '#FEF3C7',
           cityColor: '#D1FAE5',
           hijriColor: '#FFFFFF',
           gregColor: '#A7F3D0',
           cardRowBg: '#FFFFFF',
-          cardRowBorder: 'rgba(6, 78, 59, 0.14)',
+          cardRowBorder: 'rgba(6, 78, 59, 0.12)',
           prayerNameColor: '#1E293B',
           prayerTimeColor: '#064E3B',
           dividerColor: '#10B981',
@@ -2403,14 +2457,14 @@ ${APP_CONFIG.url}`;
           isTwoTone: true,
           headerBg: '#7C2D12',
           bodyBg: '#FFFDF7',
-          patternColor: '#9A3412',
-          patternOpacity: 0.10,
+          shamsahColor: '#FEF3C7',
+          shamsahOpacity: 0.12,
           dayColor: '#FEF3C7',
           cityColor: '#FED7AA',
           hijriColor: '#FFFFFF',
           gregColor: '#FFEDD5',
           cardRowBg: '#FFFFFF',
-          cardRowBorder: 'rgba(124, 45, 18, 0.14)',
+          cardRowBorder: 'rgba(124, 45, 18, 0.12)',
           prayerNameColor: '#451A03',
           prayerTimeColor: '#C2410C',
           dividerColor: '#EA580C',
@@ -2423,28 +2477,28 @@ ${APP_CONFIG.url}`;
         tConfig = {
           isTwoTone: false,
           bgGradient: ['#020408', '#070C15', '#0E1726', '#162032'],
-          patternColor: '#F59E0B',
-          patternOpacity: 0.16,
+          shamsahColor: '#F59E0B',
+          shamsahOpacity: 0.11,
           dayColor: '#FBBF24',
           cityColor: '#D1D5DB',
           hijriColor: '#FFFFFF',
           gregColor: '#9CA3AF',
           cardRowBg: 'rgba(255, 255, 255, 0.05)',
-          cardRowBorder: 'rgba(245, 158, 11, 0.28)',
+          cardRowBorder: 'rgba(245, 158, 11, 0.25)',
           prayerNameColor: '#FFFFFF',
           prayerTimeColor: '#F59E0B',
           dividerColor: '#F59E0B',
           emblemGold: '#FBBF24',
-          footerTextColor: '#F59E0B',
+          footerTextColor: '#FBBF24',
           footerSubColor: '#9CA3AF'
         };
       } else if (tmpl === 'emerald-gold' || tmpl === 'classic-blue') {
-        // 5. القالب الجديد: الأخضر الزمردي الملكي المتدرج بالكامل مع التذهيب الفاخر
+        // 5. الأخضر الزمردي الملكي المتدرج بالكامل مع التذهيب الفاخر
         tConfig = {
           isTwoTone: false,
           bgGradient: ['#02231A', '#043A2B', '#064E3B', '#0D6D53'],
-          patternColor: '#FDE68A',
-          patternOpacity: 0.16,
+          shamsahColor: '#FDE68A',
+          shamsahOpacity: 0.11,
           dayColor: '#FDE68A',
           cityColor: '#D1FAE5',
           hijriColor: '#FFFFFF',
@@ -2460,22 +2514,22 @@ ${APP_CONFIG.url}`;
         };
       }
 
-      // ==================== 1. رسم الخلفية والنقش والتطريز الإسلامي البارز ====================
+      // ==================== 1. رسم الخلفية والشمسة القرآنية الكبرى ====================
       if (tConfig.isTwoTone) {
-        // رسم الجسم السفلي
+        // رسم الجسم السفلي الصافي
         ctx.fillStyle = tConfig.bodyBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // رسم هيدر البطاقة العلوي
         ctx.fillStyle = tConfig.headerBg;
         ctx.beginPath();
-        ctx.roundRect(0, 0, canvas.width, 420, [0, 0, 48, 48]);
+        ctx.roundRect(0, 0, canvas.width, 425, [0, 0, 48, 48]);
         ctx.fill();
 
-        // رسم التطريز الإسلامي ليعم كامل البطاقة (الجسم والهيدر) بوضوح
-        drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
+        // رسم الشمسة القرآنية الكبرى في عمق الهيدر
+        drawGrandQuranicShamsah(ctx, canvas.width / 2, 215, 205, tConfig.shamsahColor, tConfig.shamsahOpacity);
       } else {
-        // رسم التدرج اللوني الكامل
+        // رسم التدرج اللوني الكامل المتناسق
         const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
         tConfig.bgGradient.forEach((color, idx) => {
           grad.addColorStop(idx / (tConfig.bgGradient.length - 1), color);
@@ -2483,8 +2537,8 @@ ${APP_CONFIG.url}`;
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // رسم التطريز والزخارف الهندسية الإسلامية الواضحة
-        drawIslamicWatermarkPattern(ctx, tConfig.patternColor, tConfig.patternOpacity);
+        // رسم الشمسة القرآنية الكبرى في عمق الهيدر
+        drawGrandQuranicShamsah(ctx, canvas.width / 2, 215, 205, tConfig.shamsahColor, tConfig.shamsahOpacity);
       }
 
       // ضبط اتجاه النصوص للغة العربية من اليمين لليسار
@@ -2502,8 +2556,8 @@ ${APP_CONFIG.url}`;
       ctx.fillStyle = tConfig.cityColor;
       ctx.fillText(`مواقيت الصلاة - ${userLocation.city}`, canvas.width / 2, 185);
 
-      // ج) خط فاصل رقيق أنيق في الهيدر
-      drawTaperedDivider(ctx, 225, tConfig.dividerColor, 360);
+      // ج) خط فاصل رقيق أنيق في الهيدر (بدون وردة لعدم زحام الهيدر)
+      drawTaperedDividerWithRosette(ctx, 225, tConfig.dividerColor, 340, 10);
 
       // د) التاريخ الهجري مع ضمان ظهور اليوم على اليمين أولاً
       ctx.font = 'bold 36px "Cairo", sans-serif';
@@ -2517,10 +2571,10 @@ ${APP_CONFIG.url}`;
       const cleanGreg = '\u200F' + (currentGregorianText || '').trim();
       ctx.fillText(cleanGreg, canvas.width / 2, 345);
 
-      // خط فاصل علوي أنيق يفصل الهيدر عن الصلوات
-      drawTaperedDivider(ctx, 420, tConfig.dividerColor, 720);
+      // و) خط فاصل علوي يتوسطه "وردة فاصل الآيات القرآنية الكبيرة"
+      drawTaperedDividerWithRosette(ctx, 425, tConfig.dividerColor, 720, 26);
 
-      // ==================== 3. جدول الصلوات الست بمظهر مريح وأنيق ====================
+      // ==================== 3. جدول الصلوات الست بمظهر نقي وصافٍ ====================
       let startY = 495;
       PRAYER_KEYS.forEach((p) => {
         // كرت صف الصلاة
@@ -2550,8 +2604,8 @@ ${APP_CONFIG.url}`;
 
       // ==================== 4. الفوتر وشعار الصرح المذهب الحقيقي (بدون أي روابط) ====================
       if (shareCardSettings.withBranding) {
-        // خط فاصل رفيع أنيق يفصل جدول الصلوات عن الفوتر
-        drawTaperedDivider(ctx, 1175, tConfig.dividerColor, 700);
+        // خط فاصل سفلي يتوسطه "وردة فاصل الآيات القرآنية الكبيرة"
+        drawTaperedDividerWithRosette(ctx, 1175, tConfig.dividerColor, 700, 26);
 
         // رسم الصرح المعماري المذهب الحقيقي للتطبيق (المئذنة والقبة والأجنحة)
         drawRealBrandEmblem(ctx, canvas.width / 2, 1245, 0.72, tConfig.emblemGold);
