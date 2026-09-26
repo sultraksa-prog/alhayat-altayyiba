@@ -1734,6 +1734,22 @@
       </div>
     </div>
 
+    <!-- مودال البحث واختيار الأذكار لإضافتها للمفضلة ⭐ -->
+    <div class="custom-modal-backdrop" id="searchFavModal">
+      <div class="custom-modal-card" style="max-height: 85vh; display: flex; flex-direction: column;">
+        <h3 class="modal-card-title">إضافة أذكار للمفضلة</h3>
+        <div class="search-input-box">
+          <input type="text" id="favSearchInput" placeholder="ابحث عن اسم القسم أو الذكر...">
+        </div>
+        <div class="fav-search-results-list" id="favSearchResultsList">
+          <!-- تظهر نتائج البحث هنا مع زر إضافة/إزالة -->
+        </div>
+        <div class="modal-actions-row">
+          <button type="button" class="modal-btn-primary" id="closeSearchFavBtn">تم</button>
+        </div>
+      </div>
+    </div>
+
     <!-- نافذة تأكيد تصفير جميع عدادات الأذكار (الخيار الافتراضي هو التراجع) -->
     <div class="custom-modal-backdrop" id="resetAllAzkarConfirmModal">
       <div class="custom-modal-card text-center" style="max-width: 320px;">
@@ -1743,9 +1759,7 @@
           هل أنت متأكد من تصفير كافة عدادات الأذكار والبدء من جديد لهذا اليوم؟
         </p>
         <div class="modal-actions-row" style="justify-content: center; gap: 14px;">
-          <!-- الزر الافتراضي الآمن ذو اللون الأزرق: تراجع -->
           <button type="button" class="modal-btn-primary" id="cancelResetAllAzkarBtn" style="background: var(--primary-blue); padding: 10px 28px;">تراجع</button>
-          <!-- زر التصفير الأحمر -->
           <button type="button" class="modal-btn-link" id="confirmResetAllAzkarBtn" style="color: #DC2626; font-weight: 700;">تصفير العدادات</button>
         </div>
       </div>
