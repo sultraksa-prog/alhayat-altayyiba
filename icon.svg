@@ -1,17 +1,135 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#09203F" />
-      <stop offset="60%" stop-color="#113F67" />
-      <stop offset="100%" stop-color="#1D5D9B" />
+    <!-- 1. التدرج الكحلي الملكي العميق للأرضية -->
+    <radialGradient id="navyCanvasGrad" cx="50%" cy="42%" r="68%" fx="50%" fy="38%">
+      <stop offset="0%" stop-color="#143D6D"/>
+      <stop offset="45%" stop-color="#09203F"/>
+      <stop offset="100%" stop-color="#030C18"/>
+    </radialGradient>
+
+    <!-- 2. تدرج الذهب الخالص اللامع والمصقول (High-Luster Gold) -->
+    <linearGradient id="goldBright" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFF8DB"/>
+      <stop offset="25%" stop-color="#FCE182"/>
+      <stop offset="55%" stop-color="#D4AF37"/>
+      <stop offset="85%" stop-color="#9A7228"/>
+      <stop offset="100%" stop-color="#5E4314"/>
     </linearGradient>
+
+    <!-- 3. تدرج الذهب العتيق والظلال المعمارية (Antique Shaded Gold) -->
+    <linearGradient id="goldDeep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EED17C"/>
+      <stop offset="40%" stop-color="#B88E33"/>
+      <stop offset="80%" stop-color="#7A5618"/>
+      <stop offset="100%" stop-color="#462E08"/>
+    </linearGradient>
+
+    <!-- 4. تدرج النور الروحاني خلف الصرح -->
+    <radialGradient id="spiritualHalo" cx="50%" cy="32%" r="40%">
+      <stop offset="0%" stop-color="#FCD34D" stop-opacity="0.22"/>
+      <stop offset="60%" stop-color="#D4AF37" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#09203F" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 5. ظل السقوط لإبراز الصرح كرمز ثلاثي الأبعاد -->
+    <filter id="royalShadow" x="-10%" y="-10%" width="120%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#020810" flood-opacity="0.75"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#FFE79A" flood-opacity="0.2"/>
+    </filter>
   </defs>
-  <!-- خلفية مربعة ذات حواف ناعمة -->
-  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+
+  <!-- ==================== الخلفية الكحلية الملكية بشكل الآيقونة المحمية ==================== -->
+  <rect width="512" height="512" rx="116" fill="url(#navyCanvasGrad)"/>
   
-  <!-- هلال إسلامي ذهبي -->
-  <path d="M290 120 C 230 120, 180 170, 180 232 C 180 300, 235 354, 305 354 C 330 354, 355 346, 375 332 C 345 342, 300 330, 280 295 C 255 250, 275 190, 315 160 C 335 145, 360 140, 380 144 C 355 128, 323 120, 290 120 Z" fill="#FFE17D"/>
-  
-  <!-- نجمة مضيئة -->
-  <polygon points="340,190 345,205 360,205 348,215 352,230 340,220 328,230 332,215 320,205 335,205" fill="#FFFFFF"/>
+  <!-- إطار ذهبي شعري فائق الرقة حول الأيقونة -->
+  <rect x="7" y="7" width="498" height="498" rx="110" fill="none" stroke="url(#goldBright)" stroke-width="1.8" stroke-opacity="0.35"/>
+
+  <!-- هالة النور الخلفية المضيئة -->
+  <circle cx="256" cy="190" r="170" fill="url(#spiritualHalo)"/>
+
+  <!-- ==================== صرح الحياة الطيبة المعماري المذهب ==================== -->
+  <g filter="url(#royalShadow)">
+    
+    <!-- 1. الهلال الشريف ودرة النور العلوية -->
+    <path d="M 256,58 A 22,22 0 1,1 256,102 A 16.5,16.5 0 1,0 256,58 Z" fill="url(#goldBright)"/>
+    <circle cx="256" cy="80" r="3.2" fill="#FFFBEB"/>
+    <!-- سارية الهلال النحيفة -->
+    <path d="M 254.5,102 L 257.5,102 L 257.5,124 L 254.5,124 Z" fill="url(#goldBright)"/>
+    <circle cx="256" cy="113" r="4.5" fill="url(#goldDeep)"/>
+
+    <!-- 2. قبة المئذنة الملكية المضلعة -->
+    <path d="M 256,124 C 278,144 294,166 288,190 L 224,190 C 218,166 234,144 256,124 Z" fill="url(#goldBright)"/>
+    <!-- حليات تضليع القبة الملكية -->
+    <path d="M 256,124 Q 263,158 266,190" stroke="url(#goldDeep)" stroke-width="2.2" fill="none"/>
+    <path d="M 256,124 Q 249,158 246,190" stroke="url(#goldDeep)" stroke-width="2.2" fill="none"/>
+
+    <!-- 3. شرفة الأذان العلوية (المقرنصات والتاج) -->
+    <path d="M 218,190 L 294,190 L 290,202 L 222,202 Z" fill="url(#goldDeep)"/>
+    <line x1="220" y1="196" x2="292" y2="196" stroke="url(#goldBright)" stroke-width="2"/>
+
+    <!-- 4. طابق الغرفة النورانية العلوية (النوافذ الثلاثية) -->
+    <rect x="225" y="202" width="62" height="60" fill="url(#goldBright)"/>
+    <!-- حواف الطابق الجانبية المعمارية -->
+    <line x1="225" y1="202" x2="225" y2="262" stroke="url(#goldDeep)" stroke-width="3"/>
+    <line x1="287" y1="202" x2="287" y2="262" stroke="url(#goldDeep)" stroke-width="3"/>
+    <!-- القوس الأوسط المفتوح -->
+    <path d="M 249,262 L 249,222 C 249,214 263,214 263,222 L 263,262 Z" fill="#06162B"/>
+    <!-- القوس الأيمن -->
+    <path d="M 269,262 L 269,228 C 269,222 279,222 279,228 L 279,262 Z" fill="#06162B"/>
+    <!-- القوس الأيسر -->
+    <path d="M 233,262 L 233,228 C 233,222 243,222 243,228 L 243,262 Z" fill="#06162B"/>
+
+    <!-- 5. الشرفة الرئيسية الكبرى (Gallery & Corbel Brackets) -->
+    <path d="M 210,262 L 302,262 L 296,278 L 216,278 Z" fill="url(#goldDeep)"/>
+    <path d="M 216,278 L 222,292 L 290,292 L 296,278 Z" fill="url(#goldBright)"/>
+    <!-- تفريغات مقرنصات الشرفة الزخرفية -->
+    <line x1="224" y1="284" x2="228" y2="284" stroke="#462E08" stroke-width="2"/>
+    <line x1="238" y1="284" x2="242" y2="284" stroke="#462E08" stroke-width="2"/>
+    <line x1="254" y1="284" x2="258" y2="284" stroke="#462E08" stroke-width="2"/>
+    <line x1="270" y1="284" x2="274" y2="284" stroke="#462E08" stroke-width="2"/>
+    <line x1="284" y1="284" x2="288" y2="284" stroke="#462E08" stroke-width="2"/>
+
+    <!-- 6. الجسد المعماري الأوسط (برج المئذنة المنقوش) -->
+    <rect x="220" y="292" width="72" height="66" fill="url(#goldBright)"/>
+    <line x1="220" y1="292" x2="220" y2="358" stroke="url(#goldDeep)" stroke-width="4"/>
+    <line x1="292" y1="292" x2="292" y2="358" stroke="url(#goldDeep)" stroke-width="4"/>
+    <!-- نجمة العمارة الإسلامية الهندسية في منتصف البرج -->
+    <g transform="translate(256, 325)">
+      <polygon points="0,-16 12,-12 16,0 12,12 0,16 -12,12 -16,0 -12,-12" fill="#081E38" stroke="url(#goldDeep)" stroke-width="1.8"/>
+      <circle cx="0" cy="0" r="4.5" fill="url(#goldBright)"/>
+    </g>
+
+    <!-- 7. الإفريز الفاصل الممتد -->
+    <path d="M 204,358 L 308,358 L 302,372 L 210,372 Z" fill="url(#goldDeep)"/>
+    <line x1="206" y1="365" x2="306" y2="365" stroke="url(#goldBright)" stroke-width="2.5"/>
+
+    <!-- 8. الطابق السفلي والبهو المعماري ذو القوس المورسي الشريف -->
+    <rect x="210" y="372" width="92" height="56" fill="url(#goldBright)"/>
+    <!-- عمودي الواجهة السفلية -->
+    <rect x="210" y="372" width="10" height="56" fill="url(#goldDeep)"/>
+    <rect x="292" y="372" width="10" height="56" fill="url(#goldDeep)"/>
+    
+    <!-- القوس المحرابي الأندلسي الداخلي المهيب -->
+    <path d="M 235,428 L 235,392 C 235,372 277,372 277,392 L 277,428 Z" fill="#040F1D"/>
+    <!-- إطار التذهيب الداخلي للمحراب -->
+    <path d="M 238,428 L 238,394 C 238,377 274,377 274,394 L 274,428" stroke="url(#goldBright)" stroke-width="2.5" fill="none"/>
+    <path d="M 244,428 L 244,397 C 244,385 268,385 268,397 L 268,428" stroke="url(#goldDeep)" stroke-width="1.5" fill="none"/>
+
+    <!-- 9. الأجنحة الزخرفية الإسلامية (Arabesque Flourish Wings) -->
+    <!-- الجناح الأيمن الممتد بفخامة -->
+    <path d="M 302,428 C 324,428 348,418 368,402 C 354,394 340,398 332,408 C 322,402 312,414 302,422 Z" fill="url(#goldBright)"/>
+    <path d="M 308,426 C 342,424 382,410 404,382 C 392,374 374,382 366,394 C 348,390 326,408 308,420 Z" fill="url(#goldDeep)"/>
+    <path d="M 302,428 C 350,428 398,406 422,364 C 408,358 394,368 388,382 C 366,380 336,408 302,426 Z" fill="url(#goldBright)" opacity="0.8"/>
+
+    <!-- الجناح الأيسر المتطابق هندسياً -->
+    <path d="M 210,428 C 188,428 164,418 144,402 C 158,394 172,398 180,408 C 190,402 200,414 210,422 Z" fill="url(#goldBright)"/>
+    <path d="M 204,426 C 170,424 130,410 108,382 C 120,374 138,382 146,394 C 164,390 186,408 204,420 Z" fill="url(#goldDeep)"/>
+    <path d="M 210,428 C 162,428 114,406 90,364 C 104,358 118,368 124,382 C 146,380 176,408 210,426 Z" fill="url(#goldBright)" opacity="0.8"/>
+
+    <!-- 10. خط الأساس وقاعدة الصرح الراسخة -->
+    <path d="M 76,432 L 436,432 L 420,442 L 92,442 Z" fill="url(#goldDeep)"/>
+    <line x1="80" y1="432" x2="432" y2="432" stroke="url(#goldBright)" stroke-width="3"/>
+    <rect x="180" y="442" width="152" height="6" rx="3" fill="url(#goldBright)" opacity="0.7"/>
+
+  </g>
 </svg>
