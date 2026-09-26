@@ -2002,7 +2002,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.27', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.28', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -2103,113 +2103,286 @@ ${APP_CONFIG.url}`;
     });
   }
 
-  // 2. توليد ومشاركة بطاقة صورة حية عبر Canvas
+  // ==================== محرك تخصيص وتوليد بطاقة المشاركة ذو اللونين ====================
+  let shareCardSettings = JSON.parse(localStorage.getItem('hayat_share_card_settings')) || {
+    template: 'royal-navy', // 'royal-navy' | 'emerald-ivory' | 'sand-bronze' | 'midnight-gold' | 'classic-blue'
+    withText: true,
+    withBranding: true
+  };
+
+  const openShareImageSettingsBtn = document.getElementById('openShareImageSettingsBtn');
+  const shareImageSettingsModal = document.getElementById('shareImageSettingsModal');
+  const closeShareImageSettingsBtn = document.getElementById('closeShareImageSettingsBtn');
+  const saveShareSettingsBtn = document.getElementById('saveShareSettingsBtn');
+  const toggleShareWithText = document.getElementById('toggleShareWithText');
+  const toggleShareWithBranding = document.getElementById('toggleShareWithBranding');
+  const templateCards = document.querySelectorAll('.template-card');
+
+  // فتح وإغلاق ومزامنة واجهة إعدادات القوالب
+  if (openShareImageSettingsBtn && shareImageSettingsModal) {
+    openShareImageSettingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (toggleShareWithText) toggleShareWithText.checked = shareCardSettings.withText;
+      if (toggleShareWithBranding) toggleShareWithBranding.checked = shareCardSettings.withBranding;
+      
+      templateCards.forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-template') === shareCardSettings.template);
+      });
+
+      shareImageSettingsModal.classList.add('show');
+    });
+
+    if (closeShareImageSettingsBtn) {
+      closeShareImageSettingsBtn.onclick = () => shareImageSettingsModal.classList.remove('show');
+    }
+
+    templateCards.forEach(card => {
+      card.onclick = () => {
+        templateCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        shareCardSettings.template = card.getAttribute('data-template');
+      };
+    });
+
+    if (saveShareSettingsBtn) {
+      saveShareSettingsBtn.onclick = () => {
+        if (toggleShareWithText) shareCardSettings.withText = toggleShareWithText.checked;
+        if (toggleShareWithBranding) shareCardSettings.withBranding = toggleShareWithBranding.checked;
+        localStorage.setItem('hayat_share_card_settings', JSON.stringify(shareCardSettings));
+        shareImageSettingsModal.classList.remove('show');
+      };
+    }
+  }
+
+  // 2. توليد ومشاركة بطاقة الصورة بنظام اللونين وفق الهيكل التحريري الجديد
   if (btnShareAsImage) {
     btnShareAsImage.addEventListener('click', async () => {
-      btnShareAsImage.innerHTML = '<span>جاري إنشاء الصورة... 🎨</span>';
+      btnShareAsImage.innerHTML = '<span>جاري إنشاء البطاقة الفاخرة... 🎨</span>';
 
       const canvas = document.createElement('canvas');
       canvas.width = 1080;
-      canvas.height = 1350;
+      canvas.height = 1440;
       const ctx = canvas.getContext('2d');
 
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, '#09203F');
-      grad.addColorStop(0.5, '#113F67');
-      grad.addColorStop(1, '#1D5D9B');
-      ctx.fillStyle = grad;
+      const tmpl = shareCardSettings.template;
+
+      // إعدادات ألوان نظام اللونين لكل قالب
+      let tConfig = {
+        headerBg: '#061933',
+        headerDayColor: '#FCD34D',
+        headerCityColor: '#E2E8F0',
+        headerHijriColor: '#FFFFFF',
+        headerGregColor: '#93C5FD',
+        bodyBg: '#0B254A',
+        cardRowBg: 'rgba(255, 255, 255, 0.08)',
+        prayerNameColor: '#FFFFFF',
+        prayerTimeColor: '#FCD34D',
+        borderStroke: '#D4AF37',
+        footerTextColor: '#FCD34D',
+        footerSubColor: '#E2E8F0'
+      };
+
+      if (tmpl === 'emerald-ivory') {
+        // طراز تطبيق منار الفاخر (هيدر زمردي + أرضية عاجية)
+        tConfig = {
+          headerBg: '#064E3B',
+          headerDayColor: '#FEF3C7',
+          headerCityColor: '#D1FAE5',
+          headerHijriColor: '#FFFFFF',
+          headerGregColor: '#A7F3D0',
+          bodyBg: '#FBF8F2',
+          cardRowBg: '#FFFFFF',
+          prayerNameColor: '#1E293B',
+          prayerTimeColor: '#064E3B',
+          borderStroke: '#10B981',
+          footerTextColor: '#064E3B',
+          footerSubColor: '#64748B'
+        };
+      } else if (tmpl === 'sand-bronze') {
+        // طراز العقيق والرملي التراثي
+        tConfig = {
+          headerBg: '#7C2D12',
+          headerDayColor: '#FEF3C7',
+          headerCityColor: '#FED7AA',
+          headerHijriColor: '#FFFFFF',
+          headerGregColor: '#FFEDD5',
+          bodyBg: '#FFFBEB',
+          cardRowBg: '#FFFFFF',
+          prayerNameColor: '#451A03',
+          prayerTimeColor: '#C2410C',
+          borderStroke: '#EA580C',
+          footerTextColor: '#9A3412',
+          footerSubColor: '#78350F'
+        };
+      } else if (tmpl === 'midnight-gold') {
+        // طراز الأسود المذهب فائق التباين
+        tConfig = {
+          headerBg: '#000000',
+          headerDayColor: '#FBBF24',
+          headerCityColor: '#D1D5DB',
+          headerHijriColor: '#FFFFFF',
+          headerGregColor: '#9CA3AF',
+          bodyBg: '#0B0F19',
+          cardRowBg: 'rgba(255, 255, 255, 0.05)',
+          prayerNameColor: '#FFFFFF',
+          prayerTimeColor: '#F59E0B',
+          borderStroke: '#F59E0B',
+          footerTextColor: '#F59E0B',
+          footerSubColor: '#9CA3AF'
+        };
+      } else if (tmpl === 'classic-blue') {
+        // النمط الكلاسيكي الأصلي
+        tConfig = {
+          headerBg: '#09203F',
+          headerDayColor: '#FFFFFF',
+          headerCityColor: '#FCD34D',
+          headerHijriColor: '#E2E8F0',
+          headerGregColor: '#E2E8F0',
+          bodyBg: '#113F67',
+          cardRowBg: 'rgba(255, 255, 255, 0.1)',
+          prayerNameColor: '#FFFFFF',
+          prayerTimeColor: '#FCD34D',
+          borderStroke: '#FCD34D',
+          footerTextColor: '#FFFFFF',
+          footerSubColor: '#93C5FD'
+        };
+      }
+
+      // رسم خلفية الجسم السفلي
+      ctx.fillStyle = tConfig.bodyBg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = '#FCD34D';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 58px "Cairo", sans-serif';
-      ctx.fillText(APP_CONFIG.name, canvas.width / 2, 140);
-
-      ctx.font = '36px "Cairo", sans-serif';
-      ctx.fillStyle = '#FCD34D';
-      ctx.fillText(`📍 مواقيت الصلاة - ${userLocation.city}`, canvas.width / 2, 215);
-
-      ctx.fillStyle = '#E2E8F0';
-      ctx.font = '32px "Cairo", sans-serif';
-      ctx.fillText(`${currentHijriText}  |  ${currentGregorianText}`, canvas.width / 2, 280);
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 2;
+      // رسم هيدر البيانات الأساسية (اللون الأول في الأعلى: 430px)
+      ctx.fillStyle = tConfig.headerBg;
       ctx.beginPath();
-      ctx.moveTo(120, 320);
-      ctx.lineTo(canvas.width - 120, 320);
+      ctx.roundRect(0, 0, canvas.width, 430, [0, 0, 44, 44]);
+      ctx.fill();
+
+      // الإطار الذهبي المزدوج المحيط بالبطاقة
+      ctx.strokeStyle = tConfig.borderStroke;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
+
+      // ==================== 1. نصوص الهيدر العلوي وفق الترتيب الجديد ====================
+      ctx.textAlign = 'center';
+
+      // أ) اسم اليوم في القمة منفرداً بخط عريض
+      ctx.font = 'bold 64px "Cairo", sans-serif';
+      ctx.fillStyle = tConfig.headerDayColor;
+      ctx.fillText(currentDayName || 'السبت', canvas.width / 2, 120);
+
+      // ب) مواقيت الصلاة - اسم المنطقة
+      ctx.font = 'bold 36px "Cairo", sans-serif';
+      ctx.fillStyle = tConfig.headerCityColor;
+      ctx.fillText(`مواقيت الصلاة - ${userLocation.city}`, canvas.width / 2, 195);
+
+      // ج) خط زخرفي فاصل رفيع
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2 - 180, 230);
+      ctx.lineTo(canvas.width / 2 + 180, 230);
       ctx.stroke();
 
-      let startY = 400;
-      PRAYER_KEYS.forEach((p, idx) => {
-        ctx.fillStyle = (idx % 2 === 0) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.14)';
+      // د) التاريخ الهجري منفرداً
+      ctx.font = 'bold 34px "Cairo", sans-serif';
+      ctx.fillStyle = tConfig.headerHijriColor;
+      ctx.fillText(currentHijriText || '', canvas.width / 2, 290);
+
+      // هـ) التاريخ الميلادي منفرداً في سطر مستقل
+      ctx.font = '600 29px "Cairo", sans-serif';
+      ctx.fillStyle = tConfig.headerGregColor;
+      ctx.fillText(currentGregorianText || '', canvas.width / 2, 345);
+
+      // ==================== 2. جدول الصلوات الست في جسم البطاقة ====================
+      let startY = 495;
+      PRAYER_KEYS.forEach((p) => {
+        // خلفية صف الصلاة
+        ctx.fillStyle = tConfig.cardRowBg;
         ctx.beginPath();
-        ctx.roundRect(140, startY - 50, canvas.width - 280, 85, 18);
+        ctx.roundRect(110, startY - 48, canvas.width - 220, 82, 18);
         ctx.fill();
 
-        ctx.font = 'bold 38px "Cairo", sans-serif';
-        ctx.fillStyle = '#FFFFFF';
+        // حدود خفيفة للصفوف في القوالب الفاتحة
+        if (tmpl === 'emerald-ivory' || tmpl === 'sand-bronze') {
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+
+        // اسم الصلاة
+        ctx.font = 'bold 36px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.prayerNameColor;
         ctx.textAlign = 'right';
-        ctx.fillText(p.name, canvas.width - 190, startY + 8);
+        ctx.fillText(p.name, canvas.width - 160, startY + 6);
 
-        ctx.fillStyle = '#FCD34D';
+        // وقت الصلاة
+        ctx.fillStyle = tConfig.prayerTimeColor;
         ctx.textAlign = 'left';
-        ctx.fillText(formatTo12Hour(currentTimings[p.key]), 190, startY + 8);
+        const formattedT = currentTimings ? formatTo12Hour(currentTimings[p.key]) : '--:--';
+        ctx.fillText(formattedT, 160, startY + 6);
 
-        startY += 115;
+        startY += 106;
       });
 
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 34px "Cairo", sans-serif';
-      ctx.fillText(APP_CONFIG.shortDesc, canvas.width / 2, canvas.height - 150);
+      // ==================== 3. الفوتر الملكي وشعار التطبيق (بدون رابط) ====================
+      if (shareCardSettings.withBranding) {
+        ctx.textAlign = 'center';
+        
+        // رسم رمز الصرح التعبيري المذهب
+        ctx.font = '46px "Cairo", sans-serif';
+        ctx.fillText('🕌', canvas.width / 2, canvas.height - 180);
 
-      ctx.fillStyle = '#93C5FD';
-      ctx.font = '30px "Cairo", sans-serif';
-      ctx.fillText(APP_CONFIG.url, canvas.width / 2, canvas.height - 95);
+        // اسم التطبيق
+        ctx.font = 'bold 36px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.footerTextColor;
+        ctx.fillText('الحياة الطيبة', canvas.width / 2, canvas.height - 125);
 
+        // الشعار اللفظي الوقور
+        ctx.font = '600 25px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.footerSubColor;
+        ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', canvas.width / 2, canvas.height - 82);
+      }
+
+      // تحويل الـ Canvas إلى ملف صورة ومشاركته
       canvas.toBlob(async (blob) => {
         btnShareAsImage.innerHTML = '<span>مشاركة كصورة 🖼️</span>';
-        const file = new File([blob], 'prayer-times.png', { type: 'image/png' });
+        const file = new File([blob], `مواقيت-${userLocation.city}.png`, { type: 'image/png' });
 
-        // 1. تجهيز نص أوقات الصلاة كاملاً
+        // صياغة الرسالة النصية
         let timingsText = '';
         if (currentTimings) {
           PRAYER_KEYS.forEach(p => {
             timingsText += `• ${p.name}: ${formatTo12Hour(currentTimings[p.key])}\n`;
           });
         }
-
-        // 2. صياغة الرسالة الكاملة المرفقة مع الصورة
-        const fullImageMessage = 
-`🕌 مواقيت الصلاة - ${userLocation.city}
+        const fullShareMessage = `🕌 مواقيت الصلاة - ${userLocation.city}
 📅 ${currentHijriText}
 📆 ${currentGregorianText}
 
 ${timingsText}
-✨ تم استخراج المواقيت عبر تطبيق: ${APP_CONFIG.name}
-📲 جرّب التطبيق الآن:
-${APP_CONFIG.url}`;
+✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
+📲 الرابط: ${APP_CONFIG.url}`;
 
-        // 3. إرسال الصورة مدمجاً معها النص الكامل
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // فحص هل المستخدم يريد إرفاق نص ورابط مع الصورة
+        const sharePayload = {
+          files: [file],
+          title: `مواقيت الصلاة - ${userLocation.city}`
+        };
+        if (shareCardSettings.withText) {
+          sharePayload.text = fullShareMessage;
+        }
+
+        if (navigator.canShare && navigator.canShare(sharePayload)) {
           try {
-            await navigator.share({
-              files: [file],
-              title: `مواقيت الصلاة - ${userLocation.city}`,
-              text: fullImageMessage
-            });
-          } catch(e) {}
+            await navigator.share(sharePayload);
+          } catch (e) {}
         } else {
           const link = document.createElement('a');
           link.download = `مواقيت-${userLocation.city}.png`;
           link.href = canvas.toDataURL();
           link.click();
-          alert('تم إنشاء وتنزيل بطاقة المواقيت كصورة بنجاح!');
+          alert('تم إنشاء وتنزيل بطاقة المواقيت الفاخرة بنجاح!');
         }
         shareModalBackdrop.classList.remove('show');
       }, 'image/png');
