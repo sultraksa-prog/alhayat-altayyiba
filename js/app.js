@@ -735,21 +735,39 @@ if (isRunningStandalone) {
     });
   }
 
-  // بطاقة المجموعة المشتركة
+  // دالة استخراج عدد الحروف الخام وتجريد الذكر من التشكيل والمسافات لعموم التطبيق
+  function getRawArabicCharCount(text) {
+    if (!text) return 0;
+    return text.replace(/[\u064B-\u065F\u0670\u0640\s]/g, '').length;
+  }
+
+  // بطاقة المجموعة المشتركة بميزان الحروف والتكرار الدقيق
   function createCategoryCard(group) {
     const totalItems = group.items ? group.items.length : 0;
-    let completedItems = 0;
-    let readItemsCount = 0;
+    let totalWeight = 0;
+    let completedWeight = 0;
+    let isStarted = false;
+    let allItemsZero = totalItems > 0;
 
+    // احتساب ميزان القراءة الحقيقي: (حروف الذكر الخام × التكرارات المنجزة فعلياً)
     if (totalItems > 0) {
-      completedItems = group.items.filter(it => it.currentCount === 0).length;
-      readItemsCount = group.items.filter(it => it.currentCount < it.count).length;
+      group.items.forEach(it => {
+        const charCount = Math.max(1, getRawArabicCharCount(it.text));
+        const totalReps = it.count || 1;
+        const remainingReps = Math.max(0, (typeof it.currentCount !== 'undefined') ? it.currentCount : totalReps);
+        const doneReps = Math.max(0, totalReps - remainingReps);
+
+        if (doneReps > 0) isStarted = true;
+        if (remainingReps > 0) allItemsZero = false;
+
+        totalWeight += (totalReps * charCount);
+        completedWeight += (doneReps * charCount);
+      });
     }
 
-    const progressPercent = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
-    const isCompleted = totalItems > 0 && progressPercent === 100;
-    const isStarted = readItemsCount > 0; // هل بدأ بقراءة جزء منها؟
-
+    // نسبة التقدم الموزونة مطابقة 100% للشريط الداخلي
+    const progressPercent = totalWeight > 0 ? Math.min(100, Math.round((completedWeight / totalWeight) * 100)) : 0;
+    const isCompleted = totalItems > 0 && allItemsZero && progressPercent === 100;
     const card = document.createElement('div');
     card.className = `azkar-group-card ${isCompleted ? 'completed' : ''}`;
     card.innerHTML = `
