@@ -3304,3 +3304,155 @@ body {
   line-height: 1.2;
 }
 
+/* ==================== شريط التقدم التراكمي الموزون بحجم الحروف ==================== */
+.reader-progress-wrapper {
+  background: #FFFFFF;
+  padding: 8px 16px;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: sticky;
+  top: 57px;
+  z-index: 40;
+  box-shadow: 0 2px 8px rgba(11, 37, 69, 0.03);
+}
+
+.reader-progress-track {
+  width: 100%;
+  height: 6px;
+  background: #E2E8F0;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.reader-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #10B981, #16A34A);
+  border-radius: 9999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reader-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.progress-lbl {
+  color: var(--text-secondary);
+}
+
+.progress-percent {
+  color: #15803D;
+  direction: ltr;
+}
+
+/* ==================== حركات اختفاء الذكر المكتمل الانسيابية الخمس ==================== */
+.dhikr-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              opacity 0.35s ease, 
+              max-height 0.4s ease, 
+              margin 0.4s ease, 
+              padding 0.4s ease, 
+              box-shadow 0.3s ease;
+  will-change: transform, opacity;
+}
+
+/* 1. السحب للأعلى (افتراضي) */
+.dhikr-card.anim-dismissing-slide-up {
+  transform: translateY(-40px) scale(0.96);
+  opacity: 0;
+  max-height: 0 !important;
+  margin-top: -16px !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+  border-color: transparent !important;
+}
+
+/* 2. التلاشي التدريجي */
+.dhikr-card.anim-dismissing-fade {
+  transform: scale(0.92);
+  opacity: 0;
+  max-height: 0 !important;
+  margin-top: -16px !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+  border-color: transparent !important;
+}
+
+/* 3. الطي للداخل */
+.dhikr-card.anim-dismissing-fold-in {
+  transform: scale(0.1) rotate(14deg) translateY(-50px);
+  opacity: 0;
+  filter: blur(5px);
+  max-height: 0 !important;
+  margin-top: -16px !important;
+  margin-bottom: 0 !important;
+  overflow: hidden;
+}
+
+/* 4. الصعود المضيء */
+.dhikr-card.anim-dismissing-ascend-glow {
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.5) !important;
+  border-color: #FCD34D !important;
+  transform: translateY(-60px) scale(0.95);
+  opacity: 0;
+  max-height: 0 !important;
+  margin-top: -16px !important;
+  margin-bottom: 0 !important;
+  overflow: hidden;
+}
+
+/* 5. طي الصحيفة */
+.dhikr-card.anim-dismissing-roll-up {
+  transform-origin: top center;
+  transform: rotateX(82deg) translateY(-30px);
+  opacity: 0;
+  max-height: 0 !important;
+  margin-top: -16px !important;
+  margin-bottom: 0 !important;
+  overflow: hidden;
+}
+
+/* شبكة خيارات حركة الاختفاء داخل الإعدادات */
+.anim-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.anim-chip-item {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.anim-chip-item input {
+  display: none;
+}
+
+.anim-chip-item.active {
+  background: #EEF6FC;
+  border-color: #BCD8F0;
+  color: var(--primary-blue);
+  box-shadow: 0 2px 6px rgba(29, 93, 155, 0.1);
+}
+
