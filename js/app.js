@@ -630,14 +630,17 @@ if (isRunningStandalone) {
     }
   }
 
-  // 2. فحص وتطبيق التصفير التلقائي عند منتصف الليل بتوقيت مدينة المستخدم
+  // 2. فحص وتطبيق التصفير التلقائي عند منتصف الليل بتوقيت مدينة المستخدم (بشكل معزول وآمن 100%)
   function checkAndPerformDailyAzkarReset() {
     let now = new Date();
-    if (userLocation && userLocation.timezone) {
-      try {
-        now = new Date(new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
-      } catch (e) {}
-    }
+    try {
+      // قراءة آمنة للموقع المحفوظ دون أي تضارب مع متغيرات أخرى
+      const savedUserLoc = JSON.parse(localStorage.getItem('hayat_saved_location'));
+      if (savedUserLoc && savedUserLoc.timezone) {
+        now = new Date(new Date().toLocaleString('en-US', { timeZone: savedUserLoc.timezone }));
+      }
+    } catch (e) {}
+
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const lastResetDay = localStorage.getItem('hayat_last_azkar_reset_day');
 
@@ -2099,7 +2102,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.35', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.36', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
