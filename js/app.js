@@ -309,6 +309,13 @@ if (isRunningStandalone) {
 
   // التقاط إيماءة الرجوع (سحب الحافة أو زر العودة في الجوال)
   window.addEventListener('popstate', () => {
+    // 0. إذا كان استوديو تصميم الصورة مفتوحاً، سحب الحافة يغلقه بسلاسة ويعيد المستخدم لقراءة الأذكار
+    const studioModal = document.getElementById('dhikrImageStudioModal');
+    if (studioModal && studioModal.classList.contains('show')) {
+      studioModal.classList.remove('show');
+      return;
+    }
+
     const activeScreen = document.querySelector('.screen-view.active');
 
     // 1. إذا كانت هناك نافذة منبثقة مفتوحة، الرجوع يغلقها أولاً دون مغادرة الشاشة
@@ -1530,21 +1537,28 @@ if (isRunningStandalone) {
   function openDhikrImageStudio(attachText) {
     studioAttachTextWhenSharing = attachText;
     
-    // احتساب وتطبيق الحجم الافتراضي الذكي فور فتح الاستوديو
+    // احتساب الحجم الافتراضي الذكي بناءً على حجم حروف الذكر والفضل
     const autoSize = calculateOptimalDefaultFontSize(studioConfig.ratio === 'story', studioConfig.includeVirtue);
     studioConfig.fontSize = autoSize;
     if (studioFontSizeSlider) studioFontSizeSlider.value = autoSize;
     if (studioFontSizeDisplay) studioFontSizeDisplay.textContent = autoSize;
 
-    if (dhikrImageStudioModal) dhikrImageStudioModal.classList.add('show');
+    if (dhikrImageStudioModal) {
+      dhikrImageStudioModal.classList.add('show');
+      // تسجيل حالة الاستوديو لضمان عودة سحب الحافة لقراءة الأذكار بنعومة
+      history.pushState({ modal: 'studio' }, '', '#studio');
+    }
     renderStudioLiveCanvas();
   }
 
   if (closeDhikrStudioBtn && dhikrImageStudioModal) {
-    closeDhikrStudioBtn.onclick = () => dhikrImageStudioModal.classList.remove('show');
+    closeDhikrStudioBtn.onclick = () => {
+      dhikrImageStudioModal.classList.remove('show');
+      if (location.hash === '#studio') history.back();
+    };
   }
 
-  // ربط شريط التحكم الحر بحجم الخط
+  // ربط شريط التحكم بحجم الخط
   if (studioFontSizeSlider) {
     studioFontSizeSlider.oninput = (e) => {
       const val = parseInt(e.target.value, 10);
@@ -1561,7 +1575,6 @@ if (isRunningStandalone) {
       tab.classList.add('active');
       studioConfig.ratio = tab.getAttribute('data-ratio');
 
-      // إعادة ضبط حجم الخط بذكاء ليتناسب مع النمط الجديد
       const autoSize = calculateOptimalDefaultFontSize(studioConfig.ratio === 'story', studioConfig.includeVirtue);
       studioConfig.fontSize = autoSize;
       if (studioFontSizeSlider) studioFontSizeSlider.value = autoSize;
@@ -1571,7 +1584,7 @@ if (isRunningStandalone) {
     };
   });
 
-  // اختيار الزخرفة الإسلامية
+  // اختيار نمط الزخرفة الإسلامية
   document.querySelectorAll('.studio-motif-chip').forEach(chip => {
     chip.onclick = () => {
       document.querySelectorAll('.studio-motif-chip').forEach(c => c.classList.remove('active'));
@@ -1588,7 +1601,7 @@ if (isRunningStandalone) {
       thumb.classList.add('active');
       studioConfig.bg = thumb.getAttribute('data-bg');
 
-      if (studioConfig.bg === 'ivory-parchment' || studioConfig.bg === 'sand-bronze') {
+      if (studioConfig.bg === 'ivory-parchment' || studioConfig.bg === 'sand-bronze' || studioConfig.bg === 'emerald-ivory') {
         studioConfig.color = '#1E293B';
       } else {
         studioConfig.color = '#FFFFFF';
@@ -1630,7 +1643,7 @@ if (isRunningStandalone) {
     };
   }
 
-  // رسم بطاقة الذكر بدقة فائقة وفق الهوية الملكية المكتملة
+  // رسم بطاقة الذكر بالمعايير الهندسية المصححة بالكامل
   function renderStudioLiveCanvas() {
     if (!studioLiveCanvas || !activeDhikrItemForShare) return;
     const isStory = studioConfig.ratio === 'story';
@@ -1688,7 +1701,7 @@ if (isRunningStandalone) {
       motifColor = '#FCD34D';
     }
 
-    // 2. رسم الزخرفة الإسلامية المختارة في عمق البطاقة بنعومة فائقة
+    // 2. رسم الزخرفة الإسلامية المختارة في العمق
     ctx.save();
     ctx.globalAlpha = motifOpacity;
     renderChosenIslamicMotif(ctx, studioConfig.motif || 'motif-1', width / 2, height * 0.48, isStory ? 280 : 210, motifColor, 3.2);
@@ -1697,45 +1710,38 @@ if (isRunningStandalone) {
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
 
-    // 3. رسم الصرح المعماري المذهب بتدرجه الحقيقي وفصله عن اسم التطبيق
+    // 3. رسم الصرح المعماري المذهب وفصله بمسافة أمان كافية عن اسم التطبيق
     const isLightHeader = (bg === 'emerald-ivory' || bg === 'sand-bronze');
-    const emblemCenterY = isStory ? 140 : 100;
+    const emblemCenterY = isStory ? 130 : 95;
     
     // رسم صرح المئذنة المذهب الحقيقي
-    drawRealBrandEmblem(ctx, width / 2, emblemCenterY, isStory ? 0.72 : 0.62, '#FCD34D');
+    drawRealBrandEmblem(ctx, width / 2, emblemCenterY, isStory ? 0.70 : 0.60, '#FCD34D');
 
-    // اسم التطبيق مع مسافة رأسية مريحة تمنع الالتصاق
-    const titleY = emblemCenterY + (isStory ? 95 : 82);
+    // اسم التطبيق مع هامش أمان رأسي يمنع أي التصاق (35 بكسل على الأقل)
+    const titleY = emblemCenterY + (isStory ? 108 : 94);
     ctx.font = 'bold 36px "Cairo", sans-serif';
     ctx.fillStyle = isLightHeader ? '#FEF3C7' : (bg === 'ivory-parchment' ? '#B45309' : '#FCD34D');
     ctx.fillText('الحياة الطيبة', width / 2, titleY);
 
-    // 4. شارة اسم مجموعة الأذكار (إن كانت مفعلة)
-    let currentY = titleY + (isStory ? 75 : 65);
+    // 4. تكبير شارة اسم مجموعة الأذكار لتتناسب مع فخامة التصميم
+    let currentHeaderBottomY = titleY + 40;
     if (studioConfig.includeCategory && activeDhikrCategoryForShare) {
       const badgeText = activeDhikrCategoryForShare.name;
-      ctx.font = 'bold 26px "Cairo", sans-serif';
-      const textW = ctx.measureText(badgeText).width + 60;
+      ctx.font = 'bold 34px "Cairo", sans-serif'; // تكبير الخط من 26 إلى 34 بكسل
+      const textW = ctx.measureText(badgeText).width + 80;
       
-      ctx.fillStyle = isLightHeader ? 'rgba(255, 255, 255, 0.2)' : 'rgba(252, 211, 77, 0.15)';
+      const badgeY = titleY + (isStory ? 75 : 65);
+      ctx.fillStyle = isLightHeader ? 'rgba(255, 255, 255, 0.22)' : 'rgba(252, 211, 77, 0.16)';
       ctx.beginPath();
-      ctx.roundRect(width / 2 - textW / 2, currentY - 30, textW, 48, 24);
+      ctx.roundRect(width / 2 - textW / 2, badgeY - 34, textW, 58, 29);
       ctx.fill();
 
       ctx.fillStyle = isLightHeader ? '#FEF3C7' : (bg === 'ivory-parchment' ? '#92400E' : '#FCD34D');
-      ctx.fillText(badgeText, width / 2, currentY + 3);
-      currentY += isStory ? 80 : 65;
+      ctx.fillText(badgeText, width / 2, badgeY + 6);
+      currentHeaderBottomY = badgeY + 45;
     }
 
-    // 5. ما قبل الذكر (إن وجد)
-    if (activeDhikrItemForShare.pre) {
-      ctx.font = 'bold 28px "Cairo", sans-serif';
-      ctx.fillStyle = (bg === 'ivory-parchment') ? '#0284C7' : '#93C5FD';
-      ctx.fillText(activeDhikrItemForShare.pre, width / 2, currentY);
-      currentY += 50;
-    }
-
-    // 6. متن الذكر الشريف والفضل بناءً على حجم الخط المختار والمحسوب
+    // 5. احتساب حجم وكتلة متن الذكر والفضل
     const baseFontSize = studioConfig.fontSize || 48;
     const lineHeight = baseFontSize * 1.82;
     const maxTextWidth = width - 160;
@@ -1756,7 +1762,7 @@ if (isRunningStandalone) {
     });
     if (curLine) lines.push(curLine);
 
-    // تجهيز أسطر الفضل إن كان مفعلاً
+    // أسطر الفضل إن كان مفعلاً
     let virtueLines = [];
     const virtueFontSize = Math.max(22, Math.round(baseFontSize * 0.58));
     const virtueLineHeight = virtueFontSize * 1.6;
@@ -1777,66 +1783,94 @@ if (isRunningStandalone) {
       if (vCur) virtueLines.push(vCur);
     }
 
-    const totalTextHeight = (lines.length * lineHeight) + (virtueLines.length > 0 ? (virtueLines.length * virtueLineHeight + 60) : 0);
-    
-    // توسيط المحتوى عمودياً بدقة متناهية
-    const availableTop = currentY + 15;
-    const availableBottom = height - (isStory ? 180 : 130);
-    const startTextY = availableTop + Math.max(10, ((availableBottom - availableTop) - totalTextHeight) / 2) + baseFontSize;
+    // ارتفاع السابقة ومتن الذكر والفضل
+    const hasPre = !!activeDhikrItemForShare.pre;
+    const preHeight = hasPre ? 50 : 0;
+    const bodyHeight = lines.length * lineHeight;
+    const virtueHeight = virtueLines.length > 0 ? (virtueLines.length * virtueLineHeight + 40) : 0;
+    const totalClusterHeight = preHeight + bodyHeight + virtueHeight;
+
+    // رفع موضع الفوتر في نمط الستوري لتفادي شريط إيماءات الجوال
+    const footerY = height - (isStory ? 140 : 65);
+    const dividerY = height - (isStory ? 200 : 115);
+
+    // توسيط الكتلة النصية بالكامل بين نهاية الهيدر وبداية الفوتر
+    const availableAreaTop = currentHeaderBottomY + 20;
+    const availableAreaBottom = dividerY - 30;
+    const clusterStartY = availableAreaTop + Math.max(10, ((availableAreaBottom - availableAreaTop) - totalClusterHeight) / 2);
+
+    // 6. رسم السابقة قريبة جداً من أول سطر للذكر
+    let startTextY = clusterStartY + baseFontSize;
+    if (hasPre) {
+      ctx.font = 'bold 30px "Cairo", sans-serif';
+      ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#0284C7' : '#93C5FD';
+      ctx.fillText(activeDhikrItemForShare.pre, width / 2, clusterStartY + 10);
+      startTextY = clusterStartY + 60 + baseFontSize; // قريبة وملاصقة للمتن بمسافة مريحة
+    }
 
     // تظليل خلفية النص إن كان مفعلاً
     if (studioConfig.textHighlight) {
-      ctx.fillStyle = (studioConfig.color === '#FFFFFF') ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.78)';
+      ctx.fillStyle = (studioConfig.color === '#FFFFFF') ? 'rgba(0, 0, 0, 0.42)' : 'rgba(255, 255, 255, 0.82)';
       ctx.beginPath();
-      ctx.roundRect(60, startTextY - baseFontSize - 20, width - 120, totalTextHeight + 40, 24);
+      ctx.roundRect(60, startTextY - baseFontSize - 20, width - 120, bodyHeight + (hasPre ? 50 : 0) + virtueHeight + 40, 24);
       ctx.fill();
     }
 
-    // كتابة أسطر الذكر الشريف
+    // كتابة متن الذكر (مع ضمان التباين الصارم في القوالب الفاتحة)
+    let finalTextColor = studioConfig.color;
+    if ((bg === 'emerald-ivory' || bg === 'sand-bronze' || bg === 'ivory-parchment') && finalTextColor === '#FFFFFF') {
+      finalTextColor = (bg === 'sand-bronze') ? '#451A03' : '#1E293B';
+    }
+
     ctx.font = `700 ${baseFontSize}px ${studioConfig.font}`;
-    ctx.fillStyle = studioConfig.color;
+    ctx.fillStyle = finalTextColor;
     lines.forEach((l, idx) => {
       ctx.fillText(l, width / 2, startTextY + (idx * lineHeight));
     });
 
-    // كتابة فضل الذكر إن وجد
-    let nextVirtueY = startTextY + (lines.length * lineHeight) + 20;
+    // كتابة فضل الذكر
     if (virtueLines.length > 0) {
+      const startVirtueY = startTextY + bodyHeight + 15;
       ctx.font = `600 ${virtueFontSize}px "Cairo", sans-serif`;
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#B45309' : '#FCD34D';
       virtueLines.forEach((vl, vIdx) => {
-        ctx.fillText((vIdx === 0 ? '✨ ' : '') + vl, width / 2, nextVirtueY + (vIdx * virtueLineHeight));
+        ctx.fillText((vIdx === 0 ? '✨ ' : '') + vl, width / 2, startVirtueY + (vIdx * virtueLineHeight));
       });
     }
 
-    // 7. الفوتر المضمون والخط الفاصل اللطيف والشعار اللفظي (خالٍ من أي روابط)
-    const footerY = height - 60;
-    const dividerY = height - 110;
-
-    // رسم الخط الفاصل اللطيف الثابت
+    // 7. رسم الخط الفاصل المذهب والشعار اللفظي في الفوتر الثابت المرتفع
     const divColor = (bg === 'ivory-parchment') ? '#D4AF37' : '#E2E8F0';
-    drawTaperedDividerWithRosette(ctx, dividerY, divColor, 620, 16);
+    drawTaperedDividerWithRosette(ctx, dividerY, divColor, 660, 18);
 
-    // الشعار اللفظي
     if (studioConfig.includeCredit) {
-      ctx.font = 'bold 28px "Cairo", sans-serif';
+      ctx.font = 'bold 30px "Cairo", sans-serif';
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#1E293B' : '#FFFFFF';
       ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', width / 2, footerY);
     }
   }
 
-  // تنزيل الصورة في المعرض
+  // تنزيل الصورة باسم ملف فريد لمنع رسالة المتصفح وإظهار إشعار النجاح
   if (downloadStudioImageBtn) {
     downloadStudioImageBtn.onclick = () => {
       if (!studioLiveCanvas) return;
+      const uniqueSuffix = Date.now().toString().slice(-4);
+      const catCleanName = activeDhikrCategoryForShare ? activeDhikrCategoryForShare.name.replace(/\s+/g, '-') : 'أذكار';
+      
       const link = document.createElement('a');
-      link.download = `ذكر-${activeDhikrCategoryForShare ? activeDhikrCategoryForShare.name : 'الحياة-الطيبة'}.png`;
+      link.download = `ذكر-${catCleanName}-${uniqueSuffix}.png`;
       link.href = studioLiveCanvas.toDataURL('image/png');
       link.click();
+
+      // إظهار إشعار نجاح الحفظ الفوري
+      const toast = document.getElementById('studioToastBanner');
+      if (toast) {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2400);
+      }
     };
   }
 
-  // مشاركة الصورة من داخل الاستوديو
+  // مشاركة الصورة دون إغلاق الاستوديو قسراً
   if (executeStudioShareBtn) {
     executeStudioShareBtn.onclick = () => {
       if (!studioLiveCanvas) return;
@@ -1844,7 +1878,8 @@ if (isRunningStandalone) {
 
       studioLiveCanvas.toBlob(async (blob) => {
         executeStudioShareBtn.textContent = 'مشاركة 📤';
-        const file = new File([blob], `ذكر-الحياة-الطيبة.png`, { type: 'image/png' });
+        const uniqueSuffix = Date.now().toString().slice(-4);
+        const file = new File([blob], `ذكر-الحياة-الطيبة-${uniqueSuffix}.png`, { type: 'image/png' });
 
         const sharePayload = {
           files: [file],
@@ -1860,18 +1895,23 @@ if (isRunningStandalone) {
             await navigator.share(sharePayload);
           } catch(e) {}
         } else {
+          // تنزيل مباشر في حال عدم دعم المشاركة المدمجة
           const link = document.createElement('a');
-          link.download = `ذكر-الحياة-الطيبة.png`;
+          link.download = `ذكر-الحياة-الطيبة-${uniqueSuffix}.png`;
           link.href = studioLiveCanvas.toDataURL('image/png');
           link.click();
-          alert('تم تنزيل بطاقة الذكر الفاخرة بنجاح!');
+          
+          const toast = document.getElementById('studioToastBanner');
+          if (toast) {
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2400);
+          }
         }
-
-        if (dhikrImageStudioModal) dhikrImageStudioModal.classList.remove('show');
+        // يبقى الاستوديو مفتوحاً أمام المستخدم ليتابع كما يشاء
       }, 'image/png');
     };
   }
-
+  
   window.moveDhikr = (index, dir) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
@@ -2740,7 +2780,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.43', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.44', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
