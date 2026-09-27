@@ -1553,11 +1553,14 @@ if (isRunningStandalone) {
     };
   });
 
-  // تأكيد المشاركة (سواء فردية أو جماعية)
+  // تأكيد المشاركة (سواء فردية أو جماعية) مع فحص صارم لصيغة المشاركة
   if (confirmDhikrShareActionBtn) {
     confirmDhikrShareActionBtn.onclick = () => {
       if (!activeDhikrCategoryForShare) return;
-      if (dhikrShareModal) dhikrShareModal.classList.remove('show');
+
+      // قراءة البطاقة المحددة فعلياً في الواجهة لمنع أي خطأ
+      const activeCard = document.querySelector('.share-format-card.active');
+      const currentFormat = activeCard ? activeCard.getAttribute('data-type') : selectedShareFormat;
 
       studioConfig.includeCategory = toggleShareIncludeCategory ? toggleShareIncludeCategory.checked : true;
       studioConfig.includeReps = toggleShareIncludeReps ? toggleShareIncludeReps.checked : true;
@@ -1567,12 +1570,16 @@ if (isRunningStandalone) {
 
       const itemsToShare = isBatchShareMode ? batchSelectedDhikrItems : [activeDhikrItemForShare];
 
-      if (selectedShareFormat === 'image-only' || selectedShareFormat === 'image-text') {
-        // فتح استوديو تصميم الصورة
-        openDhikrImageStudio(selectedShareFormat === 'image-text');
-      } else {
-        // صياغة وإرسال الرسالة النصية لجميع الأذكار المحددة
-        const msg = buildBatchDhikrTextMessage(itemsToShare, selectedShareFormat === 'text-plain');
+      // إغلاق نافذة الخيارات
+      if (dhikrShareModal) dhikrShareModal.classList.remove('show');
+
+      // 1. إذا كان الخيار صورة (سواء صورة فقط أو صورة مع نص): فتح استوديو التصميم مباشرة
+      if (currentFormat === 'image-only' || currentFormat === 'image-text') {
+        openDhikrImageStudio(currentFormat === 'image-text');
+      } 
+      // 2. إذا كان الخيار نصياً: إرسال النص فوراً
+      else {
+        const msg = buildBatchDhikrTextMessage(itemsToShare, currentFormat === 'text-plain');
         if (navigator.share) {
           navigator.share({ title: activeDhikrCategoryForShare.name, text: msg }).catch(() => {});
         } else {
@@ -1583,7 +1590,7 @@ if (isRunningStandalone) {
     };
   }
 
-  // صياغة النص الجماعي
+  // صياغة الرسالة النصية متضمنة عدد مرات التكرار لكل ذكر بلا استثناء
   function buildBatchDhikrTextMessage(itemsList, isPlain = false) {
     let msg = '';
     if (studioConfig.includeCategory && activeDhikrCategoryForShare) {
@@ -1601,9 +1608,12 @@ if (isRunningStandalone) {
       if (pText) msg += `${pText}\n`;
       msg += `${bText}\n`;
 
-      if (studioConfig.includeReps && it.count > 1) {
-        msg += `(تكرار: ${it.count} مرات)\n`;
+      // إدراج عدد مرات التكرار لكل ذكر محدد دائماً عند تفعيل الخيار
+      if (studioConfig.includeReps) {
+        const repCount = it.count || 1;
+        msg += `(تكرار: ${repCount} مرة)\n`;
       }
+
       if (studioConfig.includeVirtue && it.fullNote) {
         const note = isPlain ? stripArabicTashkeel(it.fullNote) : it.fullNote;
         msg += `✨ الفضل: ${note}\n`;
@@ -1622,7 +1632,7 @@ if (isRunningStandalone) {
     }
     return msg;
   }
-
+  
   function openDhikrImageStudio(attachText) {
     studioAttachTextWhenSharing = attachText;
     
@@ -2916,7 +2926,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.50', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.51', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
