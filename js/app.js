@@ -1886,9 +1886,6 @@ if (isRunningStandalone) {
     // 8. كتابة فضل الذكر إن وجد بمسافة تنفس متوازنة
     if (virtueLines.length > 0) {
       const startVirtueY = currentAfterDhikrY + (isRepsBadgeActive ? 32 : 18);
-    // 8. كتابة فضل الذكر إن وجد
-    if (virtueLines.length > 0) {
-      const startVirtueY = currentAfterDhikrY + 15;
       ctx.font = `600 ${virtueFontSize}px "Cairo", sans-serif`;
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#B45309' : '#FCD34D';
       virtueLines.forEach((vl, vIdx) => {
@@ -2838,7 +2835,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.48', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.49', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
