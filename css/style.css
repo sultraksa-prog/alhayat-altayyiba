@@ -3564,7 +3564,7 @@ body {
   opacity: 1;
 }
 
-/* ==================== تنسيقات المرحلة 2: استوديو تصميم الصورة المباشر ==================== */
+/* ==================== تنسيقات المرحلة 2: استوديو تصميم الصورة المباشر المطور ==================== */
 .studio-fullscreen-modal {
   position: fixed;
   inset: 0;
@@ -3578,6 +3578,31 @@ body {
 
 .studio-fullscreen-modal.show {
   display: flex;
+}
+
+/* شريط إشعار نجاح حفظ الصورة في الاستوديو */
+.studio-toast-banner {
+  position: absolute;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-25px);
+  background: rgba(16, 185, 129, 0.95);
+  color: #FFFFFF;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1100;
+  white-space: nowrap;
+}
+
+.studio-toast-banner.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
 .studio-header {
@@ -3637,13 +3662,14 @@ body {
 }
 
 .studio-preview-viewport {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 10px;
   overflow: hidden;
   background: radial-gradient(circle, #1E293B 0%, #0F172A 100%);
+  min-height: 200px;
 }
 
 .studio-canvas-container {
@@ -3653,27 +3679,27 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #studioLiveCanvas {
   display: block;
   max-width: 100%;
-  max-height: 48vh;
+  max-height: 42vh;
   object-fit: contain;
 }
 
+/* لوحة التحكم المرنة المريحة */
 .studio-controls-dock {
   background: #1E293B;
   border-top: 1px solid #334155;
-  padding: 10px 16px 20px 16px;
+  padding: 12px 16px 26px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
-  max-height: 44vh;
+  max-height: 52vh;
   overflow-y: auto;
 }
 
@@ -3688,7 +3714,7 @@ body {
 
 .ratio-tab {
   flex: 1;
-  padding: 7px 0;
+  padding: 8px 0;
   border: none;
   background: transparent;
   color: #94A3B8;
@@ -3716,11 +3742,11 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .studio-slider-val {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   color: #38BDF8;
 }
@@ -3738,13 +3764,13 @@ body {
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  padding: 2px 0;
 }
 .studio-horizontal-scroll::-webkit-scrollbar { display: none; }
 
 .studio-bg-thumb {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   border: 2px solid #334155;
   cursor: pointer;
@@ -3762,7 +3788,7 @@ body {
   border: 1.5px solid #334155;
   border-radius: 8px;
   color: #E2E8F0;
-  padding: 6px 12px;
+  padding: 7px 12px;
   font-size: 11.5px;
   white-space: nowrap;
   cursor: pointer;
@@ -3780,8 +3806,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
-  padding-top: 6px;
+  margin-top: 2px;
+  padding-top: 8px;
   border-top: 1px solid #334155;
 }
 
@@ -3799,12 +3825,12 @@ body {
 
 .color-dots-row {
   display: flex;
-  gap: 6px;
+  gap: 7px;
 }
 
 .color-dot {
-  width: 24px;
-  height: 24px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid transparent;
