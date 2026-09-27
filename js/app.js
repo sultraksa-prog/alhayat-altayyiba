@@ -1796,19 +1796,15 @@ if (isRunningStandalone) {
       if (vCur) virtueLines.push(vCur);
     }
 
-    // احتساب شارة التكرار أسفل الذكر (بصيغة: العدد مسافة كلمة مرة)
-    const showRepsBadge = studioConfig.includeReps && activeDhikrItemForShare.count;
-    const repsBadgeHeight = showRepsBadge ? 65 : 0;
-
-    // احتساب أبعاد الكتلة النصية بدقة رياضية ثابتة
+    // احتساب أبعاد الكتلة النصية بدقة رياضية ثابتة وتفادي تكرار المتغيرات
     const hasPre = !!activeDhikrItemForShare.pre;
-    const showRepsBadge = !!(studioConfig.includeReps && activeDhikrItemForShare.count);
+    const isRepsBadgeActive = !!(studioConfig.includeReps && activeDhikrItemForShare.count);
     
-    // أبعاد ثابتة لا تتأثر مطلقاً بسلايدر حجم الخط
+    // أبعاد ثابتة لا تتأثر نهائياً بسلايدر حجم الخط
     const fixedRepsBadgeHeight = 44; 
     const preHeight = hasPre ? 50 : 0;
     const dhikrLinesHeight = (lines.length - 1) * lineHeight;
-    const repsSpacingHeight = showRepsBadge ? 65 : 0;
+    const repsSpacingHeight = isRepsBadgeActive ? 65 : 0;
     const virtueHeight = virtueLines.length > 0 ? (virtueLines.length * virtueLineHeight + 40) : 0;
     
     const totalClusterHeight = preHeight + dhikrLinesHeight + repsSpacingHeight + virtueHeight + baseFontSize;
@@ -1854,7 +1850,7 @@ if (isRunningStandalone) {
     const dhikrLastLineY = startTextY + ((lines.length - 1) * lineHeight);
     let currentAfterDhikrY = dhikrLastLineY;
 
-    if (showRepsBadge) {
+    if (isRepsBadgeActive) {
       const repsText = `${activeDhikrItemForShare.count} مرة`;
       // حجم خط شارة التكرار ثابت دائماً (26px) ولا يتأثر بسلايدر حجم خط الذكر
       ctx.font = 'bold 26px "Cairo", sans-serif';
@@ -2833,7 +2829,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.46', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.47', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
