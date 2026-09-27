@@ -3842,4 +3842,81 @@ body {
   border-color: #38BDF8 !important;
 }
 
+/* ==================== تنسيقات تحديد نطاق الأذكار للمشاركة الجماعية ==================== */
+.batch-range-box {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.batch-range-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.batch-range-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.batch-count-pill {
+  font-size: 11px;
+  font-weight: 800;
+  background: #EEF6FC;
+  color: var(--primary-blue);
+  border: 1px solid #BCD8F0;
+  padding: 2px 10px;
+  border-radius: 9999px;
+}
+
+.batch-select-row {
+  display: flex;
+  gap: 10px;
+}
+
+.batch-select-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.batch-select-col label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.custom-batch-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  background: #FFFFFF;
+  color: var(--text-main);
+  outline: none;
+}
+.custom-batch-select:focus {
+  border-color: var(--primary-blue);
+}
+
+.batch-limit-notice {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400E;
+  line-height: 1.4;
+}
 
