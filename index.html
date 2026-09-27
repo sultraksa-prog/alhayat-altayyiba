@@ -786,7 +786,11 @@
           <div class="header-icon-btn" id="readerMenuBtn" title="خيارات">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </div>
-          <div class="dropdown-menu" id="readerDropdownMenu">
+          <div class="dropdown-menu" id="readerDropdownMenu" style="width: 190px;">
+            <div class="dropdown-item" id="openBatchShareModalBtn" style="color: var(--primary-blue); font-weight: 700;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              <span>مشاركة الأذكار</span>
+            </div>
             <div class="dropdown-item" id="toggleEditModeBtn">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               <span>وضع التعديل</span>
@@ -1619,10 +1623,31 @@
           <button type="button" class="modal-btn-link" id="closeDhikrShareBtn" style="font-size: 18px; cursor: pointer;">✕</button>
         </div>
 
+        <!-- قسم تحديد نطاق الأذكار (يظهر عند مشاركة مجموعة أذكار) -->
+        <div class="batch-range-box" id="batchShareRangeContainer" style="display: none;">
+          <div class="batch-range-header">
+            <span class="batch-range-title">تحديد نطاق الأذكار:</span>
+            <span class="batch-count-pill" id="batchSelectedCountBadge">المحدد: 3 أذكار</span>
+          </div>
+          <div class="batch-select-row">
+            <div class="batch-select-col">
+              <label>من الذكر:</label>
+              <select id="batchShareStartSelect" class="custom-batch-select"></select>
+            </div>
+            <div class="batch-select-col">
+              <label>إلى الذكر:</label>
+              <select id="batchShareEndSelect" class="custom-batch-select"></select>
+            </div>
+          </div>
+          <div class="batch-limit-notice" id="batchImageLimitNotice" style="display: none;">
+            <span>ℹ️ المشاركة كصورة متاحة لـ 3 أذكار كحد أقصى للحفاظ على وضوح وجمال الخط.</span>
+          </div>
+        </div>
+
         <p class="settings-sec-subtitle" style="margin-bottom: 8px;">اختر صيغة المشاركة:</p>
         
         <!-- البطاقات الأربع لاختيار صيغة المشاركة -->
-        <div class="share-format-cards">
+        <div class="share-format-cards" id="shareFormatCardsContainer">
           <div class="share-format-card" data-type="image-only">
             <span class="format-icon">🖼️</span>
             <div class="format-info">
