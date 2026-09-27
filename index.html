@@ -1610,24 +1610,33 @@
       </div>
     </div>
 
-    <!-- ==================== المرحلة 1: نافذة خيارات مشاركة الذكر ==================== -->
+    <!-- ==================== المرحلة 1: نافذة خيارات مشاركة الذكر المطورة ==================== -->
     <div class="bottom-sheet-backdrop" id="dhikrShareModal">
-      <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto;">
         <div class="sheet-drag-handle"></div>
         <div class="sheet-header">
           <h3 class="sheet-title" style="margin: 0;">مشاركة الذكر</h3>
           <button type="button" class="modal-btn-link" id="closeDhikrShareBtn" style="font-size: 18px; cursor: pointer;">✕</button>
         </div>
 
-        <p class="settings-sec-subtitle" style="margin-bottom: 10px;">اختر صيغة المشاركة:</p>
+        <p class="settings-sec-subtitle" style="margin-bottom: 8px;">اختر صيغة المشاركة:</p>
         
-        <!-- البطاقات الثلاث لاختيار صيغة المشاركة -->
+        <!-- البطاقات الأربع لاختيار صيغة المشاركة -->
         <div class="share-format-cards">
-          <div class="share-format-card active" data-type="image">
+          <div class="share-format-card" data-type="image-only">
             <span class="format-icon">🖼️</span>
             <div class="format-info">
-              <h4>مشاركة كصورة</h4>
-              <p>بطاقة إسلامية فاخرة مخصصة للنشر</p>
+              <h4>مشاركة كصورة فقط</h4>
+              <p>بطاقة إسلامية فاخرة مصممة للنشر مجردة من النص</p>
+            </div>
+            <span class="format-check">✓</span>
+          </div>
+
+          <div class="share-format-card active" data-type="image-text">
+            <span class="format-icon">🖼️📝</span>
+            <div class="format-info">
+              <h4>مشاركة كصورة مع نص</h4>
+              <p>تصميم بطاقة الصورة وإرفاق رسالة نصية مرافقة لها</p>
             </div>
             <span class="format-check">✓</span>
           </div>
@@ -1653,7 +1662,7 @@
 
         <hr class="setting-divider" style="margin: 14px 0 10px 0;">
 
-        <!-- خيارات التخصيص المرافقة -->
+        <!-- خيارات التحكم الدقيقة في المحتوى -->
         <div class="setting-toggle-row">
           <div class="setting-text-col">
             <h4 class="setting-title" style="font-size: 13.5px;">إضافة اسم مجموعة الأذكار</h4>
@@ -1661,6 +1670,28 @@
           </div>
           <label class="ios-switch">
             <input type="checkbox" id="toggleShareIncludeCategory" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-toggle-row" id="shareRepsRow">
+          <div class="setting-text-col">
+            <h4 class="setting-title" style="font-size: 13.5px;">إضافة عدد مرات التكرار</h4>
+            <p class="setting-desc">إظهار جملة: (تكرار: 3 مرات)</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleShareIncludeReps" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-toggle-row" id="shareVirtueRow">
+          <div class="setting-text-col">
+            <h4 class="setting-title" style="font-size: 13.5px;">إضافة فضل وأجر الذكر</h4>
+            <p class="setting-desc">تضمين الأجر الوارد في السنة النبوية</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleShareIncludeVirtue" checked>
             <span class="switch-slider"></span>
           </label>
         </div>
@@ -1676,13 +1707,25 @@
           </label>
         </div>
 
+        <!-- خيار الرابط التابع (يظهر فقط إذا كان خيار التذييل مفعلاً) -->
+        <div class="setting-toggle-row" id="shareLinkSubRow" style="padding-right: 18px; border-right: 3px solid #16A34A; background: #F0FDF4; border-radius: 10px; margin-top: 4px; padding: 8px 12px;">
+          <div class="setting-text-col">
+            <h4 class="setting-title" style="font-size: 13px; color: #15803D;">إضافة رابط التطبيق</h4>
+            <p class="setting-desc" style="font-size: 11px;">تضمين الرابط المباشر لتجربة التطبيق</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleShareIncludeLink" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
         <div class="modal-actions-row" style="justify-content: center; margin-top: 16px;">
           <button type="button" class="modal-btn-primary" id="confirmDhikrShareActionBtn" style="width: 100%; padding: 13px 0; font-size: 15px;">مشاركة</button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== المرحلة 2: استوديو تصميم وتنسيق الصورة المباشر ==================== -->
+    <!-- ==================== المرحلة 2: استوديو تصميم الصورة المباشر المطور ==================== -->
     <div class="studio-fullscreen-modal" id="dhikrImageStudioModal">
       <!-- هيدر الاستوديو العلوي -->
       <header class="studio-header">
@@ -1694,7 +1737,7 @@
         </div>
       </header>
 
-      <!-- مسرح المعاينة الحية المباشرة (Live Preview Canvas Viewport) -->
+      <!-- مسرح المعاينة الحية المباشرة -->
       <div class="studio-preview-viewport">
         <div class="studio-canvas-container" id="studioCanvasContainer">
           <canvas id="studioLiveCanvas"></canvas>
@@ -1703,7 +1746,7 @@
 
       <!-- لوحة وأشرطة التحكم السفلية المباشرة -->
       <div class="studio-controls-dock">
-        <!-- 1. أزرار اختيار الأبعاد (مربع / قصة) -->
+        <!-- 1. أبعاد الصورة (مربع / قصة) -->
         <div class="studio-control-row">
           <div class="studio-ratio-selector">
             <button type="button" class="ratio-tab active" data-ratio="square">
@@ -1715,7 +1758,26 @@
           </div>
         </div>
 
-        <!-- 2. شريط اختيار الخلفية -->
+        <!-- 2. شريط التحكم الحر بحجم الخط -->
+        <div class="studio-slider-box">
+          <div class="studio-slider-header">
+            <span class="ctrl-sublbl">حجم الخط:</span>
+            <span class="studio-slider-val" id="studioFontSizeDisplay">48</span>
+          </div>
+          <input type="range" id="studioFontSizeSlider" min="22" max="92" value="48" class="custom-slider">
+        </div>
+
+        <!-- 3. شريط اختيار نمط الزخرفة الإسلامية -->
+        <div class="studio-section-title">نمط الزخرفة الإسلامية:</div>
+        <div class="studio-horizontal-scroll" id="studioMotifSelector">
+          <button type="button" class="studio-motif-chip active" data-motif="motif-1">شمسة مشعة</button>
+          <button type="button" class="studio-motif-chip" data-motif="motif-2">نجمة الفصوص</button>
+          <button type="button" class="studio-motif-chip" data-motif="motif-3">الخاتم الأندلسي</button>
+          <button type="button" class="studio-motif-chip" data-motif="motif-4">نجمة المعينات</button>
+          <button type="button" class="studio-motif-chip" data-motif="motif-5">العقدة المشبكة</button>
+        </div>
+
+        <!-- 4. شريط اختيار الخلفية -->
         <div class="studio-section-title">اختر الخلفية:</div>
         <div class="studio-horizontal-scroll" id="studioBgSelector">
           <div class="studio-bg-thumb active" data-bg="royal-navy" style="background: linear-gradient(135deg, #09203F, #1D5D9B);" title="كحلي ملكي"></div>
@@ -1726,7 +1788,7 @@
           <div class="studio-bg-thumb" data-bg="ivory-parchment" style="background: linear-gradient(135deg, #FAF6ED, #F3ECE0);" title="عاجي قرطاسي"></div>
         </div>
 
-        <!-- 3. شريط اختيار نوع الخط -->
+        <!-- 5. شريط اختيار نوع الخط -->
         <div class="studio-section-title">نوع الخط:</div>
         <div class="studio-horizontal-scroll" id="studioFontSelector">
           <button type="button" class="studio-font-chip active" data-font="'AmiriLocal', serif" style="font-family:'AmiriLocal',serif;">الأميري (معاينة)</button>
@@ -1737,7 +1799,7 @@
           <button type="button" class="studio-font-chip" data-font="'CairoLocal', sans-serif" style="font-family:'CairoLocal',sans-serif;">كايرو (معاينة)</button>
         </div>
 
-        <!-- 4. لون الخط وخلفية النص -->
+        <!-- 6. لون الخط وخلفية النص -->
         <div class="studio-dual-controls-row">
           <div class="studio-color-picker-group">
             <span class="ctrl-sublbl">لون النص:</span>
