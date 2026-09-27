@@ -308,8 +308,16 @@ if (isRunningStandalone) {
   }
 
   // التقاط إيماءة الرجوع (سحب الحافة أو زر العودة في الجوال)
+  let isClosingStudioSafely = false;
+
   window.addEventListener('popstate', () => {
-    // 0. إذا كان استوديو تصميم الصورة مفتوحاً، سحب الحافة يغلقه بسلاسة ويعيد المستخدم لقراءة الأذكار
+    // إذا كان الرجوع ناتجاً عن إغلاق الاستوديو: التوقف فوراً والبقاء في شاشة قراءة الأذكار
+    if (isClosingStudioSafely) {
+      isClosingStudioSafely = false;
+      return;
+    }
+
+    // إذا كان استوديو تصميم الصورة مفتوحاً وسحب المستخدم الحافة: إغلاقه والبقاء في قراءة الأذكار
     const studioModal = document.getElementById('dhikrImageStudioModal');
     if (studioModal && studioModal.classList.contains('show')) {
       studioModal.classList.remove('show');
@@ -1551,10 +1559,16 @@ if (isRunningStandalone) {
     renderStudioLiveCanvas();
   }
 
+  // زر إغلاق الاستوديو (✕): يعيدك بأمان لنفس مكانك في شاشة قراءة الأذكار
   if (closeDhikrStudioBtn && dhikrImageStudioModal) {
     closeDhikrStudioBtn.onclick = () => {
+      isClosingStudioSafely = true;
       dhikrImageStudioModal.classList.remove('show');
-      if (location.hash === '#studio') history.back();
+      if (location.hash === '#studio') {
+        history.back();
+      } else {
+        isClosingStudioSafely = false;
+      }
     };
   }
 
@@ -1643,7 +1657,7 @@ if (isRunningStandalone) {
     };
   }
 
-  // رسم بطاقة الذكر بالمعايير الهندسية المصححة بالكامل
+  // رسم بطاقة الذكر متضمنة شارة عدد مرات التكرار بالتنسيق المطابق
   function renderStudioLiveCanvas() {
     if (!studioLiveCanvas || !activeDhikrItemForShare) return;
     const isStory = studioConfig.ratio === 'story';
@@ -1714,20 +1728,19 @@ if (isRunningStandalone) {
     const isLightHeader = (bg === 'emerald-ivory' || bg === 'sand-bronze');
     const emblemCenterY = isStory ? 130 : 95;
     
-    // رسم صرح المئذنة المذهب الحقيقي
     drawRealBrandEmblem(ctx, width / 2, emblemCenterY, isStory ? 0.70 : 0.60, '#FCD34D');
 
-    // اسم التطبيق مع هامش أمان رأسي يمنع أي التصاق (35 بكسل على الأقل)
+    // اسم التطبيق مع هامش أمان رأسي كافٍ
     const titleY = emblemCenterY + (isStory ? 108 : 94);
     ctx.font = 'bold 36px "Cairo", sans-serif';
     ctx.fillStyle = isLightHeader ? '#FEF3C7' : (bg === 'ivory-parchment' ? '#B45309' : '#FCD34D');
     ctx.fillText('الحياة الطيبة', width / 2, titleY);
 
-    // 4. تكبير شارة اسم مجموعة الأذكار لتتناسب مع فخامة التصميم
+    // 4. شارة اسم مجموعة الأذكار
     let currentHeaderBottomY = titleY + 40;
     if (studioConfig.includeCategory && activeDhikrCategoryForShare) {
       const badgeText = activeDhikrCategoryForShare.name;
-      ctx.font = 'bold 34px "Cairo", sans-serif'; // تكبير الخط من 26 إلى 34 بكسل
+      ctx.font = 'bold 34px "Cairo", sans-serif';
       const textW = ctx.measureText(badgeText).width + 80;
       
       const badgeY = titleY + (isStory ? 75 : 65);
@@ -1741,7 +1754,7 @@ if (isRunningStandalone) {
       currentHeaderBottomY = badgeY + 45;
     }
 
-    // 5. احتساب حجم وكتلة متن الذكر والفضل
+    // 5. احتساب حجم وكتلة متن الذكر والفضل وشارة التكرار
     const baseFontSize = studioConfig.fontSize || 48;
     const lineHeight = baseFontSize * 1.82;
     const maxTextWidth = width - 160;
@@ -1762,7 +1775,7 @@ if (isRunningStandalone) {
     });
     if (curLine) lines.push(curLine);
 
-    // أسطر الفضل إن كان مفعلاً
+    // تجهيز أسطر الفضل إن كان مفعلاً
     let virtueLines = [];
     const virtueFontSize = Math.max(22, Math.round(baseFontSize * 0.58));
     const virtueLineHeight = virtueFontSize * 1.6;
@@ -1783,40 +1796,43 @@ if (isRunningStandalone) {
       if (vCur) virtueLines.push(vCur);
     }
 
-    // ارتفاع السابقة ومتن الذكر والفضل
+    // احتساب شارة التكرار أسفل الذكر (بصيغة: العدد مسافة كلمة مرة)
+    const showRepsBadge = studioConfig.includeReps && activeDhikrItemForShare.count;
+    const repsBadgeHeight = showRepsBadge ? 65 : 0;
+
     const hasPre = !!activeDhikrItemForShare.pre;
     const preHeight = hasPre ? 50 : 0;
     const bodyHeight = lines.length * lineHeight;
     const virtueHeight = virtueLines.length > 0 ? (virtueLines.length * virtueLineHeight + 40) : 0;
-    const totalClusterHeight = preHeight + bodyHeight + virtueHeight;
+    const totalClusterHeight = preHeight + bodyHeight + repsBadgeHeight + virtueHeight;
 
-    // رفع موضع الفوتر في نمط الستوري لتفادي شريط إيماءات الجوال
+    // رفع الفوتر في نمط الستوري
     const footerY = height - (isStory ? 140 : 65);
     const dividerY = height - (isStory ? 200 : 115);
 
-    // توسيط الكتلة النصية بالكامل بين نهاية الهيدر وبداية الفوتر
+    // توسيط الكتلة النصية بالكامل
     const availableAreaTop = currentHeaderBottomY + 20;
     const availableAreaBottom = dividerY - 30;
     const clusterStartY = availableAreaTop + Math.max(10, ((availableAreaBottom - availableAreaTop) - totalClusterHeight) / 2);
 
-    // 6. رسم السابقة قريبة جداً من أول سطر للذكر
+    // 6. رسم السابقة
     let startTextY = clusterStartY + baseFontSize;
     if (hasPre) {
       ctx.font = 'bold 30px "Cairo", sans-serif';
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#0284C7' : '#93C5FD';
       ctx.fillText(activeDhikrItemForShare.pre, width / 2, clusterStartY + 10);
-      startTextY = clusterStartY + 60 + baseFontSize; // قريبة وملاصقة للمتن بمسافة مريحة
+      startTextY = clusterStartY + 60 + baseFontSize;
     }
 
     // تظليل خلفية النص إن كان مفعلاً
     if (studioConfig.textHighlight) {
       ctx.fillStyle = (studioConfig.color === '#FFFFFF') ? 'rgba(0, 0, 0, 0.42)' : 'rgba(255, 255, 255, 0.82)';
       ctx.beginPath();
-      ctx.roundRect(60, startTextY - baseFontSize - 20, width - 120, bodyHeight + (hasPre ? 50 : 0) + virtueHeight + 40, 24);
+      ctx.roundRect(60, startTextY - baseFontSize - 20, width - 120, totalClusterHeight + 40, 24);
       ctx.fill();
     }
 
-    // كتابة متن الذكر (مع ضمان التباين الصارم في القوالب الفاتحة)
+    // كتابة متن الذكر
     let finalTextColor = studioConfig.color;
     if ((bg === 'emerald-ivory' || bg === 'sand-bronze' || bg === 'ivory-parchment') && finalTextColor === '#FFFFFF') {
       finalTextColor = (bg === 'sand-bronze') ? '#451A03' : '#1E293B';
@@ -1828,9 +1844,34 @@ if (isRunningStandalone) {
       ctx.fillText(l, width / 2, startTextY + (idx * lineHeight));
     });
 
-    // كتابة فضل الذكر
+    // 7. رسم شارة عدد مرات التكرار أسفل الذكر بنفس تنسيق اسم المجموعة بالضبط
+    let currentAfterDhikrY = startTextY + bodyHeight + 10;
+
+    if (showRepsBadge) {
+      const repsText = `${activeDhikrItemForShare.count} مرة`;
+      ctx.font = 'bold 28px "Cairo", sans-serif';
+      const repsW = ctx.measureText(repsText).width + 64;
+
+      const repsBadgeY = currentAfterDhikrY + 22;
+      ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') 
+        ? 'rgba(0, 0, 0, 0.08)' 
+        : 'rgba(252, 211, 77, 0.16)';
+      
+      ctx.beginPath();
+      ctx.roundRect(width / 2 - repsW / 2, repsBadgeY - 26, repsW, 50, 25);
+      ctx.fill();
+
+      ctx.fillStyle = (bg === 'ivory-parchment') 
+        ? '#B45309' 
+        : ((bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#1E293B' : '#FCD34D');
+      
+      ctx.fillText(repsText, width / 2, repsBadgeY + 6);
+      currentAfterDhikrY = repsBadgeY + 45;
+    }
+
+    // 8. كتابة فضل الذكر إن وجد
     if (virtueLines.length > 0) {
-      const startVirtueY = startTextY + bodyHeight + 15;
+      const startVirtueY = currentAfterDhikrY + 15;
       ctx.font = `600 ${virtueFontSize}px "Cairo", sans-serif`;
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#B45309' : '#FCD34D';
       virtueLines.forEach((vl, vIdx) => {
@@ -1838,7 +1879,7 @@ if (isRunningStandalone) {
       });
     }
 
-    // 7. رسم الخط الفاصل المذهب والشعار اللفظي في الفوتر الثابت المرتفع
+    // 9. رسم الخط الفاصل المذهب والشعار اللفظي في الفوتر
     const divColor = (bg === 'ivory-parchment') ? '#D4AF37' : '#E2E8F0';
     drawTaperedDividerWithRosette(ctx, dividerY, divColor, 660, 18);
 
@@ -2780,7 +2821,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.44', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.45', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
