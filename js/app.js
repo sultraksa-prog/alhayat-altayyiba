@@ -1800,28 +1800,34 @@ if (isRunningStandalone) {
     const showRepsBadge = studioConfig.includeReps && activeDhikrItemForShare.count;
     const repsBadgeHeight = showRepsBadge ? 65 : 0;
 
+    // احتساب أبعاد الكتلة النصية بدقة رياضية ثابتة
     const hasPre = !!activeDhikrItemForShare.pre;
+    const showRepsBadge = !!(studioConfig.includeReps && activeDhikrItemForShare.count);
+    
+    // أبعاد ثابتة لا تتأثر مطلقاً بسلايدر حجم الخط
+    const fixedRepsBadgeHeight = 44; 
     const preHeight = hasPre ? 50 : 0;
-    const bodyHeight = lines.length * lineHeight;
+    const dhikrLinesHeight = (lines.length - 1) * lineHeight;
+    const repsSpacingHeight = showRepsBadge ? 65 : 0;
     const virtueHeight = virtueLines.length > 0 ? (virtueLines.length * virtueLineHeight + 40) : 0;
-    const totalClusterHeight = preHeight + bodyHeight + repsBadgeHeight + virtueHeight;
+    
+    const totalClusterHeight = preHeight + dhikrLinesHeight + repsSpacingHeight + virtueHeight + baseFontSize;
 
     // رفع الفوتر في نمط الستوري
     const footerY = height - (isStory ? 140 : 65);
     const dividerY = height - (isStory ? 200 : 115);
 
-    // توسيط الكتلة النصية بالكامل
+    // توسيط محتوى الذكر عمودياً في البطاقة
     const availableAreaTop = currentHeaderBottomY + 20;
     const availableAreaBottom = dividerY - 30;
     const clusterStartY = availableAreaTop + Math.max(10, ((availableAreaBottom - availableAreaTop) - totalClusterHeight) / 2);
 
     // 6. رسم السابقة
-    let startTextY = clusterStartY + baseFontSize;
+    let startTextY = clusterStartY + (hasPre ? 60 : 0) + baseFontSize;
     if (hasPre) {
       ctx.font = 'bold 30px "Cairo", sans-serif';
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#0284C7' : '#93C5FD';
-      ctx.fillText(activeDhikrItemForShare.pre, width / 2, clusterStartY + 10);
-      startTextY = clusterStartY + 60 + baseFontSize;
+      ctx.fillText(activeDhikrItemForShare.pre, width / 2, clusterStartY + 25);
     }
 
     // تظليل خلفية النص إن كان مفعلاً
@@ -1832,7 +1838,7 @@ if (isRunningStandalone) {
       ctx.fill();
     }
 
-    // كتابة متن الذكر
+    // كتابة أسطر متن الذكر الشريف
     let finalTextColor = studioConfig.color;
     if ((bg === 'emerald-ivory' || bg === 'sand-bronze' || bg === 'ivory-parchment') && finalTextColor === '#FFFFFF') {
       finalTextColor = (bg === 'sand-bronze') ? '#451A03' : '#1E293B';
@@ -1844,29 +1850,35 @@ if (isRunningStandalone) {
       ctx.fillText(l, width / 2, startTextY + (idx * lineHeight));
     });
 
-    // 7. رسم شارة عدد مرات التكرار أسفل الذكر بنفس تنسيق اسم المجموعة بالضبط
-    let currentAfterDhikrY = startTextY + bodyHeight + 10;
+    // 7. رسم شارة التكرار بأبعاد ثابتة وموضع ملاصق لمتن الذكر
+    const dhikrLastLineY = startTextY + ((lines.length - 1) * lineHeight);
+    let currentAfterDhikrY = dhikrLastLineY;
 
     if (showRepsBadge) {
       const repsText = `${activeDhikrItemForShare.count} مرة`;
-      ctx.font = 'bold 28px "Cairo", sans-serif';
-      const repsW = ctx.measureText(repsText).width + 64;
+      // حجم خط شارة التكرار ثابت دائماً (26px) ولا يتأثر بسلايدر حجم خط الذكر
+      ctx.font = 'bold 26px "Cairo", sans-serif';
+      const repsW = ctx.measureText(repsText).width + 54;
 
-      const repsBadgeY = currentAfterDhikrY + 22;
+      // موضع قريب وملاصق لآخر سطر من متن الذكر بمسافة ثابتة (40px)
+      const repsBadgeY = dhikrLastLineY + 40;
+      
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') 
         ? 'rgba(0, 0, 0, 0.08)' 
         : 'rgba(252, 211, 77, 0.16)';
       
       ctx.beginPath();
-      ctx.roundRect(width / 2 - repsW / 2, repsBadgeY - 26, repsW, 50, 25);
+      // ارتفاع الكبسولة ثابت دائماً (44px) ونصف قطرها ثابت (22px)
+      ctx.roundRect(width / 2 - repsW / 2, repsBadgeY - 22, repsW, fixedRepsBadgeHeight, 22);
       ctx.fill();
 
       ctx.fillStyle = (bg === 'ivory-parchment') 
         ? '#B45309' 
         : ((bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#1E293B' : '#FCD34D');
       
-      ctx.fillText(repsText, width / 2, repsBadgeY + 6);
-      currentAfterDhikrY = repsBadgeY + 45;
+      ctx.fillText(repsText, width / 2, repsBadgeY + 8);
+      // تأمين مسافة مريحة تفصل الشارة عن فضل الذكر بالأسفل
+      currentAfterDhikrY = repsBadgeY + 36;
     }
 
     // 8. كتابة فضل الذكر إن وجد
@@ -2821,7 +2833,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.45', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.46', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
