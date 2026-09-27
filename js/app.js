@@ -1846,37 +1846,46 @@ if (isRunningStandalone) {
       ctx.fillText(l, width / 2, startTextY + (idx * lineHeight));
     });
 
-    // 7. رسم شارة التكرار بأبعاد ثابتة وموضع ملاصق لمتن الذكر
+    // 7. رسم شارة التكرار في أقصى الجهة اليسرى بمسافة مريحة تمنع أي تداخل نهائياً
     const dhikrLastLineY = startTextY + ((lines.length - 1) * lineHeight);
     let currentAfterDhikrY = dhikrLastLineY;
 
     if (isRepsBadgeActive) {
       const repsText = `${activeDhikrItemForShare.count} مرة`;
-      // حجم خط شارة التكرار ثابت دائماً (26px) ولا يتأثر بسلايدر حجم خط الذكر
+      // حجم خط شارة التكرار ثابت (26px)
       ctx.font = 'bold 26px "Cairo", sans-serif';
-      const repsW = ctx.measureText(repsText).width + 54;
+      const repsW = ctx.measureText(repsText).width + 50;
 
-      // موضع قريب وملاصق لآخر سطر من متن الذكر بمسافة ثابتة (40px)
-      const repsBadgeY = dhikrLastLineY + 40;
+      // موضع رأسي مريح أسفل آخر سطر لتفادي ملامسة حركات التشكيل السفلية
+      const repsBadgeY = dhikrLastLineY + 55;
       
+      // المحاذاة في أقصى الجهة اليسرى (عند بداية الهامش الأيسر للبطاقة)
+      const badgeLeftX = 105;
+      const badgeCenterX = badgeLeftX + (repsW / 2);
+
       ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') 
         ? 'rgba(0, 0, 0, 0.08)' 
         : 'rgba(252, 211, 77, 0.16)';
       
       ctx.beginPath();
-      // ارتفاع الكبسولة ثابت دائماً (44px) ونصف قطرها ثابت (22px)
-      ctx.roundRect(width / 2 - repsW / 2, repsBadgeY - 22, repsW, fixedRepsBadgeHeight, 22);
+      // رسم الكبسولة في الجهة اليسرى
+      ctx.roundRect(badgeLeftX, repsBadgeY - 22, repsW, fixedRepsBadgeHeight, 22);
       ctx.fill();
 
       ctx.fillStyle = (bg === 'ivory-parchment') 
         ? '#B45309' 
         : ((bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#1E293B' : '#FCD34D');
       
-      ctx.fillText(repsText, width / 2, repsBadgeY + 8);
-      // تأمين مسافة مريحة تفصل الشارة عن فضل الذكر بالأسفل
-      currentAfterDhikrY = repsBadgeY + 36;
+      ctx.textAlign = 'center';
+      ctx.fillText(repsText, badgeCenterX, repsBadgeY + 8);
+      
+      // تأمين مسافة عمودية مريحة تفصل الشارة عن فضل الذكر بالأسفل
+      currentAfterDhikrY = repsBadgeY + 34;
     }
 
+    // 8. كتابة فضل الذكر إن وجد بمسافة تنفس متوازنة
+    if (virtueLines.length > 0) {
+      const startVirtueY = currentAfterDhikrY + (isRepsBadgeActive ? 32 : 18);
     // 8. كتابة فضل الذكر إن وجد
     if (virtueLines.length > 0) {
       const startVirtueY = currentAfterDhikrY + 15;
@@ -2829,7 +2838,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.47', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.48', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
