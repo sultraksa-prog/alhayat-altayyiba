@@ -1356,15 +1356,18 @@ if (isRunningStandalone) {
     m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('show'); });
   });
 
-  // ==================== استوديو تصميم ومشاركة الأذكار المتكامل (المرحلتان 1 و 2) ====================
+  // ==================== استوديو تصميم ومشاركة الأذكار الفردية والجماعية ====================
   let activeDhikrItemForShare = null;
   let activeDhikrCategoryForShare = null;
   let selectedShareFormat = 'image-text'; // 'image-only' | 'image-text' | 'text-tashkeel' | 'text-plain'
+  
+  // متغيرات المشاركة الجماعية
+  let isBatchShareMode = false;
+  let batchSelectedDhikrItems = [];
 
-  // إعدادات استوديو تصميم الصورة
   let studioConfig = {
-    ratio: 'square', // 'square' (1080x1080) | 'story' (1080x1920)
-    bg: 'royal-navy', // 'royal-navy' | 'emerald-ivory' | 'sand-bronze' | 'midnight-gold' | 'emerald-gold' | 'ivory-parchment'
+    ratio: 'square',
+    bg: 'royal-navy',
     motif: 'motif-1',
     font: "'AmiriLocal', serif",
     color: '#FFFFFF',
@@ -1377,42 +1380,12 @@ if (isRunningStandalone) {
     includeLink: true
   };
 
-  // دالة تجريد النصوص من علامات التشكيل بالكامل
   function stripArabicTashkeel(text) {
     if (!text) return '';
     return text.replace(/[\u064B-\u065F\u0670\u0640]/g, '').trim();
   }
 
-  // 1. فتح نافذة خيارات المشاركة (المرحلة الأولى)
-  window.shareSpecificDhikr = (itemId) => {
-    const category = azkarState.find(c => c.id === currentActiveCategoryId);
-    if (!category) return;
-    const item = category.items.find(i => i.id === itemId);
-    if (!item) return;
-
-    activeDhikrItemForShare = item;
-    activeDhikrCategoryForShare = category;
-
-    const modal = document.getElementById('dhikrShareModal');
-    const previewCatText = document.getElementById('shareCatNamePreviewText');
-    if (previewCatText) previewCatText.textContent = `مثل: ${category.name}`;
-
-    // إخفاء خيار الفضل إن لم يكن للذكر فضل محفوظ
-    const virtueRow = document.getElementById('shareVirtueRow');
-    if (virtueRow) {
-      virtueRow.style.display = (item.fullNote && item.fullNote.trim().length > 0) ? 'flex' : 'none';
-    }
-
-    // إخفاء خيار التكرار إن كان مكرراً مرة واحدة فقط
-    const repsRow = document.getElementById('shareRepsRow');
-    if (repsRow) {
-      repsRow.style.display = (item.count > 1) ? 'flex' : 'none';
-    }
-
-    if (modal) modal.classList.add('show');
-  };
-
-  // معالجات أحداث المرحلة الأولى
+  // عناصر واجهة المشاركة
   const dhikrShareModal = document.getElementById('dhikrShareModal');
   const closeDhikrShareBtn = document.getElementById('closeDhikrShareBtn');
   const confirmDhikrShareActionBtn = document.getElementById('confirmDhikrShareActionBtn');
@@ -1424,11 +1397,146 @@ if (isRunningStandalone) {
   const toggleShareIncludeLink = document.getElementById('toggleShareIncludeLink');
   const shareLinkSubRow = document.getElementById('shareLinkSubRow');
 
+  const batchShareRangeContainer = document.getElementById('batchShareRangeContainer');
+  const batchShareStartSelect = document.getElementById('batchShareStartSelect');
+  const batchShareEndSelect = document.getElementById('batchShareEndSelect');
+  const batchSelectedCountBadge = document.getElementById('batchSelectedCountBadge');
+  const batchImageLimitNotice = document.getElementById('batchImageLimitNotice');
+  const openBatchShareModalBtn = document.getElementById('openBatchShareModalBtn');
+
+  // 1. فتح نافذة المشاركة الفردية لذكر واحد
+  window.shareSpecificDhikr = (itemId) => {
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
+    if (!category) return;
+    const item = category.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    isBatchShareMode = false;
+    activeDhikrItemForShare = item;
+    activeDhikrCategoryForShare = category;
+    batchSelectedDhikrItems = [item];
+
+    if (batchShareRangeContainer) batchShareRangeContainer.style.display = 'none';
+    showImageShareOptions(true);
+
+    const previewCatText = document.getElementById('shareCatNamePreviewText');
+    if (previewCatText) previewCatText.textContent = `مثل: ${category.name}`;
+
+    const virtueRow = document.getElementById('shareVirtueRow');
+    if (virtueRow) virtueRow.style.display = (item.fullNote && item.fullNote.trim().length > 0) ? 'flex' : 'none';
+
+    const repsRow = document.getElementById('shareRepsRow');
+    if (repsRow) repsRow.style.display = (item.count > 1) ? 'flex' : 'none';
+
+    if (dhikrShareModal) dhikrShareModal.classList.add('show');
+  };
+
+  // 2. فتح نافذة المشاركة الجماعية من القائمة العلوية (⋮)
+  if (openBatchShareModalBtn) {
+    openBatchShareModalBtn.addEventListener('click', () => {
+      const readerDropdown = document.getElementById('readerDropdownMenu');
+      if (readerDropdown) readerDropdown.classList.remove('show');
+
+      const category = azkarState.find(c => c.id === currentActiveCategoryId);
+      if (!category || !category.items || category.items.length === 0) {
+        alert('لا توجد أذكار لمشاركتها في هذا القسم.');
+        return;
+      }
+
+      isBatchShareMode = true;
+      activeDhikrCategoryForShare = category;
+
+      // ملء القوائم المنسدلة بالأذكار
+      if (batchShareStartSelect && batchShareEndSelect) {
+        batchShareStartSelect.innerHTML = '';
+        batchShareEndSelect.innerHTML = '';
+
+        category.items.forEach((it, idx) => {
+          const shortText = it.text.length > 28 ? it.text.slice(0, 26) + '...' : it.text;
+          const optText = `${idx + 1} - ${shortText}`;
+          
+          const opt1 = new Option(optText, idx);
+          const opt2 = new Option(optText, idx);
+          batchShareStartSelect.add(opt1);
+          batchShareEndSelect.add(opt2);
+        });
+
+        // القيمة الافتراضية: من أول ذكر إلى الذكر الثالث (أو الأخير إن كان أقل)
+        batchShareStartSelect.value = 0;
+        batchShareEndSelect.value = Math.min(2, category.items.length - 1);
+      }
+
+      if (batchShareRangeContainer) batchShareRangeContainer.style.display = 'block';
+      updateBatchRangeStatus();
+
+      const previewCatText = document.getElementById('shareCatNamePreviewText');
+      if (previewCatText) previewCatText.textContent = `مثل: ${category.name}`;
+
+      const virtueRow = document.getElementById('shareVirtueRow');
+      if (virtueRow) virtueRow.style.display = 'flex';
+
+      const repsRow = document.getElementById('shareRepsRow');
+      if (repsRow) repsRow.style.display = 'flex';
+
+      if (dhikrShareModal) dhikrShareModal.classList.add('show');
+    });
+  }
+
+  // تحديث حالة الأذكار المحددة وتطبيق شرط الـ 3 أذكار
+  function updateBatchRangeStatus() {
+    if (!isBatchShareMode || !activeDhikrCategoryForShare) return;
+    
+    let startIdx = parseInt(batchShareStartSelect.value, 10) || 0;
+    let endIdx = parseInt(batchShareEndSelect.value, 10) || 0;
+
+    // تصحيح فوري إذا كان البداية أكبر من النهاية
+    if (startIdx > endIdx) {
+      endIdx = startIdx;
+      batchShareEndSelect.value = endIdx;
+    }
+
+    const count = (endIdx - startIdx) + 1;
+    batchSelectedDhikrItems = activeDhikrCategoryForShare.items.slice(startIdx, endIdx + 1);
+    activeDhikrItemForShare = batchSelectedDhikrItems[0]; // مرجع رئيسي
+
+    if (batchSelectedCountBadge) {
+      batchSelectedCountBadge.textContent = `المحدد: ${count} ${count <= 2 ? 'أذكار' : (count <= 10 ? 'أذكار' : 'ذكراً')}`;
+    }
+
+    // شرط الـ 3 أذكار: إخفاء خيارات الصورة إذا كان أكثر من 3
+    if (count <= 3) {
+      showImageShareOptions(true);
+      if (batchImageLimitNotice) batchImageLimitNotice.style.display = 'none';
+    } else {
+      showImageShareOptions(false);
+      if (batchImageLimitNotice) batchImageLimitNotice.style.display = 'block';
+      
+      // تحويل فوري لصيغة النص إذا كان المستخدم يقف على خيار الصورة
+      if (selectedShareFormat === 'image-only' || selectedShareFormat === 'image-text') {
+        selectedShareFormat = 'text-tashkeel';
+        shareFormatCards.forEach(c => {
+          c.classList.toggle('active', c.getAttribute('data-type') === 'text-tashkeel');
+        });
+      }
+    }
+  }
+
+  function showImageShareOptions(show) {
+    shareFormatCards.forEach(c => {
+      const type = c.getAttribute('data-type');
+      if (type === 'image-only' || type === 'image-text') {
+        c.style.display = show ? 'flex' : 'none';
+      }
+    });
+  }
+
+  if (batchShareStartSelect) batchShareStartSelect.onchange = updateBatchRangeStatus;
+  if (batchShareEndSelect) batchShareEndSelect.onchange = updateBatchRangeStatus;
+
   if (closeDhikrShareBtn && dhikrShareModal) {
     closeDhikrShareBtn.onclick = () => dhikrShareModal.classList.remove('show');
   }
 
-  // التحكم الديناميكي بظهور خيار رابط التطبيق عند تفعيل خيار "بواسطة التطبيق"
   if (toggleShareIncludeCredit && shareLinkSubRow) {
     toggleShareIncludeCredit.onchange = (e) => {
       shareLinkSubRow.style.display = e.target.checked ? 'flex' : 'none';
@@ -1445,9 +1553,10 @@ if (isRunningStandalone) {
     };
   });
 
+  // تأكيد المشاركة (سواء فردية أو جماعية)
   if (confirmDhikrShareActionBtn) {
     confirmDhikrShareActionBtn.onclick = () => {
-      if (!activeDhikrItemForShare) return;
+      if (!activeDhikrCategoryForShare) return;
       if (dhikrShareModal) dhikrShareModal.classList.remove('show');
 
       studioConfig.includeCategory = toggleShareIncludeCategory ? toggleShareIncludeCategory.checked : true;
@@ -1456,90 +1565,62 @@ if (isRunningStandalone) {
       studioConfig.includeCredit = toggleShareIncludeCredit ? toggleShareIncludeCredit.checked : true;
       studioConfig.includeLink = toggleShareIncludeLink ? toggleShareIncludeLink.checked : true;
 
+      const itemsToShare = isBatchShareMode ? batchSelectedDhikrItems : [activeDhikrItemForShare];
+
       if (selectedShareFormat === 'image-only' || selectedShareFormat === 'image-text') {
-        // فتح استوديو تصميم الصورة (المرحلة الثانية)
+        // فتح استوديو تصميم الصورة
         openDhikrImageStudio(selectedShareFormat === 'image-text');
       } else {
-        // مشاركة نصية فورية
-        const msg = buildDhikrTextMessage(selectedShareFormat === 'text-plain');
+        // صياغة وإرسال الرسالة النصية لجميع الأذكار المحددة
+        const msg = buildBatchDhikrTextMessage(itemsToShare, selectedShareFormat === 'text-plain');
         if (navigator.share) {
           navigator.share({ title: activeDhikrCategoryForShare.name, text: msg }).catch(() => {});
         } else {
           navigator.clipboard.writeText(msg);
-          alert('تم نسخ الذكر بنجاح لمشاركته!');
+          alert('تم نسخ الأذكار المحددة بنجاح لمشاركتها!');
         }
       }
     };
   }
 
-  function buildDhikrTextMessage(isPlain = false) {
-    let bodyText = isPlain ? stripArabicTashkeel(activeDhikrItemForShare.text) : activeDhikrItemForShare.text;
-    let preText = activeDhikrItemForShare.pre ? (isPlain ? stripArabicTashkeel(activeDhikrItemForShare.pre) : activeDhikrItemForShare.pre) : '';
-
+  // صياغة النص الجماعي
+  function buildBatchDhikrTextMessage(itemsList, isPlain = false) {
     let msg = '';
     if (studioConfig.includeCategory && activeDhikrCategoryForShare) {
-      msg += `📖 [ ${activeDhikrCategoryForShare.name} ]\n\n`;
+      msg += `📖 [ ${activeDhikrCategoryForShare.name} ]\n`;
+      msg += `━━━━━━━━━━━━━━━\n\n`;
     }
-    if (preText) msg += `${preText}\n`;
-    msg += `${bodyText}\n`;
 
-    if (studioConfig.includeReps && activeDhikrItemForShare.count > 1) {
-      msg += `(تكرار: ${activeDhikrItemForShare.count} مرات)\n`;
-    }
-    if (studioConfig.includeVirtue && activeDhikrItemForShare.fullNote) {
-      const note = isPlain ? stripArabicTashkeel(activeDhikrItemForShare.fullNote) : activeDhikrItemForShare.fullNote;
-      msg += `\n✨ الفضل: ${note}\n`;
-    }
+    itemsList.forEach((it, idx) => {
+      const bText = isPlain ? stripArabicTashkeel(it.text) : it.text;
+      const pText = it.pre ? (isPlain ? stripArabicTashkeel(it.pre) : it.pre) : '';
+
+      if (itemsList.length > 1) {
+        msg += `(${idx + 1})\n`;
+      }
+      if (pText) msg += `${pText}\n`;
+      msg += `${bText}\n`;
+
+      if (studioConfig.includeReps && it.count > 1) {
+        msg += `(تكرار: ${it.count} مرات)\n`;
+      }
+      if (studioConfig.includeVirtue && it.fullNote) {
+        const note = isPlain ? stripArabicTashkeel(it.fullNote) : it.fullNote;
+        msg += `✨ الفضل: ${note}\n`;
+      }
+
+      if (idx < itemsList.length - 1) {
+        msg += `\n- - - - - - - - - - - - -\n\n`;
+      }
+    });
+
     if (studioConfig.includeCredit) {
-      msg += `\nبواسطة تطبيق الحياة الطيبة 🌙\n`;
+      msg += `\n━━━━━━━━━━━━━━━\nبواسطة تطبيق الحياة الطيبة 🌙\n`;
       if (studioConfig.includeLink) {
         msg += `ساعدنا في نشر التطبيق:\n${APP_CONFIG.url}`;
       }
     }
     return msg;
-  }
-
-  // ==================== استوديو تصميم الصورة المباشر (المرحلة الثانية) ====================
-  const dhikrImageStudioModal = document.getElementById('dhikrImageStudioModal');
-  const closeDhikrStudioBtn = document.getElementById('closeDhikrStudioBtn');
-  const downloadStudioImageBtn = document.getElementById('downloadStudioImageBtn');
-  const executeStudioShareBtn = document.getElementById('executeStudioShareBtn');
-  const studioLiveCanvas = document.getElementById('studioLiveCanvas');
-  const studioFontSizeSlider = document.getElementById('studioFontSizeSlider');
-  const studioFontSizeDisplay = document.getElementById('studioFontSizeDisplay');
-
-  let studioAttachTextWhenSharing = true;
-
-  // معادلتك الذكية لاحتساب حجم الخط الافتراضي بناءً على حروف الذكر والفضل بعد تجريد التشكيل
-  function calculateOptimalDefaultFontSize(isStory, withVirtue) {
-    if (!activeDhikrItemForShare) return 48;
-    const rawDhikr = stripArabicTashkeel(activeDhikrItemForShare.text).replace(/\s/g, '');
-    const rawPre = stripArabicTashkeel(activeDhikrItemForShare.pre || '').replace(/\s/g, '');
-    const rawVirtue = (withVirtue && activeDhikrItemForShare.fullNote)
-      ? stripArabicTashkeel(activeDhikrItemForShare.fullNote).replace(/\s/g, '')
-      : '';
-
-    // إجمالي حجم الحروف الفعلي
-    const totalChars = rawDhikr.length + (rawVirtue.length * 0.7) + rawPre.length;
-
-    let size = 48;
-    if (isStory) {
-      if (totalChars <= 50) size = 76;
-      else if (totalChars <= 100) size = 64;
-      else if (totalChars <= 180) size = 54;
-      else if (totalChars <= 280) size = 46;
-      else if (totalChars <= 420) size = 38;
-      else size = 32;
-    } else {
-      // مربع (1:1)
-      if (totalChars <= 50) size = 66;
-      else if (totalChars <= 100) size = 54;
-      else if (totalChars <= 180) size = 44;
-      else if (totalChars <= 280) size = 36;
-      else if (totalChars <= 420) size = 30;
-      else size = 25;
-    }
-    return size;
   }
 
   function openDhikrImageStudio(attachText) {
@@ -2835,7 +2916,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.49', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.50', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
