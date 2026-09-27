@@ -1610,6 +1610,157 @@
       </div>
     </div>
 
+    <!-- ==================== المرحلة 1: نافذة خيارات مشاركة الذكر ==================== -->
+    <div class="bottom-sheet-backdrop" id="dhikrShareModal">
+      <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title" style="margin: 0;">مشاركة الذكر</h3>
+          <button type="button" class="modal-btn-link" id="closeDhikrShareBtn" style="font-size: 18px; cursor: pointer;">✕</button>
+        </div>
+
+        <p class="settings-sec-subtitle" style="margin-bottom: 10px;">اختر صيغة المشاركة:</p>
+        
+        <!-- البطاقات الثلاث لاختيار صيغة المشاركة -->
+        <div class="share-format-cards">
+          <div class="share-format-card active" data-type="image">
+            <span class="format-icon">🖼️</span>
+            <div class="format-info">
+              <h4>مشاركة كصورة</h4>
+              <p>بطاقة إسلامية فاخرة مخصصة للنشر</p>
+            </div>
+            <span class="format-check">✓</span>
+          </div>
+
+          <div class="share-format-card" data-type="text-tashkeel">
+            <span class="format-icon">📝</span>
+            <div class="format-info">
+              <h4>مشاركة نص</h4>
+              <p>مشاركة النص العربي بكامل علامات التشكيل</p>
+            </div>
+            <span class="format-check">✓</span>
+          </div>
+
+          <div class="share-format-card" data-type="text-plain">
+            <span class="format-icon">📄</span>
+            <div class="format-info">
+              <h4>مشاركة نص بدون تشكيل</h4>
+              <p>مشاركة النص مجرداً لتسهيل القراءة والبحث</p>
+            </div>
+            <span class="format-check">✓</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider" style="margin: 14px 0 10px 0;">
+
+        <!-- خيارات التخصيص المرافقة -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title" style="font-size: 13.5px;">إضافة اسم مجموعة الأذكار</h4>
+            <p class="setting-desc" id="shareCatNamePreviewText">مثل: أذكار الصباح</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleShareIncludeCategory" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title" style="font-size: 13.5px;">إضافة "بواسطة تطبيق الحياة الطيبة"</h4>
+            <p class="setting-desc" style="color: #16A34A; font-weight: 700;">ساعدنا في نشر التطبيق 🌙</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleShareIncludeCredit" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="modal-actions-row" style="justify-content: center; margin-top: 16px;">
+          <button type="button" class="modal-btn-primary" id="confirmDhikrShareActionBtn" style="width: 100%; padding: 13px 0; font-size: 15px;">مشاركة</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== المرحلة 2: استوديو تصميم وتنسيق الصورة المباشر ==================== -->
+    <div class="studio-fullscreen-modal" id="dhikrImageStudioModal">
+      <!-- هيدر الاستوديو العلوي -->
+      <header class="studio-header">
+        <button type="button" class="studio-btn-icon" id="closeDhikrStudioBtn" title="إغلاق">✕</button>
+        <h3 class="studio-top-title">استوديو تصميم الذكر</h3>
+        <div class="studio-header-actions">
+          <button type="button" class="studio-btn-download" id="downloadStudioImageBtn" title="تنزيل الصورة في المعرض">💾 حفظ</button>
+          <button type="button" class="studio-btn-primary" id="executeStudioShareBtn">مشاركة 📤</button>
+        </div>
+      </header>
+
+      <!-- مسرح المعاينة الحية المباشرة (Live Preview Canvas Viewport) -->
+      <div class="studio-preview-viewport">
+        <div class="studio-canvas-container" id="studioCanvasContainer">
+          <canvas id="studioLiveCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- لوحة وأشرطة التحكم السفلية المباشرة -->
+      <div class="studio-controls-dock">
+        <!-- 1. أزرار اختيار الأبعاد (مربع / قصة) -->
+        <div class="studio-control-row">
+          <div class="studio-ratio-selector">
+            <button type="button" class="ratio-tab active" data-ratio="square">
+              <span>⏹️ مربع (1:1)</span>
+            </button>
+            <button type="button" class="ratio-tab" data-ratio="story">
+              <span>📱 قصة / ستوري (9:16)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. شريط اختيار الخلفية -->
+        <div class="studio-section-title">اختر الخلفية:</div>
+        <div class="studio-horizontal-scroll" id="studioBgSelector">
+          <div class="studio-bg-thumb active" data-bg="royal-navy" style="background: linear-gradient(135deg, #09203F, #1D5D9B);" title="كحلي ملكي"></div>
+          <div class="studio-bg-thumb" data-bg="emerald-ivory" style="background: linear-gradient(135deg, #064E3B 50%, #FAF7F0 50%);" title="زمردي وعاجي"></div>
+          <div class="studio-bg-thumb" data-bg="sand-bronze" style="background: linear-gradient(135deg, #7C2D12 50%, #FFFDF7 50%);" title="عقيق ورملي"></div>
+          <div class="studio-bg-thumb" data-bg="midnight-gold" style="background: linear-gradient(135deg, #020408, #162032);" title="أسود مذهب"></div>
+          <div class="studio-bg-thumb" data-bg="emerald-gold" style="background: linear-gradient(135deg, #02231A, #0D6D53);" title="زمردي كامل"></div>
+          <div class="studio-bg-thumb" data-bg="ivory-parchment" style="background: linear-gradient(135deg, #FAF6ED, #F3ECE0);" title="عاجي قرطاسي"></div>
+        </div>
+
+        <!-- 3. شريط اختيار نوع الخط -->
+        <div class="studio-section-title">نوع الخط:</div>
+        <div class="studio-horizontal-scroll" id="studioFontSelector">
+          <button type="button" class="studio-font-chip active" data-font="'AmiriLocal', serif" style="font-family:'AmiriLocal',serif;">الأميري (معاينة)</button>
+          <button type="button" class="studio-font-chip" data-font="'ScheherazadeLocal', serif" style="font-family:'ScheherazadeLocal',serif;">المصحف (معاينة)</button>
+          <button type="button" class="studio-font-chip" data-font="'NotoNaskhLocal', serif" style="font-family:'NotoNaskhLocal',serif;">النسخ (معاينة)</button>
+          <button type="button" class="studio-font-chip" data-font="'RuqaaLocal', cursive" style="font-family:'RuqaaLocal',cursive;">الرقعة (معاينة)</button>
+          <button type="button" class="studio-font-chip" data-font="'TajawalLocal', sans-serif" style="font-family:'TajawalLocal',sans-serif;">تجوال (معاينة)</button>
+          <button type="button" class="studio-font-chip" data-font="'CairoLocal', sans-serif" style="font-family:'CairoLocal',sans-serif;">كايرو (معاينة)</button>
+        </div>
+
+        <!-- 4. لون الخط وخلفية النص -->
+        <div class="studio-dual-controls-row">
+          <div class="studio-color-picker-group">
+            <span class="ctrl-sublbl">لون النص:</span>
+            <div class="color-dots-row" id="studioColorDots">
+              <span class="color-dot active" data-color="#FFFFFF" style="background:#FFFFFF; border:1px solid #CBD5E1;"></span>
+              <span class="color-dot" data-color="#FCD34D" style="background:#FCD34D;"></span>
+              <span class="color-dot" data-color="#1E293B" style="background:#1E293B;"></span>
+              <span class="color-dot" data-color="#064E3B" style="background:#064E3B;"></span>
+              <span class="color-dot" data-color="#9A3412" style="background:#9A3412;"></span>
+            </div>
+          </div>
+
+          <div class="studio-text-bg-toggle">
+            <span class="ctrl-sublbl">تظليل النص:</span>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleStudioTextHighlight">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== نافذة إعدادات الأذكار المنبثقة ==================== -->
     <div class="bottom-sheet-backdrop" id="azkarSettingsModal">
       <div class="bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
