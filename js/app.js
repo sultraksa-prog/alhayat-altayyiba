@@ -1553,14 +1553,15 @@ if (isRunningStandalone) {
     };
   });
 
-  // تأكيد المشاركة (سواء فردية أو جماعية) مع فحص صارم لصيغة المشاركة
+  // تأكيد المشاركة (سواء فردية أو جماعية) مع فحص مرن يضمن فتح الاستوديو دائماً
   if (confirmDhikrShareActionBtn) {
     confirmDhikrShareActionBtn.onclick = () => {
       if (!activeDhikrCategoryForShare) return;
 
-      // قراءة البطاقة المحددة فعلياً في الواجهة لمنع أي خطأ
+      // قراءة البطاقة المحددة في الواجهة مع دعم كافة مسميات الصور
       const activeCard = document.querySelector('.share-format-card.active');
-      const currentFormat = activeCard ? activeCard.getAttribute('data-type') : selectedShareFormat;
+      const formatType = (activeCard ? activeCard.getAttribute('data-type') : selectedShareFormat) || 'image-text';
+      const isImageChosen = formatType.includes('image');
 
       studioConfig.includeCategory = toggleShareIncludeCategory ? toggleShareIncludeCategory.checked : true;
       studioConfig.includeReps = toggleShareIncludeReps ? toggleShareIncludeReps.checked : true;
@@ -1568,18 +1569,20 @@ if (isRunningStandalone) {
       studioConfig.includeCredit = toggleShareIncludeCredit ? toggleShareIncludeCredit.checked : true;
       studioConfig.includeLink = toggleShareIncludeLink ? toggleShareIncludeLink.checked : true;
 
-      const itemsToShare = isBatchShareMode ? batchSelectedDhikrItems : [activeDhikrItemForShare];
+      const itemsToShare = (isBatchShareMode && batchSelectedDhikrItems.length > 0) 
+        ? batchSelectedDhikrItems 
+        : [activeDhikrItemForShare];
 
       // إغلاق نافذة الخيارات
       if (dhikrShareModal) dhikrShareModal.classList.remove('show');
 
-      // 1. إذا كان الخيار صورة (سواء صورة فقط أو صورة مع نص): فتح استوديو التصميم مباشرة
-      if (currentFormat === 'image-only' || currentFormat === 'image-text') {
-        openDhikrImageStudio(currentFormat === 'image-text');
+      // 1. إذا كان الخيار صورة: فتح استوديو التصميم مباشرة
+      if (isImageChosen) {
+        openDhikrImageStudio(formatType.includes('text'));
       } 
       // 2. إذا كان الخيار نصياً: إرسال النص فوراً
       else {
-        const msg = buildBatchDhikrTextMessage(itemsToShare, currentFormat === 'text-plain');
+        const msg = buildBatchDhikrTextMessage(itemsToShare, formatType === 'text-plain');
         if (navigator.share) {
           navigator.share({ title: activeDhikrCategoryForShare.name, text: msg }).catch(() => {});
         } else {
@@ -1590,7 +1593,7 @@ if (isRunningStandalone) {
     };
   }
 
-  // صياغة الرسالة النصية متضمنة عدد مرات التكرار لكل ذكر بلا استثناء
+  // صياغة الرسالة النصية متضمنة عدد مرات التكرار لكل ذكر محدد بلا استثناء
   function buildBatchDhikrTextMessage(itemsList, isPlain = false) {
     let msg = '';
     if (studioConfig.includeCategory && activeDhikrCategoryForShare) {
@@ -1608,7 +1611,7 @@ if (isRunningStandalone) {
       if (pText) msg += `${pText}\n`;
       msg += `${bText}\n`;
 
-      // إدراج عدد مرات التكرار لكل ذكر محدد دائماً عند تفعيل الخيار
+      // إدراج عدد مرات التكرار دائماً لكل ذكر (حتى لو كان مرة واحدة)
       if (studioConfig.includeReps) {
         const repCount = it.count || 1;
         msg += `(تكرار: ${repCount} مرة)\n`;
@@ -1632,29 +1635,89 @@ if (isRunningStandalone) {
     }
     return msg;
   }
-  
+
+  // ==================== استوديو تصميم الصورة المباشر (المرحلة الثانية) ====================
+  const dhikrImageStudioModal = document.getElementById('dhikrImageStudioModal');
+  const closeDhikrStudioBtn = document.getElementById('closeDhikrStudioBtn');
+  const downloadStudioImageBtn = document.getElementById('downloadStudioImageBtn');
+  const executeStudioShareBtn = document.getElementById('executeStudioShareBtn');
+  const studioLiveCanvas = document.getElementById('studioLiveCanvas');
+  const studioFontSizeSlider = document.getElementById('studioFontSizeSlider');
+  const studioFontSizeDisplay = document.getElementById('studioFontSizeDisplay');
+
+  let studioAttachTextWhenSharing = true;
+
+  // احتساب الحجم الافتراضي الذكي بناءً على حروف الذكر والفضل
+  function calculateOptimalDefaultFontSize(isStory, withVirtue) {
+    if (!activeDhikrItemForShare) return 48;
+    const rawDhikr = stripArabicTashkeel(activeDhikrItemForShare.text).replace(/\s/g, '');
+    const rawPre = stripArabicTashkeel(activeDhikrItemForShare.pre || '').replace(/\s/g, '');
+    const rawVirtue = (withVirtue && activeDhikrItemForShare.fullNote)
+      ? stripArabicTashkeel(activeDhikrItemForShare.fullNote).replace(/\s/g, '')
+      : '';
+
+    const totalChars = rawDhikr.length + (rawVirtue.length * 0.7) + rawPre.length;
+
+    let size = 48;
+    if (isStory) {
+      if (totalChars <= 50) size = 76;
+      else if (totalChars <= 100) size = 64;
+      else if (totalChars <= 180) size = 54;
+      else if (totalChars <= 280) size = 46;
+      else if (totalChars <= 420) size = 38;
+      else size = 32;
+    } else {
+      if (totalChars <= 50) size = 66;
+      else if (totalChars <= 100) size = 54;
+      else if (totalChars <= 180) size = 44;
+      else if (totalChars <= 280) size = 36;
+      else if (totalChars <= 420) size = 30;
+      else size = 25;
+    }
+    return size;
+  }
+
+  // فتح استوديو تصميم الصورة بشكل مضمون ومباشر
   function openDhikrImageStudio(attachText) {
     studioAttachTextWhenSharing = attachText;
     
-    // احتساب الحجم الافتراضي الذكي بناءً على حجم حروف الذكر والفضل
-    const autoSize = calculateOptimalDefaultFontSize(studioConfig.ratio === 'story', studioConfig.includeVirtue);
-    studioConfig.fontSize = autoSize;
-    if (studioFontSizeSlider) studioFontSizeSlider.value = autoSize;
-    if (studioFontSizeDisplay) studioFontSizeDisplay.textContent = autoSize;
-
-    if (dhikrImageStudioModal) {
-      dhikrImageStudioModal.classList.add('show');
-      // تسجيل حالة الاستوديو لضمان عودة سحب الحافة لقراءة الأذكار بنعومة
-      history.pushState({ modal: 'studio' }, '', '#studio');
+    try {
+      const autoSize = calculateOptimalDefaultFontSize(studioConfig.ratio === 'story', studioConfig.includeVirtue);
+      studioConfig.fontSize = autoSize;
+      if (studioFontSizeSlider) studioFontSizeSlider.value = autoSize;
+      if (studioFontSizeDisplay) studioFontSizeDisplay.textContent = autoSize;
+    } catch(e) {
+      studioConfig.fontSize = 48;
     }
-    renderStudioLiveCanvas();
+
+    const studioModal = document.getElementById('dhikrImageStudioModal');
+    if (studioModal) {
+      studioModal.classList.add('show');
+      studioModal.style.display = 'flex'; // تأكيد العرض الفوري
+      try {
+        history.pushState({ modal: 'studio' }, '', '#studio');
+      } catch(e) {}
+    }
+
+    // استدعاء رسم المعاينة داخل إطار آمن
+    setTimeout(() => {
+      try {
+        renderStudioLiveCanvas();
+      } catch(err) {
+        console.error('خطأ في رسم المعاينة:', err);
+      }
+    }, 40);
   }
 
-  // زر إغلاق الاستوديو (✕): يعيدك بأمان لنفس مكانك في شاشة قراءة الأذكار
-  if (closeDhikrStudioBtn && dhikrImageStudioModal) {
+  // زر إغلاق الاستوديو (✕): يعيدك بأمان لقراءة الأذكار
+  if (closeDhikrStudioBtn) {
     closeDhikrStudioBtn.onclick = () => {
       isClosingStudioSafely = true;
-      dhikrImageStudioModal.classList.remove('show');
+      const studioModal = document.getElementById('dhikrImageStudioModal');
+      if (studioModal) {
+        studioModal.classList.remove('show');
+        studioModal.style.display = 'none';
+      }
       if (location.hash === '#studio') {
         history.back();
       } else {
@@ -1663,7 +1726,6 @@ if (isRunningStandalone) {
     };
   }
 
-  // ربط شريط التحكم بحجم الخط
   if (studioFontSizeSlider) {
     studioFontSizeSlider.oninput = (e) => {
       const val = parseInt(e.target.value, 10);
@@ -1673,7 +1735,6 @@ if (isRunningStandalone) {
     };
   }
 
-  // التبديل بين أبعاد الصورة (مربع / قصة)
   document.querySelectorAll('.ratio-tab').forEach(tab => {
     tab.onclick = () => {
       document.querySelectorAll('.ratio-tab').forEach(t => t.classList.remove('active'));
@@ -1689,7 +1750,6 @@ if (isRunningStandalone) {
     };
   });
 
-  // اختيار نمط الزخرفة الإسلامية
   document.querySelectorAll('.studio-motif-chip').forEach(chip => {
     chip.onclick = () => {
       document.querySelectorAll('.studio-motif-chip').forEach(c => c.classList.remove('active'));
@@ -1699,7 +1759,6 @@ if (isRunningStandalone) {
     };
   });
 
-  // اختيار الخلفية
   document.querySelectorAll('.studio-bg-thumb').forEach(thumb => {
     thumb.onclick = () => {
       document.querySelectorAll('.studio-bg-thumb').forEach(b => b.classList.remove('active'));
@@ -1719,7 +1778,6 @@ if (isRunningStandalone) {
     };
   });
 
-  // اختيار الخط
   document.querySelectorAll('.studio-font-chip').forEach(chip => {
     chip.onclick = () => {
       document.querySelectorAll('.studio-font-chip').forEach(f => f.classList.remove('active'));
@@ -1729,7 +1787,6 @@ if (isRunningStandalone) {
     };
   });
 
-  // اختيار لون الخط
   document.querySelectorAll('.color-dot').forEach(dot => {
     dot.onclick = () => {
       document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
@@ -1739,7 +1796,6 @@ if (isRunningStandalone) {
     };
   });
 
-  // تظليل النص
   const toggleStudioTextHighlight = document.getElementById('toggleStudioTextHighlight');
   if (toggleStudioTextHighlight) {
     toggleStudioTextHighlight.onchange = (e) => {
@@ -1748,16 +1804,17 @@ if (isRunningStandalone) {
     };
   }
 
-  // رسم بطاقة الذكر متضمنة شارة عدد مرات التكرار بالتنسيق المطابق
+  // رسم بطاقة الذكر بالمعايير الهندسية الكاملة
   function renderStudioLiveCanvas() {
-    if (!studioLiveCanvas || !activeDhikrItemForShare) return;
+    const canvas = document.getElementById('studioLiveCanvas');
+    if (!canvas || !activeDhikrItemForShare) return;
     const isStory = studioConfig.ratio === 'story';
     const width = 1080;
     const height = isStory ? 1920 : 1080;
-    studioLiveCanvas.width = width;
-    studioLiveCanvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
 
-    const ctx = studioLiveCanvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     const bg = studioConfig.bg;
 
     // 1. رسم الخلفية
@@ -1798,7 +1855,6 @@ if (isRunningStandalone) {
       motifColor = '#B45309';
       motifOpacity = 0.06;
     } else {
-      // كحلي ملكي
       const g = ctx.createLinearGradient(0, 0, 0, height);
       g.addColorStop(0, '#06152B'); g.addColorStop(0.4, '#09203F'); g.addColorStop(1, '#1D5D9B');
       ctx.fillStyle = g;
@@ -1815,13 +1871,12 @@ if (isRunningStandalone) {
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
 
-    // 3. رسم الصرح المعماري المذهب وفصله بمسافة أمان كافية عن اسم التطبيق
+    // 3. رسم الصرح المعماري المذهب وفصله بمسافة أمان عن اسم التطبيق
     const isLightHeader = (bg === 'emerald-ivory' || bg === 'sand-bronze');
     const emblemCenterY = isStory ? 130 : 95;
     
     drawRealBrandEmblem(ctx, width / 2, emblemCenterY, isStory ? 0.70 : 0.60, '#FCD34D');
 
-    // اسم التطبيق مع هامش أمان رأسي كافٍ
     const titleY = emblemCenterY + (isStory ? 108 : 94);
     ctx.font = 'bold 36px "Cairo", sans-serif';
     ctx.fillStyle = isLightHeader ? '#FEF3C7' : (bg === 'ivory-parchment' ? '#B45309' : '#FCD34D');
@@ -1845,7 +1900,7 @@ if (isRunningStandalone) {
       currentHeaderBottomY = badgeY + 45;
     }
 
-    // 5. احتساب حجم وكتلة متن الذكر والفضل وشارة التكرار
+    // 5. احتساب حجم وكتلة متن الذكر والفضل
     const baseFontSize = studioConfig.fontSize || 48;
     const lineHeight = baseFontSize * 1.82;
     const maxTextWidth = width - 160;
@@ -1866,7 +1921,7 @@ if (isRunningStandalone) {
     });
     if (curLine) lines.push(curLine);
 
-    // تجهيز أسطر الفضل إن كان مفعلاً
+    // أسطر الفضل إن كان مفعلاً
     let virtueLines = [];
     const virtueFontSize = Math.max(22, Math.round(baseFontSize * 0.58));
     const virtueLineHeight = virtueFontSize * 1.6;
@@ -1887,11 +1942,10 @@ if (isRunningStandalone) {
       if (vCur) virtueLines.push(vCur);
     }
 
-    // احتساب أبعاد الكتلة النصية بدقة رياضية ثابتة وتفادي تكرار المتغيرات
+    // احتساب أبعاد الكتلة النصية بدقة رياضية ثابتة
     const hasPre = !!activeDhikrItemForShare.pre;
     const isRepsBadgeActive = !!(studioConfig.includeReps && activeDhikrItemForShare.count);
     
-    // أبعاد ثابتة لا تتأثر نهائياً بسلايدر حجم الخط
     const fixedRepsBadgeHeight = 44; 
     const preHeight = hasPre ? 50 : 0;
     const dhikrLinesHeight = (lines.length - 1) * lineHeight;
@@ -1909,7 +1963,7 @@ if (isRunningStandalone) {
     const availableAreaBottom = dividerY - 30;
     const clusterStartY = availableAreaTop + Math.max(10, ((availableAreaBottom - availableAreaTop) - totalClusterHeight) / 2);
 
-    // 6. رسم السابقة
+    // 6. رسم السابقة قريبة من متن الذكر
     let startTextY = clusterStartY + (hasPre ? 60 : 0) + baseFontSize;
     if (hasPre) {
       ctx.font = 'bold 30px "Cairo", sans-serif';
@@ -1925,7 +1979,7 @@ if (isRunningStandalone) {
       ctx.fill();
     }
 
-    // كتابة أسطر متن الذكر الشريف
+    // كتابة متن الذكر
     let finalTextColor = studioConfig.color;
     if ((bg === 'emerald-ivory' || bg === 'sand-bronze' || bg === 'ivory-parchment') && finalTextColor === '#FFFFFF') {
       finalTextColor = (bg === 'sand-bronze') ? '#451A03' : '#1E293B';
@@ -1937,20 +1991,16 @@ if (isRunningStandalone) {
       ctx.fillText(l, width / 2, startTextY + (idx * lineHeight));
     });
 
-    // 7. رسم شارة التكرار في أقصى الجهة اليسرى بمسافة مريحة تمنع أي تداخل نهائياً
+    // 7. رسم شارة التكرار في الجهة اليسرى
     const dhikrLastLineY = startTextY + ((lines.length - 1) * lineHeight);
     let currentAfterDhikrY = dhikrLastLineY;
 
     if (isRepsBadgeActive) {
       const repsText = `${activeDhikrItemForShare.count} مرة`;
-      // حجم خط شارة التكرار ثابت (26px)
       ctx.font = 'bold 26px "Cairo", sans-serif';
-      const repsW = ctx.measureText(repsText).width + 50;
+      const repsW = ctx.measureText(repsText).width + 54;
 
-      // موضع رأسي مريح أسفل آخر سطر لتفادي ملامسة حركات التشكيل السفلية
       const repsBadgeY = dhikrLastLineY + 55;
-      
-      // المحاذاة في أقصى الجهة اليسرى (عند بداية الهامش الأيسر للبطاقة)
       const badgeLeftX = 105;
       const badgeCenterX = badgeLeftX + (repsW / 2);
 
@@ -1959,7 +2009,6 @@ if (isRunningStandalone) {
         : 'rgba(252, 211, 77, 0.16)';
       
       ctx.beginPath();
-      // رسم الكبسولة في الجهة اليسرى
       ctx.roundRect(badgeLeftX, repsBadgeY - 22, repsW, fixedRepsBadgeHeight, 22);
       ctx.fill();
 
@@ -1969,12 +2018,10 @@ if (isRunningStandalone) {
       
       ctx.textAlign = 'center';
       ctx.fillText(repsText, badgeCenterX, repsBadgeY + 8);
-      
-      // تأمين مسافة عمودية مريحة تفصل الشارة عن فضل الذكر بالأسفل
       currentAfterDhikrY = repsBadgeY + 34;
     }
 
-    // 8. كتابة فضل الذكر إن وجد بمسافة تنفس متوازنة
+    // 8. كتابة فضل الذكر
     if (virtueLines.length > 0) {
       const startVirtueY = currentAfterDhikrY + (isRepsBadgeActive ? 32 : 18);
       ctx.font = `600 ${virtueFontSize}px "Cairo", sans-serif`;
