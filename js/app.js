@@ -2877,18 +2877,10 @@ if (isRunningStandalone) {
     }
   }, true);
 
-  // إيقاف التمرير التلقائي فوراً عند مغادرة شاشة قراءة الأذكار
-  const originalShowScreen = showScreen;
-  showScreen = function(screen, pushToHistory = true) {
-    if (screen !== screenAzkarReader) {
-      stopAutoScrolling();
-    }
-    originalShowScreen(screen, pushToHistory);
-  };
-
-  // ==================== محرك زر التراجع والالتصاق المغناطيسي بالحافة ====================
+  // ==================== محرك زر التراجع والالتصاق المغناطيسي بالحافة المطور ====================
   const floatingUndoBtn = document.getElementById('floatingUndoBtn');
   let undoHistoryStack = [];
+  let lastUndoExecutionTimestamp = 0; // حاجز زمني لمنع التكرار المزدوج للأحداث
 
   function pushToUndoStack(itemId) {
     undoHistoryStack.push({
@@ -2914,15 +2906,25 @@ if (isRunningStandalone) {
     const readerScreen = document.getElementById('screen-azkar-reader');
     const isReaderActive = readerScreen && readerScreen.classList.contains('active');
     
-    if (dhikrSettings.undoButtonEnabled && isReaderActive) {
+    // يظهر الزر فورياً إذا كان مفعلاً وكانت شاشة الأذكار هي النشطة
+    if (dhikrSettings.undoButtonEnabled !== false && isReaderActive) {
       floatingUndoBtn.style.display = 'flex';
       initFloatingUndoPosition();
+      updateUndoButtonState();
     } else {
       floatingUndoBtn.style.display = 'none';
     }
   }
 
   function executeUndoAction() {
+    // 1. منع التكرار المزدوج: تجاهل أي طلب تراجع ثانٍ يحدث خلال أقل من 320ms
+    const now = Date.now();
+    if (now - lastUndoExecutionTimestamp < 320) {
+      return;
+    }
+    lastUndoExecutionTimestamp = now;
+
+    // 2. التحقق من وجود عمليات مسجلة
     if (undoHistoryStack.length === 0) return;
     const lastAction = undoHistoryStack.pop();
     updateUndoButtonState();
@@ -2933,34 +2935,26 @@ if (isRunningStandalone) {
     const item = category.items.find(i => i.id === lastAction.itemId);
     if (!item) return;
 
-    // استرجاع (+1) للذكر دون تجاوز العدد الكلي الأصلي
+    // استرجاع تسبيحة واحدة فقط (+1)
     item.currentCount = Math.min(item.count, item.currentCount + 1);
     saveAzkarState();
 
-    // إعادة تحديث شريط الإنجاز الموزون فورياً
+    // تحديث شريط الإنجاز الموزون
     updateReaderProgressBar();
 
-    // استرجاع كرت الذكر بسلاسة حتى لو كان قد اختفى لوصوله للصفر
+    // إعادة رسم الكروت لاسترجاع الذكر في حال كان مخفياً
     renderDhikrCards();
 
     // اهتزاز خفيف لتأكيد التراجع
     if (navigator.vibrate) navigator.vibrate(28);
   }
 
-  // تفريغ السجل وتحديث حالة الزر عند فتح أي قسم أذكار جديد
-  const originalOpenCategoryReader = window.openCategoryReader;
-  window.openCategoryReader = function(categoryId, resetCounters = false) {
-    undoHistoryStack = [];
-    updateUndoButtonState();
-    updateUndoButtonVisibility();
-    if (originalOpenCategoryReader) originalOpenCategoryReader(categoryId, resetCounters);
-  };
-
-  // ==================== فيزياء السحب الحر والالتصاق المغناطيسي بالحافة ====================
+  // ==================== فيزياء السحب الحر والالتصاق المغناطيسي وفصل اللمس ====================
   let isDraggingUndo = false;
   let undoStartX = 0, undoStartY = 0;
   let undoInitialLeft = 0, undoInitialTop = 0;
   let hasMovedUndo = false;
+  let isUndoTouchActive = false; // تتبع أحداث اللمس لمنع محاكاة الفأرة
 
   function initFloatingUndoPosition() {
     if (!floatingUndoBtn) return;
@@ -2977,13 +2971,16 @@ if (isRunningStandalone) {
         floatingUndoBtn.style.left = `${containerRect.right - 60}px`;
       }
     } else {
-      // موضع افتراضي أنيق في منتصف الحافة اليسرى
       floatingUndoBtn.style.top = `${window.innerHeight * 0.45}px`;
       floatingUndoBtn.style.left = `${containerRect.left + 14}px`;
     }
   }
 
   function onUndoPointerDown(e) {
+    // إذا كان الحدث فأرة بينما المستخدم يستخدم اللمس، يتم تجاهله فوراً
+    if (e.type === 'touchstart') isUndoTouchActive = true;
+    if (e.type === 'mousedown' && isUndoTouchActive) return;
+
     isDraggingUndo = true;
     hasMovedUndo = false;
     floatingUndoBtn.classList.remove('snapping');
@@ -3003,7 +3000,7 @@ if (isRunningStandalone) {
     const dx = pt.clientX - undoStartX;
     const dy = pt.clientY - undoStartY;
 
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
       hasMovedUndo = true;
     }
 
@@ -3014,17 +3011,21 @@ if (isRunningStandalone) {
     floatingUndoBtn.style.top = `${newTop}px`;
   }
 
-  function onUndoPointerUp() {
+  function onUndoPointerUp(e) {
     if (!isDraggingUndo) return;
     isDraggingUndo = false;
 
-    // إذا لم يتحرك الزر (نقرة واحدة سريعة): تنفيذ التراجع
+    if (e.type === 'touchend') {
+      setTimeout(() => { isUndoTouchActive = false; }, 400);
+    }
+
+    // نقرة واحدة بدون سحب: تنفيذ التراجع لخطوة واحدة بدقة
     if (!hasMovedUndo) {
       executeUndoAction();
       return;
     }
 
-    // تطبيق الالتصاق المغناطيسي التلقائي بأقرب حافة (يمين أو يسار)
+    // سحب باليد: الالتصاق المغناطيسي بالحافة
     floatingUndoBtn.classList.add('snapping');
     const container = document.querySelector('.app-container');
     const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth, width: window.innerWidth, top: 0, height: window.innerHeight };
@@ -3035,14 +3036,11 @@ if (isRunningStandalone) {
 
     const side = (btnCenterX < containerCenterX) ? 'left' : 'right';
     const targetLeft = (side === 'left') ? (containerRect.left + 14) : (containerRect.right - 60);
-
-    // حصر الحركة الرأسية بين الهيدر والأزرار السفلية
     const targetTop = Math.max(68, Math.min(btnRect.top, window.innerHeight - 135));
 
     floatingUndoBtn.style.left = `${targetLeft}px`;
     floatingUndoBtn.style.top = `${targetTop}px`;
 
-    // حفظ الموضع المختار في ذاكرة الجهاز
     localStorage.setItem('hayat_undo_btn_pos', JSON.stringify({ side: side, top: targetTop }));
   }
 
@@ -3055,6 +3053,18 @@ if (isRunningStandalone) {
     window.addEventListener('mousemove', onUndoPointerMove);
     window.addEventListener('mouseup', onUndoPointerUp);
   }
+
+  // ربط التنقل بحيث تظهر/تختفي الميزات فوراً وبشكل مضمون عند الانتقال بين الشاشات
+  const originalShowScreen = showScreen;
+  showScreen = function(screen, pushToHistory = true) {
+    if (screen !== screenAzkarReader) {
+      stopAutoScrolling();
+    }
+    originalShowScreen(screen, pushToHistory);
+
+    // تحديث ظهور زر التراجع فور اكتمال تنشيط الشاشة
+    updateUndoButtonVisibility();
+  };
 
   window.addEventListener('scroll', updateQuickScrollVisibility, { passive: true });
   const appContainerElement = document.querySelector('.app-container');
@@ -3809,7 +3819,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.63', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.64', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
