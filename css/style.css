@@ -1032,7 +1032,7 @@ body {
   color: var(--primary-blue);
 }
 
-/* نافذة المشاركة */
+/* نافذة المشاركة والإعدادات السفلية مع العزل التام للتمرير */
 .bottom-sheet-backdrop {
   position: fixed;
   inset: 0;
@@ -1042,10 +1042,8 @@ body {
   display: none;
   justify-content: center;
   align-items: flex-end;
-}
-
-.bottom-sheet-backdrop.show {
-  display: flex;
+  overscroll-behavior: contain;
+  touch-action: none; /* منع تمرير الخلفية عند لمس الغطاء المعتم */
 }
 
 .bottom-sheet {
@@ -1055,6 +1053,20 @@ body {
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
   padding: 12px 20px 34px 20px;
+  overscroll-behavior: contain; /* منع تسريب التمرير للشاشة الخلفية نهائياً */
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y; /* حصر اللمس في التمرير الرأسي الداخلي للنافذة فقط */
+}
+
+/* تجميد الخلفية تماماً عند فتح النوافذ المنبثقة */
+body.scroll-locked,
+.app-container.scroll-locked {
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+
+.bottom-sheet-backdrop.show {
+  display: flex;
 }
 
 .sheet-drag-handle {
