@@ -4163,3 +4163,83 @@ body {
   border-color: #064E3B transparent transparent transparent;
 }
 
+/* ==================== زر التراجع العائم والرسائل الإرشادية ==================== */
+.floating-undo-btn {
+  position: fixed;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.8px solid #BCD8F0;
+  color: var(--primary-blue);
+  box-shadow: 0 6px 18px rgba(11, 37, 69, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 85;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: opacity 0.25s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.floating-undo-btn:active {
+  cursor: grabbing;
+  transform: scale(1.08);
+  box-shadow: 0 10px 24px rgba(29, 93, 155, 0.28);
+}
+
+/* حالة الالتصاق المغناطيسي الناعمة */
+.floating-undo-btn.snapping {
+  transition: left 0.28s cubic-bezier(0.2, 0.85, 0.3, 1), 
+              top 0.28s cubic-bezier(0.2, 0.85, 0.3, 1), 
+              transform 0.15s ease;
+}
+
+/* خفوت الزر عند عدم وجود عمليات للتراجع عنها */
+.floating-undo-btn.dimmed {
+  opacity: 0.32;
+  border-color: #E2E8F0;
+  color: #94A3B8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* الرسالة الإرشادية اللطيفة المنبثقة */
+.guidance-toast-banner {
+  position: fixed;
+  bottom: 82px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  background: rgba(9, 32, 63, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #1D5D9B;
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 250;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90%;
+  width: max-content;
+  text-align: center;
+}
+
+.guidance-toast-banner.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.guidance-toast-text {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #F8FAFC;
+}
+
