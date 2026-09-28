@@ -792,13 +792,19 @@ if (isRunningStandalone) {
       <span class="azkar-group-title">${group.name}</span>
     `;
 
-    // نظام رصد النقر المطوّل (Long Press)
+    // نظام رصد النقر المطوّل (مع التجميد التام أثناء وضع ترتيب المفضلة)
     let pressTimer = null;
     let isLongPress = false;
     let startX = 0;
     let startY = 0;
 
     const startPress = (e) => {
+      // 1. تجميد ومنع ظهور نافذة الخيارات المنبثقة أثناء تفعيل وضع ترتيب المفضلة
+      const activeScreen = document.querySelector('.screen-view.active');
+      if (isFavReorderMode && activeScreen === screenAzkarFavorites) {
+        return;
+      }
+
       isLongPress = false;
       if (e.type === 'touchstart') {
         startX = e.touches[0].clientX;
@@ -806,14 +812,13 @@ if (isRunningStandalone) {
       }
       pressTimer = setTimeout(() => {
         isLongPress = true;
-        if (navigator.vibrate) navigator.vibrate(45); // اهتزاز خفيف للتنبيه
+        if (navigator.vibrate) navigator.vibrate(45);
         openGroupLongPressModal(group, isStarted);
-      }, 550); // نصف ثانية للضغط المطول
+      }, 550);
     };
 
     const cancelPress = (e) => {
       if (e.type === 'touchmove') {
-        // إذا كان المستخدم يمرر الصفحة بإصبعه يتم إلغاء النقر المطول فوراً
         const diffX = Math.abs(e.touches[0].clientX - startX);
         const diffY = Math.abs(e.touches[0].clientY - startY);
         if (diffX > 10 || diffY > 10) clearTimeout(pressTimer);
@@ -832,9 +837,16 @@ if (isRunningStandalone) {
     card.addEventListener('mouseup', cancelPress);
     card.addEventListener('mouseleave', cancelPress);
 
-    // النقر العادي السريع
+    // النقر العادي (مع تجميد فتح الشاشة أثناء وضع ترتيب المفضلة)
     card.addEventListener('click', (e) => {
-      // إذا كان الحدث نقراً مطولاً نلغي النقر العادي
+      // 2. تجميد النقر العادي ومنع فتح شاشة القراءة بالخطأ أثناء الترتيب
+      const activeScreen = document.querySelector('.screen-view.active');
+      if (isFavReorderMode && activeScreen === screenAzkarFavorites) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       if (isLongPress) {
         e.preventDefault();
         e.stopPropagation();
@@ -1252,8 +1264,11 @@ if (isRunningStandalone) {
     });
   }
 
-  // تقليص عداد الذكر وتنفيذ حركة الاختفاء الانسيابية وميزان الحروف
+  // تقليص عداد الذكر (مع تجميد العد تماماً أثناء وضع ترتيب الأذكار)
   window.decrementDhikr = (itemId) => {
+    // تجميد العداد كلياً ومنع أي خصم أو اختفاء للكروت أثناء الترتيب
+    if (isReorderMode) return;
+
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
     const item = category.items.find(i => i.id === itemId);
@@ -3182,7 +3197,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.56', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.57', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
