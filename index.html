@@ -778,16 +778,8 @@
         <button class="nav-back-btn" id="backToCategoriesBtn">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <<h2 class="section-page-title" id="readerCategoryTitle">الأذكار</h2>
+        <h2 class="section-page-title" id="readerCategoryTitle">الأذكار</h2>
         <div class="reader-header-actions">
-          <!-- زر التراجع الذكي -->
-          <div class="header-icon-btn" id="undoDhikrBtn" title="تراجع عن آخر قراءة" style="display: none; color: #D97706;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-          </div>
-          <!-- زر التمرير التلقائي -->
-          <div class="header-icon-btn" id="toggleAutoScrollBtn" title="قراءة آلية" style="display: none; color: #16A34A;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          </div>
           <div class="header-icon-btn" id="openDhikrSettingsBtn" title="الإعدادات">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
           </div>
@@ -822,23 +814,6 @@
       </div>
 
       <div class="dhikr-cards-container" id="dhikrCardsContainer"></div>
-
-      <!-- شريط التحكم بسرعة القراءة الآلية المتدلي -->
-      <div class="auto-scroll-dock" id="autoScrollDock">
-        <span class="auto-scroll-icon">⚡</span>
-        <input type="range" id="autoScrollSpeedSlider" min="1" max="15" value="5" class="custom-slider">
-        <span class="auto-scroll-icon" style="font-size: 12px;">🐢</span>
-      </div>
-
-      <!-- أزرار الانتقال العائمة (أعلى وأسفل) -->
-      <div class="floating-nav-buttons" id="floatingNavButtons">
-        <button class="float-nav-btn" id="floatUpBtn" style="opacity: 0; pointer-events: none;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-        </button>
-        <button class="float-nav-btn" id="floatDownBtn" style="opacity: 0; pointer-events: none;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-      </div>
 
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1928,28 +1903,17 @@
 
         <hr class="setting-divider">
 
-        <!-- 4. ارتجاج عند الصفر -->
+        <!-- 4. ارتجاج عند الصفر (مفعل افتراضياً) -->
         <div class="setting-toggle-row">
           <div class="setting-text-col">
             <h4 class="setting-title">ارتجاج عند الصفر</h4>
-            <p class="setting-desc">تفعيل الارتجاج عند وصول العداد للصفر</p>
+            <p class="setting-desc">تفعيل هذا الخيار سيفعل الارتجاج عند وصول العداد للصفر في صفحة أذكار اليوم والليلة</p>
           </div>
           <label class="ios-switch">
             <input type="checkbox" id="toggleVibrateOnZero" checked>
             <span class="switch-slider"></span>
           </label>
         </div>
-
-        <!-- مؤشر قوة الاهتزاز -->
-        <div class="setting-block" id="vibrationIntensityBlock" style="padding: 0 14px 10px 14px;">
-          <div class="setting-header-inline">
-            <span style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary);">قوة الارتجاج:</span>
-          </div>
-          <input type="range" id="vibrationIntensitySlider" min="30" max="250" value="120" class="custom-slider" style="margin-top: 6px;">
-        </div>
-
-        <hr class="setting-divider">
-
 
         <!-- 5. ارتجاج عند كل ضغطة (معطل افتراضياً) -->
         <div class="setting-toggle-row">
@@ -2014,7 +1978,7 @@
           </label>
         </div>
 
-        <!-- 8. تأكيد الخروج -->
+        <!-- 8. تأكيد الخروج (مفعل افتراضياً) -->
         <div class="setting-toggle-row">
           <div class="setting-text-col">
             <h4 class="setting-title">تأكيد الخروج</h4>
@@ -2022,42 +1986,6 @@
           </div>
           <label class="ios-switch">
             <input type="checkbox" id="toggleConfirmExit" checked>
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-
-        <!-- 9. التمرير التلقائي للقراءة الحرة -->
-        <div class="setting-toggle-row">
-          <div class="setting-text-col">
-            <h4 class="setting-title">التمرير التلقائي للقراءة الحرة</h4>
-            <p class="setting-desc">يُظهر زر (تشغيل/إيقاف) في أعلى الشاشة لتمرير الأذكار آلياً</p>
-          </div>
-          <label class="ios-switch">
-            <input type="checkbox" id="toggleAutoScrollMode">
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-
-        <!-- 10. زر التراجع الذكي -->
-        <div class="setting-toggle-row">
-          <div class="setting-text-col">
-            <h4 class="setting-title">زر التراجع عن القراءة ↩️</h4>
-            <p class="setting-desc">يُظهر زراً في الأعلى للتراجع عن أي قراءة تمت بالخطأ واستعادتها</p>
-          </div>
-          <label class="ios-switch">
-            <input type="checkbox" id="toggleUndoMode" checked>
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-
-        <!-- 11. أزرار الانتقال العائمة -->
-        <div class="setting-toggle-row">
-          <div class="setting-text-col">
-            <h4 class="setting-title">أزرار الانتقال للأعلى والأسفل</h4>
-            <p class="setting-desc">يُظهر أسهم عائمة لتسهيل الصعود والنزول في قوائم الأذكار الطويلة</p>
-          </div>
-          <label class="ios-switch">
-            <input type="checkbox" id="toggleFloatingNavMode" checked>
             <span class="switch-slider"></span>
           </label>
         </div>
@@ -2162,12 +2090,7 @@
       </div>
     </div>
 
-<!-- إشعار التوجيه اللطيف (عام) -->
-    <div class="generic-toast-banner" id="genericToastBanner">
-      <span id="genericToastText"></span>
-    </div>
-
-    <!-- ==================== إشعار الخروج الذكي من التطبيق ==================== -->
+  <!-- ==================== إشعار الخروج الذكي من التطبيق ==================== -->
     <div class="exit-toast-banner" id="exitToastBanner">
       <div class="exit-toast-content">
         <span class="exit-toast-icon">🚪</span>
