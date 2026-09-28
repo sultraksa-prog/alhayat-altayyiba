@@ -854,6 +854,19 @@
         </div>
       </div>
 
+      <!-- زر التراجع العائم الحر مع الالتصاق المغناطيسي بالحافة -->
+      <button type="button" class="floating-undo-btn" id="floatingUndoBtn" title="تراجع عن التسبيح">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 14 4 9 9 4"></polyline>
+          <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+        </svg>
+      </button>
+
+      <!-- الرسالة الإرشادية اللطيفة المنبثقة عند تفعيل الميزات -->
+      <div class="guidance-toast-banner" id="guidanceToastBanner">
+        <span class="guidance-toast-text" id="guidanceToastText"></span>
+      </div>
+
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
@@ -2055,7 +2068,7 @@
           </label>
         </div>
 
-        <!-- 10. التمرير التلقائي للأذكار -->
+          <!-- 10. التمرير التلقائي للأذكار -->
         <div class="setting-toggle-row">
           <div class="setting-text-col">
             <h4 class="setting-title">التمرير التلقائي للأذكار</h4>
@@ -2063,6 +2076,18 @@
           </div>
           <label class="ios-switch">
             <input type="checkbox" id="toggleAutoScrollOption">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 11. زر التراجع عن التسبيح -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">زر التراجع عن التسبيح</h4>
+            <p class="setting-desc">إظهار زر عائم يمكنك سحبه لأي مكان ويلتصق بالحافة تلقائياً؛ لعكس آخر تسبيحات واسترجاع الأذكار المكتملة بنقرة واحدة.</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleUndoButtonOption" checked>
             <span class="switch-slider"></span>
           </label>
         </div>
