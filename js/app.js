@@ -2886,6 +2886,176 @@ if (isRunningStandalone) {
     originalShowScreen(screen, pushToHistory);
   };
 
+  // ==================== محرك زر التراجع والالتصاق المغناطيسي بالحافة ====================
+  const floatingUndoBtn = document.getElementById('floatingUndoBtn');
+  let undoHistoryStack = [];
+
+  function pushToUndoStack(itemId) {
+    undoHistoryStack.push({
+      itemId: itemId,
+      categoryId: currentActiveCategoryId,
+      time: Date.now()
+    });
+    if (undoHistoryStack.length > 30) undoHistoryStack.shift();
+    updateUndoButtonState();
+  }
+
+  function updateUndoButtonState() {
+    if (!floatingUndoBtn) return;
+    if (undoHistoryStack.length === 0) {
+      floatingUndoBtn.classList.add('dimmed');
+    } else {
+      floatingUndoBtn.classList.remove('dimmed');
+    }
+  }
+
+  function updateUndoButtonVisibility() {
+    if (!floatingUndoBtn) return;
+    const readerScreen = document.getElementById('screen-azkar-reader');
+    const isReaderActive = readerScreen && readerScreen.classList.contains('active');
+    
+    if (dhikrSettings.undoButtonEnabled && isReaderActive) {
+      floatingUndoBtn.style.display = 'flex';
+      initFloatingUndoPosition();
+    } else {
+      floatingUndoBtn.style.display = 'none';
+    }
+  }
+
+  function executeUndoAction() {
+    if (undoHistoryStack.length === 0) return;
+    const lastAction = undoHistoryStack.pop();
+    updateUndoButtonState();
+
+    const category = azkarState.find(c => c.id === currentActiveCategoryId);
+    if (!category || !category.items) return;
+
+    const item = category.items.find(i => i.id === lastAction.itemId);
+    if (!item) return;
+
+    // استرجاع (+1) للذكر دون تجاوز العدد الكلي الأصلي
+    item.currentCount = Math.min(item.count, item.currentCount + 1);
+    saveAzkarState();
+
+    // إعادة تحديث شريط الإنجاز الموزون فورياً
+    updateReaderProgressBar();
+
+    // استرجاع كرت الذكر بسلاسة حتى لو كان قد اختفى لوصوله للصفر
+    renderDhikrCards();
+
+    // اهتزاز خفيف لتأكيد التراجع
+    if (navigator.vibrate) navigator.vibrate(28);
+  }
+
+  // تفريغ السجل وتحديث حالة الزر عند فتح أي قسم أذكار جديد
+  const originalOpenCategoryReader = window.openCategoryReader;
+  window.openCategoryReader = function(categoryId, resetCounters = false) {
+    undoHistoryStack = [];
+    updateUndoButtonState();
+    updateUndoButtonVisibility();
+    if (originalOpenCategoryReader) originalOpenCategoryReader(categoryId, resetCounters);
+  };
+
+  // ==================== فيزياء السحب الحر والالتصاق المغناطيسي بالحافة ====================
+  let isDraggingUndo = false;
+  let undoStartX = 0, undoStartY = 0;
+  let undoInitialLeft = 0, undoInitialTop = 0;
+  let hasMovedUndo = false;
+
+  function initFloatingUndoPosition() {
+    if (!floatingUndoBtn) return;
+    const savedPos = JSON.parse(localStorage.getItem('hayat_undo_btn_pos'));
+    const container = document.querySelector('.app-container');
+    const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth, width: window.innerWidth, top: 0, height: window.innerHeight };
+
+    if (savedPos && savedPos.side) {
+      const top = Math.max(70, Math.min(savedPos.top, window.innerHeight - 140));
+      floatingUndoBtn.style.top = `${top}px`;
+      if (savedPos.side === 'left') {
+        floatingUndoBtn.style.left = `${containerRect.left + 14}px`;
+      } else {
+        floatingUndoBtn.style.left = `${containerRect.right - 60}px`;
+      }
+    } else {
+      // موضع افتراضي أنيق في منتصف الحافة اليسرى
+      floatingUndoBtn.style.top = `${window.innerHeight * 0.45}px`;
+      floatingUndoBtn.style.left = `${containerRect.left + 14}px`;
+    }
+  }
+
+  function onUndoPointerDown(e) {
+    isDraggingUndo = true;
+    hasMovedUndo = false;
+    floatingUndoBtn.classList.remove('snapping');
+
+    const pt = e.touches ? e.touches[0] : e;
+    undoStartX = pt.clientX;
+    undoStartY = pt.clientY;
+
+    const rect = floatingUndoBtn.getBoundingClientRect();
+    undoInitialLeft = rect.left;
+    undoInitialTop = rect.top;
+  }
+
+  function onUndoPointerMove(e) {
+    if (!isDraggingUndo) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - undoStartX;
+    const dy = pt.clientY - undoStartY;
+
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      hasMovedUndo = true;
+    }
+
+    const newLeft = undoInitialLeft + dx;
+    const newTop = undoInitialTop + dy;
+
+    floatingUndoBtn.style.left = `${newLeft}px`;
+    floatingUndoBtn.style.top = `${newTop}px`;
+  }
+
+  function onUndoPointerUp() {
+    if (!isDraggingUndo) return;
+    isDraggingUndo = false;
+
+    // إذا لم يتحرك الزر (نقرة واحدة سريعة): تنفيذ التراجع
+    if (!hasMovedUndo) {
+      executeUndoAction();
+      return;
+    }
+
+    // تطبيق الالتصاق المغناطيسي التلقائي بأقرب حافة (يمين أو يسار)
+    floatingUndoBtn.classList.add('snapping');
+    const container = document.querySelector('.app-container');
+    const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth, width: window.innerWidth, top: 0, height: window.innerHeight };
+
+    const btnRect = floatingUndoBtn.getBoundingClientRect();
+    const btnCenterX = btnRect.left + btnRect.width / 2;
+    const containerCenterX = containerRect.left + containerRect.width / 2;
+
+    const side = (btnCenterX < containerCenterX) ? 'left' : 'right';
+    const targetLeft = (side === 'left') ? (containerRect.left + 14) : (containerRect.right - 60);
+
+    // حصر الحركة الرأسية بين الهيدر والأزرار السفلية
+    const targetTop = Math.max(68, Math.min(btnRect.top, window.innerHeight - 135));
+
+    floatingUndoBtn.style.left = `${targetLeft}px`;
+    floatingUndoBtn.style.top = `${targetTop}px`;
+
+    // حفظ الموضع المختار في ذاكرة الجهاز
+    localStorage.setItem('hayat_undo_btn_pos', JSON.stringify({ side: side, top: targetTop }));
+  }
+
+  if (floatingUndoBtn) {
+    floatingUndoBtn.addEventListener('touchstart', onUndoPointerDown, { passive: true });
+    window.addEventListener('touchmove', onUndoPointerMove, { passive: true });
+    window.addEventListener('touchend', onUndoPointerUp);
+
+    floatingUndoBtn.addEventListener('mousedown', onUndoPointerDown);
+    window.addEventListener('mousemove', onUndoPointerMove);
+    window.addEventListener('mouseup', onUndoPointerUp);
+  }
+
   window.addEventListener('scroll', updateQuickScrollVisibility, { passive: true });
   const appContainerElement = document.querySelector('.app-container');
   if (appContainerElement) {
@@ -3639,7 +3809,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.62', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.63', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -5864,174 +6034,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
   }
-});
-
-// ==================== محرك زر التراجع والالتصاق المغناطيسي بالحافة ====================
-  const floatingUndoBtn = document.getElementById('floatingUndoBtn');
-  let undoHistoryStack = [];
-
-  function pushToUndoStack(itemId) {
-    undoHistoryStack.push({
-      itemId: itemId,
-      categoryId: currentActiveCategoryId,
-      time: Date.now()
-    });
-    if (undoHistoryStack.length > 30) undoHistoryStack.shift();
-    updateUndoButtonState();
-  }
-
-  function updateUndoButtonState() {
-    if (!floatingUndoBtn) return;
-    if (undoHistoryStack.length === 0) {
-      floatingUndoBtn.classList.add('dimmed');
-    } else {
-      floatingUndoBtn.classList.remove('dimmed');
-    }
-  }
-
-  function updateUndoButtonVisibility() {
-    if (!floatingUndoBtn) return;
-    const readerScreen = document.getElementById('screen-azkar-reader');
-    const isReaderActive = readerScreen && readerScreen.classList.contains('active');
-    
-    if (dhikrSettings.undoButtonEnabled && isReaderActive) {
-      floatingUndoBtn.style.display = 'flex';
-      initFloatingUndoPosition();
-    } else {
-      floatingUndoBtn.style.display = 'none';
-    }
-  }
-
-  function executeUndoAction() {
-    if (undoHistoryStack.length === 0) return;
-    const lastAction = undoHistoryStack.pop();
-    updateUndoButtonState();
-
-    const category = azkarState.find(c => c.id === currentActiveCategoryId);
-    if (!category || !category.items) return;
-
-    const item = category.items.find(i => i.id === lastAction.itemId);
-    if (!item) return;
-
-    // استرجاع (+1) للذكر دون تجاوز العدد الكلي الأصلي
-    item.currentCount = Math.min(item.count, item.currentCount + 1);
-    saveAzkarState();
-
-    // إعادة تحديث شريط الإنجاز الموزون فورياً
-    updateReaderProgressBar();
-
-    // استرجاع كرت الذكر بسلاسة حتى لو كان قد اختفى لوصوله للصفر
-    renderDhikrCards();
-
-    // اهتزاز خفيف لتأكيد التراجع
-    if (navigator.vibrate) navigator.vibrate(28);
-  }
-
-  // تفريغ السجل وتحديث حالة الزر عند فتح أي قسم أذكار جديد
-  const originalOpenCategoryReader = window.openCategoryReader;
-  window.openCategoryReader = function(categoryId, resetCounters = false) {
-    undoHistoryStack = [];
-    updateUndoButtonState();
-    updateUndoButtonVisibility();
-    if (originalOpenCategoryReader) originalOpenCategoryReader(categoryId, resetCounters);
-  };
-
-  // ==================== فيزياء السحب الحر والالتصاق المغناطيسي بالحافة ====================
-  let isDraggingUndo = false;
-  let undoStartX = 0, undoStartY = 0;
-  let undoInitialLeft = 0, undoInitialTop = 0;
-  let hasMovedUndo = false;
-
-  function initFloatingUndoPosition() {
-    if (!floatingUndoBtn) return;
-    const savedPos = JSON.parse(localStorage.getItem('hayat_undo_btn_pos'));
-    const container = document.querySelector('.app-container');
-    const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth, width: window.innerWidth, top: 0, height: window.innerHeight };
-
-    if (savedPos && savedPos.side) {
-      const top = Math.max(70, Math.min(savedPos.top, window.innerHeight - 140));
-      floatingUndoBtn.style.top = `${top}px`;
-      if (savedPos.side === 'left') {
-        floatingUndoBtn.style.left = `${containerRect.left + 14}px`;
-      } else {
-        floatingUndoBtn.style.left = `${containerRect.right - 60}px`;
-      }
-    } else {
-      // موضع افتراضي أنيق في منتصف الحافة اليسرى
-      floatingUndoBtn.style.top = `${window.innerHeight * 0.45}px`;
-      floatingUndoBtn.style.left = `${containerRect.left + 14}px`;
-    }
-  }
-
-  function onUndoPointerDown(e) {
-    isDraggingUndo = true;
-    hasMovedUndo = false;
-    floatingUndoBtn.classList.remove('snapping');
-
-    const pt = e.touches ? e.touches[0] : e;
-    undoStartX = pt.clientX;
-    undoStartY = pt.clientY;
-
-    const rect = floatingUndoBtn.getBoundingClientRect();
-    undoInitialLeft = rect.left;
-    undoInitialTop = rect.top;
-  }
-
-  function onUndoPointerMove(e) {
-    if (!isDraggingUndo) return;
-    const pt = e.touches ? e.touches[0] : e;
-    const dx = pt.clientX - undoStartX;
-    const dy = pt.clientY - undoStartY;
-
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-      hasMovedUndo = true;
-    }
-
-    const newLeft = undoInitialLeft + dx;
-    const newTop = undoInitialTop + dy;
-
-    floatingUndoBtn.style.left = `${newLeft}px`;
-    floatingUndoBtn.style.top = `${newTop}px`;
-  }
-
-  function onUndoPointerUp() {
-    if (!isDraggingUndo) return;
-    isDraggingUndo = false;
-
-    // إذا لم يتحرك الزر (نقرة واحدة سريعة): تنفيذ التراجع
-    if (!hasMovedUndo) {
-      executeUndoAction();
-      return;
-    }
-
-    // تطبيق الالتصاق المغناطيسي التلقائي بأقرب حافة (يمين أو يسار)
-    floatingUndoBtn.classList.add('snapping');
-    const container = document.querySelector('.app-container');
-    const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth, width: window.innerWidth, top: 0, height: window.innerHeight };
-
-    const btnRect = floatingUndoBtn.getBoundingClientRect();
-    const btnCenterX = btnRect.left + btnRect.width / 2;
-    const containerCenterX = containerRect.left + containerRect.width / 2;
-
-    const side = (btnCenterX < containerCenterX) ? 'left' : 'right';
-    const targetLeft = (side === 'left') ? (containerRect.left + 14) : (containerRect.right - 60);
-
-    // حصر الحركة الرأسية بين الهيدر والأزرار السفلية
-    const targetTop = Math.max(68, Math.min(btnRect.top, window.innerHeight - 135));
-
-    floatingUndoBtn.style.left = `${targetLeft}px`;
-    floatingUndoBtn.style.top = `${targetTop}px`;
-
-    // حفظ الموضع المختار في ذاكرة الجهاز
-    localStorage.setItem('hayat_undo_btn_pos', JSON.stringify({ side: side, top: targetTop }));
-  }
-
-  if (floatingUndoBtn) {
-    floatingUndoBtn.addEventListener('touchstart', onUndoPointerDown, { passive: true });
-    window.addEventListener('touchmove', onUndoPointerMove, { passive: true });
-    window.addEventListener('touchend', onUndoPointerUp);
-
-    floatingUndoBtn.addEventListener('mousedown', onUndoPointerDown);
-    window.addEventListener('mousemove', onUndoPointerMove);
-    window.addEventListener('mouseup', onUndoPointerUp);
-  }  
+});  
