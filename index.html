@@ -815,6 +815,22 @@
 
       <div class="dhikr-cards-container" id="dhikrCardsContainer"></div>
 
+      <!-- أزرار التمرير السريع للأعلى والأسفل العائمة يساراً -->
+      <div class="quick-scroll-container" id="quickScrollContainer">
+        <button type="button" class="quick-scroll-btn" id="btnScrollToTop" title="الانتقال لأول ذكر">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 11 12 6 7 11"></polyline>
+            <polyline points="17 18 12 13 7 18"></polyline>
+          </svg>
+        </button>
+        <button type="button" class="quick-scroll-btn" id="btnScrollToBottom" title="الانتقال لآخر ذكر">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="7 13 12 18 17 13"></polyline>
+            <polyline points="7 6 12 11 17 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
@@ -1986,6 +2002,18 @@
           </div>
           <label class="ios-switch">
             <input type="checkbox" id="toggleConfirmExit" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 9. أزرار الانتقال السريع للأعلى والأسفل -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">أزرار الانتقال السريع (أعلى / أسفل)</h4>
+            <p class="setting-desc">إظهار أزرار عائمة للتنقل السريع المباشر لأول وآخر ذكر عند التمرير</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleQuickScrollButtons" checked>
             <span class="switch-slider"></span>
           </label>
         </div>
