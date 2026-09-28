@@ -86,12 +86,16 @@ if (isRunningStandalone) {
     hideOnZero: true,
     dismissAnimation: 'slide-up', // 'slide-up' | 'fade' | 'fold-in' | 'ascend-glow' | 'roll-up'
     tapAnywhere: true,
-    confirmExit: true
+    confirmExit: true,
+    quickScrollButtons: true
   };
 
   let dhikrSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
   if (!dhikrSettings.dismissAnimation) {
     dhikrSettings.dismissAnimation = 'slide-up';
+  }
+  if (dhikrSettings.quickScrollButtons === undefined) {
+    dhikrSettings.quickScrollButtons = true;
   }
 
   function saveSettings() {
@@ -2380,6 +2384,11 @@ if (isRunningStandalone) {
     document.getElementById('toggleTapAnywhere').checked = dhikrSettings.tapAnywhere;
     document.getElementById('toggleConfirmExit').checked = dhikrSettings.confirmExit;
 
+    const toggleQuickScroll = document.getElementById('toggleQuickScrollButtons');
+    if (toggleQuickScroll) {
+      toggleQuickScroll.checked = dhikrSettings.quickScrollButtons !== false;
+    }
+
     // مزامنة النمط المختار لحركة اختفاء الذكر
     const curAnim = dhikrSettings.dismissAnimation || 'slide-up';
     document.querySelectorAll('.anim-chip-item').forEach(chip => {
@@ -2449,6 +2458,127 @@ if (isRunningStandalone) {
     dhikrSettings.confirmExit = e.target.checked;
     saveSettings();
   });
+
+  const toggleQuickScrollInput = document.getElementById('toggleQuickScrollButtons');
+  if (toggleQuickScrollInput) {
+    toggleQuickScrollInput.addEventListener('change', (e) => {
+      dhikrSettings.quickScrollButtons = e.target.checked;
+      saveSettings();
+      updateQuickScrollVisibility();
+    });
+  }
+
+  // ==================== محرك أزرار الانتقال السريع للأعلى والأسفل ====================
+  const btnScrollToTop = document.getElementById('btnScrollToTop');
+  const btnScrollToBottom = document.getElementById('btnScrollToBottom');
+
+  function getScrollMetrics() {
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer && appContainer.scrollHeight > appContainer.clientHeight && window.getComputedStyle(appContainer).overflowY.includes('auto')) {
+      return {
+        element: appContainer,
+        scrollTop: appContainer.scrollTop,
+        scrollHeight: appContainer.scrollHeight,
+        clientHeight: appContainer.clientHeight,
+        isWindow: false
+      };
+    }
+    return {
+      element: window,
+      scrollTop: window.pageYOffset || document.documentElement.scrollTop || 0,
+      scrollHeight: document.documentElement.scrollHeight || document.body.scrollHeight || 0,
+      clientHeight: window.innerHeight || document.documentElement.clientHeight || 0,
+      isWindow: true
+    };
+  }
+
+  function hideQuickScrollButtons() {
+    if (btnScrollToTop) btnScrollToTop.classList.remove('show');
+    if (btnScrollToBottom) btnScrollToBottom.classList.remove('show');
+  }
+
+  function updateQuickScrollVisibility() {
+    const readerScreen = document.getElementById('screen-azkar-reader');
+    if (!readerScreen || !readerScreen.classList.contains('active')) {
+      hideQuickScrollButtons();
+      return;
+    }
+
+    if (dhikrSettings.quickScrollButtons === false) {
+      hideQuickScrollButtons();
+      return;
+    }
+
+    const metrics = getScrollMetrics();
+    const maxScroll = metrics.scrollHeight - metrics.clientHeight;
+
+    // حماية القوائم القصيرة: إذا كانت الصفحة لا تتطلب تمريراً كافياً
+    if (maxScroll <= 180) {
+      hideQuickScrollButtons();
+      return;
+    }
+
+    const currentScroll = metrics.scrollTop;
+    const distanceFromBottom = maxScroll - currentScroll;
+
+    // 1. عند فتح الشاشة أو الوقوف في القمة التامة (< 70px): مخفيان
+    if (currentScroll < 70) {
+      hideQuickScrollButtons();
+      return;
+    }
+
+    // 2. زر الهبوط لأسفل: يظهر فقط عندما يكون في الثلث/النصف العلوي وبعيداً عن القاع بـ 250px على الأقل
+    if (currentScroll >= 70 && currentScroll < maxScroll * 0.45 && distanceFromBottom > 250) {
+      if (btnScrollToBottom) btnScrollToBottom.classList.add('show');
+      if (btnScrollToTop) btnScrollToTop.classList.remove('show');
+      return;
+    }
+
+    // 3. زر الصعود لأعلى: يظهر فقط عندما يتعمق في القراءة (النصف السفلي) ويكون بعيداً عن القمة بـ 200px على الأقل
+    if (currentScroll > maxScroll * 0.55 && currentScroll > 200) {
+      if (btnScrollToTop) btnScrollToTop.classList.add('show');
+      if (btnScrollToBottom) btnScrollToBottom.classList.remove('show');
+      return;
+    }
+
+    // 4. في المنطقة الوسطى الحرجة أو عدم تحقق الشروط: إخفاء الزرين لصفاء القراءة
+    hideQuickScrollButtons();
+  }
+
+  function scrollToDhikrTop() {
+    const metrics = getScrollMetrics();
+    if (!metrics.isWindow) {
+      metrics.element.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function scrollToDhikrBottom() {
+    const cards = document.querySelectorAll('#dhikrCardsContainer .dhikr-card');
+    const visibleCards = Array.from(cards).filter(c => c.style.display !== 'none');
+    const lastCard = visibleCards.length > 0 ? visibleCards[visibleCards.length - 1] : null;
+
+    if (lastCard) {
+      lastCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    } else {
+      const metrics = getScrollMetrics();
+      if (!metrics.isWindow) {
+        metrics.element.scrollTo({ top: metrics.scrollHeight, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+    }
+  }
+
+  if (btnScrollToTop) btnScrollToTop.addEventListener('click', scrollToDhikrTop);
+  if (btnScrollToBottom) btnScrollToBottom.addEventListener('click', scrollToDhikrBottom);
+
+  window.addEventListener('scroll', updateQuickScrollVisibility, { passive: true });
+  const appContainerElement = document.querySelector('.app-container');
+  if (appContainerElement) {
+    appContainerElement.addEventListener('scroll', updateQuickScrollVisibility, { passive: true });
+  }
   
   document.addEventListener('click', () => readerDropdownMenu.classList.remove('show'));
 
@@ -3197,7 +3327,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.57', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.58', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
