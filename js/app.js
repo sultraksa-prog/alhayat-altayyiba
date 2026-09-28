@@ -82,15 +82,11 @@ if (isRunningStandalone) {
     fontSize: 21,
     fontFamily: "'Amiri', serif",
     vibrateOnZero: true,
-    vibrationIntensity: 120,
     vibrateOnClick: false,
     hideOnZero: true,
-    dismissAnimation: 'slide-up',
+    dismissAnimation: 'slide-up', // 'slide-up' | 'fade' | 'fold-in' | 'ascend-glow' | 'roll-up'
     tapAnywhere: true,
-    confirmExit: true,
-    autoScrollEnabled: false,
-    undoEnabled: true,
-    floatingNavEnabled: true
+    confirmExit: true
   };
 
   let dhikrSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
@@ -1268,40 +1264,31 @@ if (isRunningStandalone) {
     });
   }
 
-    // مكدس عمليات التراجع التراكمي
-  let dhikrUndoStack = [];
-
-  // تقليص عداد الذكر وتنفيذ الحركة
+  // تقليص عداد الذكر (مع تجميد العد تماماً أثناء وضع ترتيب الأذكار)
   window.decrementDhikr = (itemId) => {
-    // 1. تجميد العداد كلياً ومنع أي خصم أثناء الترتيب
-    if (typeof isReorderMode !== 'undefined' && isReorderMode) return;
+    // تجميد العداد كلياً ومنع أي خصم أو اختفاء للكروت أثناء الترتيب
+    if (isReorderMode) return;
 
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
     const item = category.items.find(i => i.id === itemId);
     if (!item || item.currentCount <= 0) return;
 
-    // 2. تسجيل العملية في مكدس التراجع (الاحتفاظ بالحالة قبل الخصم)
-    dhikrUndoStack.push({ id: itemId, prevCount: item.currentCount });
-
     item.currentCount--;
 
-    // 3. ارتجاج عند كل ضغطة
+    // 1. ارتجاج عند كل ضغطة
     if (dhikrSettings.vibrateOnClick && navigator.vibrate) {
       navigator.vibrate(30);
     }
 
-    // 4. تحديث شريط ميزان الحروف فورياً
+    // 2. تحديث شريط ميزان الحروف فورياً
     saveAzkarState();
     updateReaderProgressBar();
 
-    // 5. عند وصول العداد للصفر
+    // 3. عند وصول العداد للصفر
     if (item.currentCount === 0) {
-      
-      // ارتجاج الصفر بالقوة المخصصة من الإعدادات الجديدة
       if (dhikrSettings.vibrateOnZero && navigator.vibrate) {
-        const vInt = dhikrSettings.vibrationIntensity || 120;
-        navigator.vibrate([vInt, 60, vInt + 30]);
+        navigator.vibrate([120, 60, 150]);
       }
 
       // إذا كان خيار الإخفاء مفعلاً: تشغيل الرسم المتحرك المختار لمدة 440ms
@@ -1329,7 +1316,6 @@ if (isRunningStandalone) {
       }
     }
 
-    // 6. في حال لم يكن خيار الإخفاء مفعلاً أو لم يصل العداد للصفر
     renderDhikrCards();
     checkCategoryCompletion(category);
   };
@@ -3211,7 +3197,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.59', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.57', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -4253,7 +4239,6 @@ ${APP_CONFIG.url}`;
 
 }); // إغلاق الدالة الرئيسية للتطبيق بشكل صحيح
 
-  
 // ==================== نافذة وخيارات النقر المطوّل (تشغيل مباشر ومضمون) ====================
   const groupLongPressModal = document.getElementById('groupLongPressModal');
   const longPressModalTitle = document.getElementById('longPressModalTitle');
@@ -5437,206 +5422,5 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
   }
-
-// ==================== رسائل التوجيه اللطيفة ====================
-  let genericToastTimer = null;
-  function showGenericToast(text) {
-    const toast = document.getElementById('genericToastBanner');
-    const txtEl = document.getElementById('genericToastText');
-    if (!toast || !txtEl) return;
-    txtEl.textContent = text;
-    toast.classList.add('show');
-    clearTimeout(genericToastTimer);
-    genericToastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
-  }
-
-  // ==================== مزامنة إعدادات القراءة والتمرير ====================
-  function syncSettingsUI() {
-    // ... مزامنة الإعدادات السابقة ...
-    document.getElementById('radioVertical').checked = (dhikrSettings.displayMode === 'vertical');
-    document.getElementById('radioHorizontal').checked = (dhikrSettings.displayMode !== 'vertical');
-    document.getElementById('fontSizeSlider').value = dhikrSettings.fontSize;
-    document.getElementById('fontSizeDisplay').textContent = dhikrSettings.fontSize;
-    document.getElementById('fontFamilySelector').value = dhikrSettings.fontFamily;
-    document.getElementById('toggleVibrateOnZero').checked = dhikrSettings.vibrateOnZero;
-    document.getElementById('vibrationIntensitySlider').value = dhikrSettings.vibrationIntensity || 120;
-    document.getElementById('toggleVibrateOnClick').checked = dhikrSettings.vibrateOnClick;
-    document.getElementById('toggleHideOnZero').checked = dhikrSettings.hideOnZero;
-    document.getElementById('toggleTapAnywhere').checked = dhikrSettings.tapAnywhere;
-    document.getElementById('toggleConfirmExit').checked = dhikrSettings.confirmExit;
-
-    document.getElementById('toggleAutoScrollMode').checked = dhikrSettings.autoScrollEnabled;
-    document.getElementById('toggleUndoMode').checked = dhikrSettings.undoEnabled;
-    document.getElementById('toggleFloatingNavMode').checked = dhikrSettings.floatingNavEnabled;
-
-    const curAnim = dhikrSettings.dismissAnimation || 'slide-up';
-    document.querySelectorAll('.anim-chip-item').forEach(chip => {
-      const isSelected = chip.getAttribute('data-anim') === curAnim;
-      chip.classList.toggle('active', isSelected);
-      const radio = chip.querySelector('input');
-      if (radio) radio.checked = isSelected;
-    });
-
-    applyReaderHeaderToggles();
-  }
-
-  // تطبيق ظهور أزرار الهيدر
-  function applyReaderHeaderToggles() {
-    const undoBtn = document.getElementById('undoDhikrBtn');
-    const autoScrollBtn = document.getElementById('toggleAutoScrollBtn');
-    if (undoBtn) undoBtn.style.display = dhikrSettings.undoEnabled ? 'flex' : 'none';
-    if (autoScrollBtn) autoScrollBtn.style.display = dhikrSettings.autoScrollEnabled ? 'flex' : 'none';
-  }
-
-  document.getElementById('vibrationIntensitySlider').addEventListener('input', (e) => {
-    dhikrSettings.vibrationIntensity = parseInt(e.target.value);
-    saveSettings();
-    if (navigator.vibrate) navigator.vibrate(dhikrSettings.vibrationIntensity);
-  });
-
-  ['toggleAutoScrollMode', 'toggleUndoMode', 'toggleFloatingNavMode'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('change', (e) => {
-        const key = id.replace('toggle', '').replace('Mode', '');
-        const prop = key.charAt(0).toLowerCase() + key.slice(1) + 'Enabled';
-        dhikrSettings[prop] = e.target.checked;
-        saveSettings();
-        applyReaderHeaderToggles();
-        if (e.target.checked && id !== 'toggleFloatingNavMode') {
-          showGenericToast('✨ تم التفعيل.. ستجد الزر في أعلى شاشة قراءة الأذكار');
-        }
-      });
-    }
-  });
-
-  // ==================== محرك التراجع التراكمي (Undo) ====================
-  const undoDhikrBtn = document.getElementById('undoDhikrBtn');
-  if (undoDhikrBtn) {
-    undoDhikrBtn.addEventListener('click', () => {
-      if (dhikrUndoStack.length === 0) {
-        showGenericToast('لا توجد عمليات سابقة للتراجع عنها');
-        return;
-      }
-
-      const lastAction = dhikrUndoStack.pop();
-      const category = azkarState.find(c => c.id === currentActiveCategoryId);
-      if (!category) return;
-      const item = category.items.find(i => i.id === lastAction.id);
-      if (!item) return;
-
-      // استعادة العداد
-      if (item.currentCount < item.count) {
-        item.currentCount++;
-      }
-      saveAzkarState();
-      updateReaderProgressBar();
-
-      // إعادة عرض الكرت إذا كان مخفياً وإعادة العداد لشكله الطبيعي
-      const cardEl = document.querySelector(`.dhikr-card[data-item-id="${item.id}"]`);
-      if (cardEl) {
-        cardEl.className = 'dhikr-card'; // إزالة كل أنماط الإخفاء
-        const btn = cardEl.querySelector('.dhikr-counter-btn');
-        if (btn) {
-          btn.classList.remove('done');
-          btn.textContent = item.currentCount;
-        }
-        // تمرير سلس نحو الذكر المستعاد
-        cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        renderDhikrCards(); // إعادة رسم كاملة إذا تم تفريغ الكرت
-      }
-    });
-  }
-
-  // تصفير المكدس عند فتح فئة جديدة
-  const originalOpenCat = window.openCategoryReader;
-  window.openCategoryReader = function(categoryId, reset) {
-    dhikrUndoStack = [];
-    originalOpenCat(categoryId, reset);
-    applyReaderHeaderToggles();
-  };
-
-  // ==================== محرك التمرير التلقائي (60 FPS) ====================
-  const toggleAutoScrollBtn = document.getElementById('toggleAutoScrollBtn');
-  const autoScrollDock = document.getElementById('autoScrollDock');
-  const autoScrollSpeedSlider = document.getElementById('autoScrollSpeedSlider');
-  let autoScrollRaf = null;
-  let isAutoScrolling = false;
-
-  function performAutoScroll() {
-    if (!isAutoScrolling) return;
-    // عكس قيمة السلايدر (1 سريع جداً -> 15 بطيء) لتحديد سرعة الإزاحة
-    const speedVal = parseInt(autoScrollSpeedSlider.value);
-    const step = 20 / speedVal; 
-    window.scrollBy(0, step);
-    autoScrollRaf = requestAnimationFrame(performAutoScroll);
-  }
-
-  function toggleAutoScrollState() {
-    isAutoScrolling = !isAutoScrolling;
-    if (isAutoScrolling) {
-      autoScrollDock.classList.add('show');
-      toggleAutoScrollBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
-      autoScrollRaf = requestAnimationFrame(performAutoScroll);
-    } else {
-      autoScrollDock.classList.remove('show');
-      toggleAutoScrollBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
-      cancelAnimationFrame(autoScrollRaf);
-    }
-  }
-
-  if (toggleAutoScrollBtn) {
-    toggleAutoScrollBtn.addEventListener('click', toggleAutoScrollState);
-  }
-
-  // إيقاف التمرير التلقائي عند اللمس البشري لتجنب التضارب
-  window.addEventListener('touchstart', () => {
-    if (isAutoScrolling) toggleAutoScrollState();
-  }, { passive: true });
-  window.addEventListener('wheel', () => {
-    if (isAutoScrolling) toggleAutoScrollState();
-  }, { passive: true });
-
-  // ==================== محرك أزرار الانتقال العائمة الذكية ====================
-  const floatingNavBtns = document.getElementById('floatingNavButtons');
-  const floatUpBtn = document.getElementById('floatUpBtn');
-  const floatDownBtn = document.getElementById('floatDownBtn');
-
-  window.addEventListener('scroll', () => {
-    const activeScreen = document.querySelector('.screen-view.active');
-    // لا تظهر إلا في شاشة القراءة وعند التفعيل
-    if (!dhikrSettings.floatingNavEnabled || activeScreen !== screenAzkarReader) {
-      if (floatingNavBtns) floatingNavBtns.style.opacity = '0';
-      return;
-    }
-
-    if (floatingNavBtns) floatingNavBtns.style.opacity = '1';
-
-    const y = window.scrollY || document.documentElement.scrollTop;
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-
-    // يظهر زر الصعود إذا نزل المستخدم عن القمة
-    if (y > 350) {
-      floatUpBtn.style.opacity = '1';
-      floatUpBtn.style.pointerEvents = 'auto';
-    } else {
-      floatUpBtn.style.opacity = '0';
-      floatUpBtn.style.pointerEvents = 'none';
-    }
-
-    // يظهر زر النزول إذا كان المستخدم بعيداً عن القاع
-    if (maxScroll - y > 350) {
-      floatDownBtn.style.opacity = '1';
-      floatDownBtn.style.pointerEvents = 'auto';
-    } else {
-      floatDownBtn.style.opacity = '0';
-      floatDownBtn.style.pointerEvents = 'none';
-    }
-  }, { passive: true });
-
-  if (floatUpBtn) floatUpBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (floatDownBtn) floatDownBtn.onclick = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-  
 });
 
