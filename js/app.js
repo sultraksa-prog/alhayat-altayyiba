@@ -88,13 +88,17 @@ if (isRunningStandalone) {
     dismissAnimation: 'slide-up',
     tapAnywhere: true,
     confirmExit: true,
-    quickScrollButtons: true
+    quickScrollButtons: true,
+    autoScrollEnabled: false,
+    autoScrollSpeed: 1.0
   };
 
   let dhikrSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
   if (!dhikrSettings.dismissAnimation) dhikrSettings.dismissAnimation = 'slide-up';
   if (dhikrSettings.quickScrollButtons === undefined) dhikrSettings.quickScrollButtons = true;
   if (dhikrSettings.vibrateZeroIntensity === undefined) dhikrSettings.vibrateZeroIntensity = 2;
+  if (dhikrSettings.autoScrollEnabled === undefined) dhikrSettings.autoScrollEnabled = false;
+  if (dhikrSettings.autoScrollSpeed === undefined) dhikrSettings.autoScrollSpeed = 1.0;
 
   function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(dhikrSettings));
@@ -2400,10 +2404,11 @@ if (isRunningStandalone) {
     document.getElementById('toggleTapAnywhere').checked = dhikrSettings.tapAnywhere;
     document.getElementById('toggleConfirmExit').checked = dhikrSettings.confirmExit;
 
-    const toggleQuickScroll = document.getElementById('toggleQuickScrollButtons');
-    if (toggleQuickScroll) {
-      toggleQuickScroll.checked = dhikrSettings.quickScrollButtons !== false;
+    const toggleAutoScrollEl = document.getElementById('toggleAutoScrollOption');
+    if (toggleAutoScrollEl) {
+      toggleAutoScrollEl.checked = !!dhikrSettings.autoScrollEnabled;
     }
+    updateAutoScrollHeaderVisibility();
 
     // مزامنة النمط المختار لحركة اختفاء الذكر
     const curAnim = dhikrSettings.dismissAnimation || 'slide-up';
@@ -2622,6 +2627,137 @@ if (isRunningStandalone) {
 
   if (btnScrollToTop) btnScrollToTop.addEventListener('click', scrollToDhikrTop);
   if (btnScrollToBottom) btnScrollToBottom.addEventListener('click', scrollToDhikrBottom);
+
+  // ==================== محرك التمرير التلقائي للأذكار (Auto-Scroll Engine) ====================
+  const btnToggleAutoScroll = document.getElementById('btnToggleAutoScroll');
+  const autoScrollPlayIcon = document.getElementById('autoScrollPlayIcon');
+  const autoScrollPauseIcon = document.getElementById('autoScrollPauseIcon');
+  const autoScrollSpeedDock = document.getElementById('autoScrollSpeedDock');
+  const autoScrollSpeedSlider = document.getElementById('autoScrollSpeedSlider');
+  const speedFloatingBubble = document.getElementById('speedFloatingBubble');
+
+  let isAutoScrolling = false;
+  let autoScrollRafId = null;
+  let autoScrollFractionalY = 0;
+
+  function updateAutoScrollHeaderVisibility() {
+    if (!btnToggleAutoScroll) return;
+    if (dhikrSettings.autoScrollEnabled) {
+      btnToggleAutoScroll.style.display = 'flex';
+    } else {
+      btnToggleAutoScroll.style.display = 'none';
+      stopAutoScrolling();
+    }
+  }
+
+  const toggleAutoScrollInput = document.getElementById('toggleAutoScrollOption');
+  if (toggleAutoScrollInput) {
+    toggleAutoScrollInput.addEventListener('change', (e) => {
+      dhikrSettings.autoScrollEnabled = e.target.checked;
+      saveSettings();
+      updateAutoScrollHeaderVisibility();
+    });
+  }
+
+  function updateFloatingBubblePosition() {
+    if (!autoScrollSpeedSlider || !speedFloatingBubble) return;
+    const min = parseFloat(autoScrollSpeedSlider.min) || 0.3;
+    const max = parseFloat(autoScrollSpeedSlider.max) || 3.5;
+    const val = parseFloat(autoScrollSpeedSlider.value) || 1.0;
+    const percent = (val - min) / (max - min);
+
+    // حساب إزاحة المؤشر الدقيقة داخل العرض
+    const sliderWidth = autoScrollSpeedSlider.offsetWidth;
+    const thumbOffset = percent * (sliderWidth - 16) + 8;
+    speedFloatingBubble.style.left = `${thumbOffset}px`;
+    speedFloatingBubble.textContent = val.toFixed(1);
+  }
+
+  if (autoScrollSpeedSlider) {
+    autoScrollSpeedSlider.value = dhikrSettings.autoScrollSpeed || 1.0;
+    setTimeout(updateFloatingBubblePosition, 50);
+
+    autoScrollSpeedSlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      dhikrSettings.autoScrollSpeed = val;
+      saveSettings();
+      updateFloatingBubblePosition();
+    });
+  }
+
+  function startAutoScrolling() {
+    const readerScreen = document.getElementById('screen-azkar-reader');
+    if (!readerScreen || !readerScreen.classList.contains('active')) return;
+
+    isAutoScrolling = true;
+    if (btnToggleAutoScroll) btnToggleAutoScroll.classList.add('running');
+    if (autoScrollPlayIcon) autoScrollPlayIcon.style.display = 'none';
+    if (autoScrollPauseIcon) autoScrollPauseIcon.style.display = 'block';
+    if (autoScrollSpeedDock) {
+      autoScrollSpeedDock.classList.add('show');
+      setTimeout(updateFloatingBubblePosition, 60);
+    }
+
+    const metrics = getScrollMetrics();
+    autoScrollFractionalY = metrics.scrollTop;
+
+    function scrollStep() {
+      if (!isAutoScrolling) return;
+
+      const currentMetrics = getScrollMetrics();
+      const maxScroll = currentMetrics.scrollHeight - currentMetrics.clientHeight;
+
+      // الوصول لنهاية الأذكار: إيقاف تلقائي هادئ
+      if (currentMetrics.scrollTop >= maxScroll - 2) {
+        stopAutoScrolling();
+        return;
+      }
+
+      // زيادة بمعدل سرعة ناعم (0.8px مضروبة في مضاعف السرعة)
+      const speedMultiplier = dhikrSettings.autoScrollSpeed || 1.0;
+      autoScrollFractionalY += (0.85 * speedMultiplier);
+
+      if (!currentMetrics.isWindow) {
+        currentMetrics.element.scrollTop = autoScrollFractionalY;
+      } else {
+        window.scrollTo(0, autoScrollFractionalY);
+      }
+
+      autoScrollRafId = requestAnimationFrame(scrollStep);
+    }
+
+    cancelAnimationFrame(autoScrollRafId);
+    autoScrollRafId = requestAnimationFrame(scrollStep);
+  }
+
+  function stopAutoScrolling() {
+    isAutoScrolling = false;
+    cancelAnimationFrame(autoScrollRafId);
+    if (btnToggleAutoScroll) btnToggleAutoScroll.classList.remove('running');
+    if (autoScrollPlayIcon) autoScrollPlayIcon.style.display = 'block';
+    if (autoScrollPauseIcon) autoScrollPauseIcon.style.display = 'none';
+    if (autoScrollSpeedDock) autoScrollSpeedDock.classList.remove('show');
+  }
+
+  if (btnToggleAutoScroll) {
+    btnToggleAutoScroll.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isAutoScrolling) {
+        stopAutoScrolling();
+      } else {
+        startAutoScrolling();
+      }
+    });
+  }
+
+  // إيقاف التمرير التلقائي فوراً عند مغادرة شاشة قراءة الأذكار
+  const originalShowScreen = showScreen;
+  showScreen = function(screen, pushToHistory = true) {
+    if (screen !== screenAzkarReader) {
+      stopAutoScrolling();
+    }
+    originalShowScreen(screen, pushToHistory);
+  };
 
   window.addEventListener('scroll', updateQuickScrollVisibility, { passive: true });
   const appContainerElement = document.querySelector('.app-container');
@@ -3376,7 +3512,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.59', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.60', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
