@@ -339,6 +339,7 @@ if (isRunningStandalone) {
     const openModal = document.querySelector('.custom-modal-backdrop.show, .bottom-sheet-backdrop.show');
     if (openModal) {
       openModal.classList.remove('show');
+      if (typeof unlockBackgroundScroll === 'function') unlockBackgroundScroll();
       history.pushState({ screenId: activeScreen ? activeScreen.id : 'screen-home' }, '', location.hash || '#app');
       return;
     }
@@ -515,17 +516,6 @@ if (isRunningStandalone) {
     });
   }
   
-  function openDhikrSettingsModalFromTop() {
-    syncSettingsUI();
-    const sheet = azkarSettingsModal.querySelector('.bottom-sheet');
-    if (sheet) sheet.scrollTop = 0; // فتح النافذة دائماً من بدايتها
-    azkarSettingsModal.classList.add('show');
-  }
-
-  if (openDhikrSettingsFromMenu) {
-    openDhikrSettingsFromMenu.addEventListener('click', openDhikrSettingsModalFromTop);
-  }
-
   if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
   if (backToSettingsFromAboutBtn) backToSettingsFromAboutBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
 
@@ -2370,13 +2360,53 @@ if (isRunningStandalone) {
   const openDhikrSettingsBtn = document.getElementById('openDhikrSettingsBtn');
   const azkarSettingsModal = document.getElementById('azkarSettingsModal');
 
+  // دوال قفل وفك تجميد الشاشة الخلفية لمنع تسريب التمرير
+  function lockBackgroundScroll() {
+    document.body.classList.add('scroll-locked');
+    const container = document.querySelector('.app-container');
+    if (container) container.classList.add('scroll-locked');
+  }
+
+  function unlockBackgroundScroll() {
+    document.body.classList.remove('scroll-locked');
+    const container = document.querySelector('.app-container');
+    if (container) container.classList.remove('scroll-locked');
+  }
+
+  function openDhikrSettingsModalFromTop() {
+    syncSettingsUI();
+    const sheet = azkarSettingsModal.querySelector('.bottom-sheet');
+    if (sheet) sheet.scrollTop = 0; // فتح النافذة دائماً من بدايتها
+    azkarSettingsModal.classList.add('show');
+    lockBackgroundScroll(); // تجميد الشاشة الخلفية فوراً
+  }
+
+  function closeDhikrSettingsModal() {
+    azkarSettingsModal.classList.remove('show');
+    unlockBackgroundScroll(); // فك تجميد الشاشة الخلفية
+  }
+
+  if (openDhikrSettingsFromMenu) {
+    openDhikrSettingsFromMenu.addEventListener('click', openDhikrSettingsModalFromTop);
+  }
+
   if (openDhikrSettingsBtn) {
     openDhikrSettingsBtn.addEventListener('click', openDhikrSettingsModalFromTop);
   }
 
+  // إغلاق النافذة وفك التجميد عند النقر على الغطاء المعتم
   azkarSettingsModal.addEventListener('click', (e) => {
-    if (e.target === azkarSettingsModal) azkarSettingsModal.classList.remove('show');
+    if (e.target === azkarSettingsModal) {
+      closeDhikrSettingsModal();
+    }
   });
+
+  // منع تحريك الخلفية إطلاقاً عند لمس الغطاء الخارجي المعتم
+  azkarSettingsModal.addEventListener('touchmove', (e) => {
+    if (e.target === azkarSettingsModal) {
+      e.preventDefault();
+    }
+  }, { passive: false });  
 
   // مزامنة واجهة الإعدادات مع القيم المحفوظة بما فيها حركة الاختفاء
   function syncSettingsUI() {
@@ -3819,7 +3849,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.64', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.65', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
