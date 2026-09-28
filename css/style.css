@@ -4039,3 +4039,127 @@ body {
   cursor: grabbing;
 }
 
+/* ==================== زر الهيدر وشريط التحكم بسرعة التمرير التلقائي ==================== */
+#btnToggleAutoScroll {
+  cursor: pointer;
+  color: var(--primary-blue);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #EEF6FC;
+  border: 1px solid #BCD8F0;
+}
+
+#btnToggleAutoScroll:active {
+  transform: scale(0.92);
+}
+
+#btnToggleAutoScroll.running {
+  background: #DCFCE7;
+  border-color: #86EFAC;
+  color: #15803D;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.3);
+}
+
+/* شريط السرعة السفلي العائم */
+.autoscroll-speed-dock {
+  position: fixed;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  width: calc(100% - 32px);
+  max-width: 388px;
+  z-index: 85;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+@media (min-width: 500px) {
+  .autoscroll-speed-dock {
+    max-width: 370px;
+  }
+}
+
+.autoscroll-speed-dock.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.speed-dock-inner {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid #E2E8F0;
+  border-radius: 9999px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(11, 37, 69, 0.14);
+}
+
+.speed-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #064E3B;
+  flex-shrink: 0;
+}
+
+.speed-label-text {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.speed-slider-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.autoscroll-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: #E2E8F0;
+  outline: none;
+  cursor: pointer;
+  accent-color: #16A34A;
+}
+
+/* فقاعة القيمة العائمة فوق مؤشر السحب */
+.speed-floating-bubble {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #064E3B;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: left 0.05s ease-out;
+  direction: ltr;
+}
+
+.speed-floating-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px 4px 0 4px;
+  border-style: solid;
+  border-color: #064E3B transparent transparent transparent;
+}
+
