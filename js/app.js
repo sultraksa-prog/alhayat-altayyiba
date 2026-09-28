@@ -871,6 +871,7 @@ if (isRunningStandalone) {
     renderFavorites();
   });
 
+  // بناء شبكة المفضلة مع دعم السحب الشبكي الرباعي الأبعاد (أعلى، أسفل، يمين، يسار)
   function renderFavorites() {
     favoritesGroupsContainer.innerHTML = '';
     const favGroups = favoritesIds.map(id => azkarState.find(g => g.id === id)).filter(Boolean);
@@ -884,17 +885,33 @@ if (isRunningStandalone) {
       return;
     }
 
+    if (isFavReorderMode) {
+      const hint = document.createElement('div');
+      hint.className = 'reorder-hint-banner';
+      hint.style.gridColumn = 'span 2';
+      hint.innerHTML = '<span>💡 اضغط مطولاً على أي بطاقة واسحبها بأي اتجاه، أو استخدم الأسهم:</span>';
+      favoritesGroupsContainer.appendChild(hint);
+    }
+
     favGroups.forEach((group, index) => {
       const cardWrap = document.createElement('div');
-      cardWrap.style.position = 'relative';
+      cardWrap.className = 'fav-card-wrapper';
+      cardWrap.setAttribute('data-fav-index', index);
+      cardWrap.style.cssText = 'position: relative; transition: transform 0.2s ease;';
 
       const card = createCategoryCard(group);
       cardWrap.appendChild(card);
 
-      // أزرار الترتيب إذا كان وضع الترتيب مفعلاً
       if (isFavReorderMode) {
         const reorderBar = document.createElement('div');
-        reorderBar.style.cssText = 'position: absolute; top: -6px; left: 4px; display: flex; gap: 4px; z-index: 10;';
+        reorderBar.style.cssText = 'position: absolute; top: -8px; left: 4px; display: flex; align-items: center; gap: 4px; z-index: 20;';
+        
+        // مقبض سحب رباعي الأبعاد
+        const grip = document.createElement('span');
+        grip.className = 'drag-grip-handle';
+        grip.innerHTML = '⠿ سحب';
+        reorderBar.appendChild(grip);
+
         if (index > 0) {
           const upBtn = document.createElement('button');
           upBtn.className = 'reorder-btn';
@@ -910,10 +927,79 @@ if (isRunningStandalone) {
           reorderBar.appendChild(downBtn);
         }
         cardWrap.appendChild(reorderBar);
+
+        // محرك السحب الشبكي التفاعلي باللمس والفأرة في كافة الاتجاهات الأربعة
+        setup2DGridDragAndDrop(cardWrap, index);
       }
 
       favoritesGroupsContainer.appendChild(cardWrap);
     });
+  }
+
+  // محرك السحب والإفلات الشبكي للمفضلة (أعلى، أسفل، يمين، يسار)
+  function setup2DGridDragAndDrop(el, fromIndex) {
+    let pressTimer = null;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+
+    const onStart = (clientX, clientY) => {
+      startX = clientX;
+      startY = clientY;
+      pressTimer = setTimeout(() => {
+        isDragging = true;
+        if (navigator.vibrate) navigator.vibrate(35);
+        el.classList.add('is-dragging');
+      }, 200); // ضغطة مطولة 200ms لبدء السحب
+    };
+
+    const onMove = (e, clientX, clientY) => {
+      if (!isDragging) {
+        if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
+          clearTimeout(pressTimer);
+        }
+        return;
+      }
+      e.preventDefault(); // منع تمرير الصفحة أثناء سحب البطاقة
+
+      // رصد العنصر المتواجد تحت الإصبع في الشبكة ثنائية الأبعاد
+      const targetElement = document.elementFromPoint(clientX, clientY);
+      if (!targetElement) return;
+
+      const targetWrapper = targetElement.closest('.fav-card-wrapper');
+      if (targetWrapper && targetWrapper !== el) {
+        const toIndex = parseInt(targetWrapper.getAttribute('data-fav-index'), 10);
+        if (!isNaN(toIndex) && toIndex !== fromIndex) {
+          const [movedId] = favoritesIds.splice(fromIndex, 1);
+          favoritesIds.splice(toIndex, 0, movedId);
+          saveFavorites();
+          fromIndex = toIndex;
+          renderFavorites();
+        }
+      }
+    };
+
+    const onEnd = () => {
+      clearTimeout(pressTimer);
+      if (isDragging) {
+        isDragging = false;
+        el.classList.remove('is-dragging');
+        renderFavorites();
+      }
+    };
+
+    // أحداث لمس الجوال
+    el.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches[0]) onMove(e, e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    window.addEventListener('touchend', onEnd);
+
+    // أحداث الفأرة للكمبيوتر
+    el.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) onMove(e, e.clientX, e.clientY);
+    });
+    window.addEventListener('mouseup', onEnd);
   }
 
   function moveFavorite(index, dir) {
@@ -1081,16 +1167,23 @@ if (isRunningStandalone) {
       const card = document.createElement('div');
       card.className = 'dhikr-card';
       card.setAttribute('data-item-id', item.id);
+      card.setAttribute('data-card-index', index);
+      if (isReorderMode) {
+        setupVerticalDhikrDragAndDrop(card, index, category);
+      }
       const isDone = item.currentCount === 0;
 
       const hasLongNote = item.fullNote && item.fullNote.length > 70;
       const notePreview = hasLongNote ? item.fullNote.substring(0, 68) + '...' : (item.fullNote || '');
 
       card.innerHTML = `
-        ${isReorderMode ? `
-          <div class="dhikr-reorder-controls">
-            ${index > 0 ? `<button class="reorder-btn" onclick="moveDhikr(${index}, -1)">▲ لأعلى</button>` : ''}
-            ${index < category.items.length - 1 ? `<button class="reorder-btn" onclick="moveDhikr(${index}, 1)">▼ لأسفل</button>` : ''}
+       ${isReorderMode ? `
+          <div class="dhikr-reorder-controls" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+            <span class="drag-grip-handle" data-drag-index="${index}">⠿ اضغط مطولاً واسحب للترتيب</span>
+            <div style="display: flex; gap: 6px;">
+              ${index > 0 ? `<button type="button" class="reorder-btn" onclick="moveDhikr(${index}, -1)">▲ لأعلى</button>` : ''}
+              ${index < category.items.length - 1 ? `<button type="button" class="reorder-btn" onclick="moveDhikr(${index}, 1)">▼ لأسفل</button>` : ''}
+            </div>
           </div>
         ` : ''}
 
@@ -2160,9 +2253,10 @@ if (isRunningStandalone) {
     };
   }
   
+  // دالة تحريك الذكر بالأسهم
   window.moveDhikr = (index, dir) => {
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
-    if (!category) return;
+    if (!category || !category.items) return;
     const targetIdx = index + dir;
     if (targetIdx < 0 || targetIdx >= category.items.length) return;
     const temp = category.items[index];
@@ -2171,6 +2265,66 @@ if (isRunningStandalone) {
     saveAzkarState();
     renderDhikrCards();
   };
+
+  // محرك السحب والإفلات الرأسي المباشر لكروت الأذكار (بالضغط المطول والسحب للأعلى والأسفل)
+  function setupVerticalDhikrDragAndDrop(cardEl, fromIndex, category) {
+    let pressTimer = null;
+    let isDragging = false;
+    let startY = 0;
+
+    const onStart = (clientY) => {
+      startY = clientY;
+      pressTimer = setTimeout(() => {
+        isDragging = true;
+        if (navigator.vibrate) navigator.vibrate(35);
+        cardEl.classList.add('is-dragging');
+      }, 200);
+    };
+
+    const onMove = (e, clientY) => {
+      if (!isDragging) {
+        if (Math.abs(clientY - startY) > 10) clearTimeout(pressTimer);
+        return;
+      }
+      e.preventDefault();
+
+      const targetEl = document.elementFromPoint(window.innerWidth / 2, clientY);
+      if (!targetEl) return;
+
+      const targetCard = targetEl.closest('.dhikr-card');
+      if (targetCard && targetCard !== cardEl) {
+        const toIndex = parseInt(targetCard.getAttribute('data-card-index'), 10);
+        if (!isNaN(toIndex) && toIndex !== fromIndex) {
+          const [movedItem] = category.items.splice(fromIndex, 1);
+          category.items.splice(toIndex, 0, movedItem);
+          saveAzkarState();
+          fromIndex = toIndex;
+          renderDhikrCards();
+        }
+      }
+    };
+
+    const onEnd = () => {
+      clearTimeout(pressTimer);
+      if (isDragging) {
+        isDragging = false;
+        cardEl.classList.remove('is-dragging');
+        renderDhikrCards();
+      }
+    };
+
+    cardEl.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY), { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches[0]) onMove(e, e.touches[0].clientY);
+    }, { passive: false });
+    window.addEventListener('touchend', onEnd);
+
+    cardEl.addEventListener('mousedown', (e) => onStart(e.clientY));
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) onMove(e, e.clientY);
+    });
+    window.addEventListener('mouseup', onEnd);
+  }
 
   const readerMenuBtn = document.getElementById('readerMenuBtn');
   const readerDropdownMenu = document.getElementById('readerDropdownMenu');
@@ -3028,7 +3182,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.55', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.56', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
