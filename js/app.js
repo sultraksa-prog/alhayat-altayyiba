@@ -2750,6 +2750,93 @@ if (isRunningStandalone) {
     });
   }
 
+  // ==================== ميزة النقر المطوّل لإيقاف واستئناف التمرير ====================
+  let autoScrollLpTimer = null;
+  let isAutoScrollLpTriggered = false;
+  let lpStartX = 0;
+  let lpStartY = 0;
+
+  function onAutoScrollTouchStart(e) {
+    // تعمل الميزة فقط إذا كان خيار التمرير التلقائي مفعلاً في الإعدادات
+    if (!dhikrSettings.autoScrollEnabled) return;
+
+    // استثناء أزرار الهيدر وشريط السرعة وأزرار القفز والـ FAB
+    if (
+      e.target.closest('.autoscroll-speed-dock') || 
+      e.target.closest('.quick-scroll-container') ||
+      e.target.closest('.fab-btn') ||
+      e.target.closest('.reader-header-actions') ||
+      e.target.closest('.dhikr-card-top-actions') ||
+      e.target.closest('.dhikr-counter-btn') ||
+      e.target.closest('.virtue-info-btn') ||
+      e.target.closest('.alert-badge-btn')
+    ) {
+      return;
+    }
+
+    isAutoScrollLpTriggered = false;
+    const pt = e.touches ? e.touches[0] : e;
+    lpStartX = pt.clientX;
+    lpStartY = pt.clientY;
+
+    // مؤقت النقر المطوّل (500 ملي ثانية)
+    autoScrollLpTimer = setTimeout(() => {
+      isAutoScrollLpTriggered = true;
+      if (navigator.vibrate) navigator.vibrate(45);
+
+      // تبديل حالة التمرير: إيقاف إذا كان يعمل، واستئناف إذا كان متوقفاً
+      if (isAutoScrolling) {
+        stopAutoScrolling();
+      } else {
+        startAutoScrolling();
+      }
+    }, 500);
+  }
+
+  function onAutoScrollTouchMove(e) {
+    if (!autoScrollLpTimer) return;
+    const pt = e.touches ? e.touches[0] : e;
+    // إلغاء المؤقت في حال تحريك الإصبع للسحب العادي
+    if (Math.abs(pt.clientX - lpStartX) > 10 || Math.abs(pt.clientY - lpStartY) > 10) {
+      clearTimeout(autoScrollLpTimer);
+      autoScrollLpTimer = null;
+    }
+  }
+
+  function onAutoScrollTouchEnd() {
+    if (autoScrollLpTimer) {
+      clearTimeout(autoScrollLpTimer);
+      autoScrollLpTimer = null;
+    }
+    // إعادة ضبط علم النقر المطول بعد انتهاء دورة اللمس
+    if (isAutoScrollLpTriggered) {
+      setTimeout(() => {
+        isAutoScrollLpTriggered = false;
+      }, 120);
+    }
+  }
+
+  const readerContainer = document.getElementById('screen-azkar-reader');
+  if (readerContainer) {
+    // دعم أجهزة اللمس (الجوال والتابلت)
+    readerContainer.addEventListener('touchstart', onAutoScrollTouchStart, { passive: true });
+    readerContainer.addEventListener('touchmove', onAutoScrollTouchMove, { passive: true });
+    readerContainer.addEventListener('touchend', onAutoScrollTouchEnd);
+
+    // دعم الفأرة للكمبيوتر
+    readerContainer.addEventListener('mousedown', onAutoScrollTouchStart);
+    readerContainer.addEventListener('mousemove', onAutoScrollTouchMove);
+    readerContainer.addEventListener('mouseup', onAutoScrollTouchEnd);
+  }
+
+  // منع خصم العداد بالخطأ إذا كان اللمس نقراً مطولاً
+  window.addEventListener('click', (e) => {
+    if (isAutoScrollLpTriggered) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+
   // إيقاف التمرير التلقائي فوراً عند مغادرة شاشة قراءة الأذكار
   const originalShowScreen = showScreen;
   showScreen = function(screen, pushToHistory = true) {
@@ -3512,7 +3599,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.60', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.61', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
