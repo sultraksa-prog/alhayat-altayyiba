@@ -3920,3 +3920,54 @@ body {
   line-height: 1.4;
 }
 
+/* ==================== تنسيقات ميزة السحب والإفلات التفاعلي (ترتيب الأذكار والمفضلة) ==================== */
+.reorder-hint-banner {
+  background: #EFF6FF;
+  border: 1px dashed #3B82F6;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1D4ED8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.dhikr-card.is-dragging {
+  opacity: 0.88 !important;
+  transform: scale(1.03) translateY(-4px) !important;
+  box-shadow: 0 16px 32px rgba(29, 93, 155, 0.28) !important;
+  border-color: var(--primary-blue) !important;
+  z-index: 90 !important;
+  user-select: none;
+}
+
+.fav-card-wrapper.is-dragging {
+  opacity: 0.88 !important;
+  transform: scale(1.06) !important;
+  box-shadow: 0 16px 32px rgba(245, 158, 11, 0.35) !important;
+  border-color: #F59E0B !important;
+  z-index: 90 !important;
+  user-select: none;
+}
+
+.drag-grip-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  background: #EFF6FF;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.drag-grip-handle:active {
+  cursor: grabbing;
+}
+
