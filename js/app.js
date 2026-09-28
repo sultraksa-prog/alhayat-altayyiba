@@ -1642,7 +1642,7 @@ if (isRunningStandalone) {
 
   let studioAttachTextWhenSharing = true;
 
-  // احتساب الحجم الافتراضي الذكي لمجموع حروف الأذكار المحددة (1 أو 2 أو 3 أذكار)
+  // احتساب الحجم الافتراضي الذكي مع الفحص المسبق لمنع احتساب الفضل المكرر
   function calculateOptimalDefaultFontSize(isStory, withVirtue) {
     const itemsList = (isBatchShareMode && batchSelectedDhikrItems.length > 1)
       ? batchSelectedDhikrItems
@@ -1651,28 +1651,40 @@ if (isRunningStandalone) {
     if (!itemsList.length) return 48;
 
     let totalChars = 0;
-    itemsList.forEach(it => {
+    itemsList.forEach((it, idx) => {
       const rawDhikr = stripArabicTashkeel(it.text).replace(/\s/g, '');
       const rawPre = stripArabicTashkeel(it.pre || '').replace(/\s/g, '');
-      const rawVirtue = (withVirtue && it.fullNote) ? stripArabicTashkeel(it.fullNote).replace(/\s/g, '') : '';
+      
+      // احتساب الفضل فقط إذا لم يكن مكرراً مع الذكر التالي (لتكبير خط الآيات)
+      let shouldCountVirtue = false;
+      if (withVirtue && it.fullNote && it.fullNote.trim().length > 0) {
+        const currentClean = stripArabicTashkeel(it.fullNote).replace(/\s/g, '');
+        const nextItem = itemsList[idx + 1];
+        const nextClean = (nextItem && nextItem.fullNote) ? stripArabicTashkeel(nextItem.fullNote).replace(/\s/g, '') : null;
+        if (currentClean !== nextClean) {
+          shouldCountVirtue = true;
+        }
+      }
+
+      const rawVirtue = shouldCountVirtue ? stripArabicTashkeel(it.fullNote).replace(/\s/g, '') : '';
       totalChars += (rawDhikr.length + (rawVirtue.length * 0.7) + rawPre.length);
     });
 
     let size = 48;
     if (isStory) {
-      if (totalChars <= 50) size = 76;
-      else if (totalChars <= 100) size = 62;
-      else if (totalChars <= 180) size = 52;
-      else if (totalChars <= 280) size = 42;
-      else if (totalChars <= 450) size = 34;
-      else size = 28;
+      if (totalChars <= 50) size = 78;
+      else if (totalChars <= 100) size = 66;
+      else if (totalChars <= 180) size = 56;
+      else if (totalChars <= 280) size = 46;
+      else if (totalChars <= 420) size = 38;
+      else size = 30;
     } else {
-      if (totalChars <= 50) size = 64;
-      else if (totalChars <= 100) size = 52;
-      else if (totalChars <= 180) size = 42;
-      else if (totalChars <= 280) size = 34;
-      else if (totalChars <= 450) size = 28;
-      else size = 23;
+      if (totalChars <= 50) size = 66;
+      else if (totalChars <= 100) size = 56;
+      else if (totalChars <= 180) size = 46;
+      else if (totalChars <= 280) size = 38;
+      else if (totalChars <= 420) size = 30;
+      else size = 25;
     }
     return size;
   }
@@ -1686,7 +1698,7 @@ if (isRunningStandalone) {
       if (studioFontSizeSlider) studioFontSizeSlider.value = autoSize;
       if (studioFontSizeDisplay) studioFontSizeDisplay.textContent = autoSize;
     } catch(e) {
-      studioConfig.fontSize = 44;
+      studioConfig.fontSize = 48;
     }
 
     const studioModal = document.getElementById('dhikrImageStudioModal');
@@ -1794,7 +1806,7 @@ if (isRunningStandalone) {
     };
   }
 
-  // رسم بطاقة الذكر (فردية أو جماعية لـ 2 و 3 أذكار) بكامل تفاصيلها
+  // رسم بطاقة الذكر (بدون أرقام مع الفحص الذكي للفضل ومنع التكرار)
   function renderStudioLiveCanvas() {
     const canvas = document.getElementById('studioLiveCanvas');
     if (!canvas || !activeDhikrCategoryForShare) return;
@@ -1868,7 +1880,7 @@ if (isRunningStandalone) {
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
 
-    // 3. هيدر الشعار المعماري
+    // 3. هيدر الشعار المعماري المذهب
     const isLightHeader = (bg === 'emerald-ivory' || bg === 'sand-bronze');
     const emblemCenterY = isStory ? 130 : 95;
     
@@ -1897,12 +1909,11 @@ if (isRunningStandalone) {
       currentHeaderBottomY = badgeY + 45;
     }
 
-    // 5. تجهيز ورسم كتلة الأذكار (ذكر واحد أو 2 أو 3 أذكار مدمجة)
+    // 5. تجهيز أسطر الأذكار وتطبيق الفحص الذكي للفضل ومنع التكرار
     const baseFontSize = studioConfig.fontSize || 48;
     const lineHeight = baseFontSize * 1.8;
     const maxTextWidth = width - 160;
 
-    // تجهيز حزم النصوص لكل ذكر في القائمة
     let parsedDhikrBlocks = [];
     let totalClusterHeight = 0;
 
@@ -1923,12 +1934,24 @@ if (isRunningStandalone) {
       });
       if (curLine) lines.push(curLine);
 
-      // الفضل
+      // الفحص الذكي للفضل: إذا كان الفضل متطابقاً مع الذكر التالي لا نكرره ونكتفي به في الذكر الأخير
       let vLines = [];
       const vFontSize = Math.max(20, Math.round(baseFontSize * 0.56));
       const vLineHeight = vFontSize * 1.55;
 
-      if (studioConfig.includeVirtue && it.fullNote) {
+      let shouldRenderVirtue = false;
+      if (studioConfig.includeVirtue && it.fullNote && it.fullNote.trim().length > 0) {
+        const currentClean = stripArabicTashkeel(it.fullNote).replace(/\s/g, '');
+        const nextItem = itemsToDraw[iIdx + 1];
+        const nextClean = (nextItem && nextItem.fullNote) ? stripArabicTashkeel(nextItem.fullNote).replace(/\s/g, '') : null;
+        
+        // يُرسم الفضل فقط إذا كان مختلفاً عن التالي أو كان هو الذكر الأخير
+        if (currentClean !== nextClean) {
+          shouldRenderVirtue = true;
+        }
+      }
+
+      if (shouldRenderVirtue) {
         const vWords = it.fullNote.split(' ');
         let vCur = '';
         vWords.forEach(w => {
@@ -1950,21 +1973,19 @@ if (isRunningStandalone) {
       const bodyH = lines.length * lineHeight;
       const repsH = showReps ? 55 : 0;
       const virtH = vLines.length > 0 ? (vLines.length * vLineHeight + 25) : 0;
-      const numH = (itemsToDraw.length > 1) ? 45 : 0;
 
-      const blockTotalH = numH + preH + bodyH + repsH + virtH + 30;
+      // تم حذف numH نهائياً لتوفير المساحة وإلغاء الأرقام من الصورة
+      const blockTotalH = preH + bodyH + repsH + virtH + 25;
       totalClusterHeight += blockTotalH;
 
       parsedDhikrBlocks.push({
         item: it,
-        index: iIdx + 1,
         lines,
         vLines,
         vFontSize,
         vLineHeight,
         hasPre,
         showReps,
-        numH,
         preH,
         bodyH,
         repsH,
@@ -1973,11 +1994,11 @@ if (isRunningStandalone) {
       });
     });
 
-    // موضع الفوتر المرتفع
+    // موضع الفوتر
     const footerY = height - (isStory ? 140 : 65);
     const dividerY = height - (isStory ? 200 : 115);
 
-    // توسيط الكتلة الكلية رأسياً
+    // توسيط الكتلة رأسياً
     const availableAreaTop = currentHeaderBottomY + 20;
     const availableAreaBottom = dividerY - 30;
     let currentBlockY = availableAreaTop + Math.max(10, ((availableAreaBottom - availableAreaTop) - totalClusterHeight) / 2);
@@ -1987,7 +2008,7 @@ if (isRunningStandalone) {
       finalTextColor = (bg === 'sand-bronze') ? '#451A03' : '#1E293B';
     }
 
-    // تظليل الخلفية العام للنص
+    // تظليل الخلفية إن كان مفعلاً
     if (studioConfig.textHighlight) {
       ctx.fillStyle = (studioConfig.color === '#FFFFFF') ? 'rgba(0, 0, 0, 0.42)' : 'rgba(255, 255, 255, 0.82)';
       ctx.beginPath();
@@ -1995,17 +2016,9 @@ if (isRunningStandalone) {
       ctx.fill();
     }
 
-    // رسم كل ذكر من الأذكار المحددة
+    // رسم الأذكار دون أي أرقام
     parsedDhikrBlocks.forEach((block, bIdx) => {
-      // أ) رقم الذكر عند وجود أكثر من ذكر
-      if (itemsToDraw.length > 1) {
-        ctx.font = 'bold 30px "Cairo", sans-serif';
-        ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#D97706' : '#FCD34D';
-        ctx.fillText(`﴿ ${block.index} ﴾`, width / 2, currentBlockY + 28);
-        currentBlockY += block.numH;
-      }
-
-      // ب) السابقة
+      // أ) السابقة
       if (block.hasPre) {
         ctx.font = 'bold 28px "Cairo", sans-serif';
         ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#0284C7' : '#93C5FD';
@@ -2013,7 +2026,7 @@ if (isRunningStandalone) {
         currentBlockY += block.preH;
       }
 
-      // ج) متن الذكر
+      // ب) متن الذكر الشريف
       ctx.font = `700 ${baseFontSize}px ${studioConfig.font}`;
       ctx.fillStyle = finalTextColor;
       let textLineY = currentBlockY + baseFontSize;
@@ -2022,13 +2035,15 @@ if (isRunningStandalone) {
         textLineY += lineHeight;
       });
 
-      // د) شارة التكرار اليسرى
-      let afterDhikrY = textLineY - (lineHeight - baseFontSize);
+      // ج) شارة التكرار في الجهة اليسرى
+      const dhikrLastLineY = textLineY - (lineHeight - baseFontSize);
+      let afterDhikrY = dhikrLastLineY;
+
       if (block.showReps) {
         const repsText = `${block.item.count} مرة`;
         ctx.font = 'bold 26px "Cairo", sans-serif';
-        const repsW = ctx.measureText(repsText).width + 54;
-        const repsBadgeY = afterDhikrY + 36;
+        const repsW = ctx.measureText(repsText).width + 50;
+        const repsBadgeY = dhikrLastLineY + 52;
         const badgeLeftX = 105;
 
         ctx.fillStyle = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') 
@@ -2044,10 +2059,10 @@ if (isRunningStandalone) {
           : ((bg === 'emerald-ivory' || bg === 'sand-bronze') ? '#1E293B' : '#FCD34D');
         
         ctx.fillText(repsText, badgeLeftX + repsW / 2, repsBadgeY + 8);
-        afterDhikrY = repsBadgeY + 30;
+        afterDhikrY = repsBadgeY + 34;
       }
 
-      // هـ) الفضل
+      // د) فضل الذكر (يُرسم فقط إذا كان غير مكرر)
       if (block.vLines.length > 0) {
         const startVirtueY = afterDhikrY + 22;
         ctx.font = `600 ${block.vFontSize}px "Cairo", sans-serif`;
@@ -2058,16 +2073,16 @@ if (isRunningStandalone) {
         afterDhikrY = startVirtueY + (block.vLines.length * block.vLineHeight);
       }
 
-      currentBlockY = afterDhikrY + 25;
+      currentBlockY = afterDhikrY + 20;
 
       // فاصل إسلامي رقيق بين الأذكار
       if (bIdx < parsedDhikrBlocks.length - 1) {
         const divCol = (bg === 'ivory-parchment' || bg === 'emerald-ivory' || bg === 'sand-bronze') ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.18)';
-        drawTaperedDividerWithRosette(ctx, currentBlockY - 10, divCol, 540, 14);
+        drawTaperedDividerWithRosette(ctx, currentBlockY - 6, divCol, 540, 14);
       }
     });
 
-    // 7. الفوتر النهائي
+    // 7. الفوتر النهائي والخط الفاصل والشعار اللفظي
     const divColor = (bg === 'ivory-parchment') ? '#D4AF37' : '#E2E8F0';
     drawTaperedDividerWithRosette(ctx, dividerY, divColor, 660, 18);
 
