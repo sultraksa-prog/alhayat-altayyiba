@@ -1931,6 +1931,20 @@
           </label>
         </div>
 
+        <!-- مؤشر قوة الاهتزاز عند الصفر -->
+        <div class="setting-block" id="vibrateZeroIntensityBlock" style="padding: 10px 14px; background: #F8FAFC; border-radius: 12px; margin-top: 4px; margin-bottom: 12px; border: 1px solid #E2E8F0; transition: opacity 0.2s ease;">
+          <div class="setting-header-inline" style="margin-bottom: 6px;">
+            <h4 class="setting-label" style="font-size: 13.5px; margin: 0;">قوة الاهتزاز عند الصفر</h4>
+            <span class="font-size-val" id="vibrateZeroIntensityDisplay" style="font-size: 13px; font-weight: 800;">متوسط</span>
+          </div>
+          <input type="range" id="vibrateZeroIntensitySlider" min="1" max="3" step="1" value="2" class="custom-slider">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 4px;">
+            <span>خفيف</span>
+            <span>متوسط</span>
+            <span>قوي</span>
+          </div>
+        </div>
+
         <!-- 5. ارتجاج عند كل ضغطة (معطل افتراضياً) -->
         <div class="setting-toggle-row">
           <div class="setting-text-col">
