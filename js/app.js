@@ -1273,40 +1273,35 @@ if (isRunningStandalone) {
 
   // تقليص عداد الذكر وتنفيذ الحركة
   window.decrementDhikr = (itemId) => {
-    if (isReorderMode) return;
+    // 1. تجميد العداد كلياً ومنع أي خصم أثناء الترتيب
+    if (typeof isReorderMode !== 'undefined' && isReorderMode) return;
+
     const category = azkarState.find(c => c.id === currentActiveCategoryId);
     if (!category) return;
     const item = category.items.find(i => i.id === itemId);
     if (!item || item.currentCount <= 0) return;
 
-    // تسجيل العملية في مكدس التراجع (الاحتفاظ بالحالة قبل الخصم)
+    // 2. تسجيل العملية في مكدس التراجع (الاحتفاظ بالحالة قبل الخصم)
     dhikrUndoStack.push({ id: itemId, prevCount: item.currentCount });
 
     item.currentCount--;
 
+    // 3. ارتجاج عند كل ضغطة
     if (dhikrSettings.vibrateOnClick && navigator.vibrate) {
       navigator.vibrate(30);
     }
 
+    // 4. تحديث شريط ميزان الحروف فورياً
     saveAzkarState();
     updateReaderProgressBar();
 
+    // 5. عند وصول العداد للصفر
     if (item.currentCount === 0) {
+      
+      // ارتجاج الصفر بالقوة المخصصة من الإعدادات الجديدة
       if (dhikrSettings.vibrateOnZero && navigator.vibrate) {
-        // استخدام القوة المحددة من الإعدادات
         const vInt = dhikrSettings.vibrationIntensity || 120;
         navigator.vibrate([vInt, 60, vInt + 30]);
-      }
-      // ... بقية الكود كما هو
-
-    // 2. تحديث شريط ميزان الحروف فورياً
-    saveAzkarState();
-    updateReaderProgressBar();
-
-    // 3. عند وصول العداد للصفر
-    if (item.currentCount === 0) {
-      if (dhikrSettings.vibrateOnZero && navigator.vibrate) {
-        navigator.vibrate([120, 60, 150]);
       }
 
       // إذا كان خيار الإخفاء مفعلاً: تشغيل الرسم المتحرك المختار لمدة 440ms
@@ -1334,6 +1329,7 @@ if (isRunningStandalone) {
       }
     }
 
+    // 6. في حال لم يكن خيار الإخفاء مفعلاً أو لم يصل العداد للصفر
     renderDhikrCards();
     checkCategoryCompletion(category);
   };
@@ -3215,7 +3211,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.58', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.59', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
@@ -4257,6 +4253,7 @@ ${APP_CONFIG.url}`;
 
 }); // إغلاق الدالة الرئيسية للتطبيق بشكل صحيح
 
+  
 // ==================== نافذة وخيارات النقر المطوّل (تشغيل مباشر ومضمون) ====================
   const groupLongPressModal = document.getElementById('groupLongPressModal');
   const longPressModalTitle = document.getElementById('longPressModalTitle');
