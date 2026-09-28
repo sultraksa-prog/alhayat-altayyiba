@@ -780,6 +780,11 @@
         </button>
         <h2 class="section-page-title" id="readerCategoryTitle">الأذكار</h2>
         <div class="reader-header-actions">
+          <!-- زر تشغيل/إيقاف التمرير التلقائي (يظهر عند التفعيل من الإعدادات) -->
+          <div class="header-icon-btn" id="btnToggleAutoScroll" title="التمرير التلقائي" style="display: none;">
+            <svg id="autoScrollPlayIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            <svg id="autoScrollPauseIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          </div>
           <div class="header-icon-btn" id="openDhikrSettingsBtn" title="الإعدادات">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.484.484 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.63 8.47c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
           </div>
@@ -829,6 +834,24 @@
             <polyline points="7 6 12 11 17 6"></polyline>
           </svg>
         </button>
+      </div>
+
+      <!-- شريط التحكم العائم بسرعة التمرير التلقائي (بتصميم مطابق للصور المرفقة) -->
+      <div class="autoscroll-speed-dock" id="autoScrollSpeedDock">
+        <div class="speed-dock-inner">
+          <div class="speed-label-group">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span class="speed-label-text">السرعة</span>
+          </div>
+
+          <div class="speed-slider-wrapper">
+            <span class="speed-floating-bubble" id="speedFloatingBubble">1.0</span>
+            <input type="range" id="autoScrollSpeedSlider" min="0.3" max="3.5" step="0.1" value="1.0" class="autoscroll-slider">
+          </div>
+        </div>
       </div>
 
       <button class="fab-btn" id="openAddDhikrModalBtn" title="إضافة ذكر جديد">
@@ -2028,6 +2051,18 @@
           </div>
           <label class="ios-switch">
             <input type="checkbox" id="toggleQuickScrollButtons" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 10. التمرير التلقائي للأذكار -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">التمرير التلقائي للأذكار</h4>
+            <p class="setting-desc">عند تفعيل هذا الخيار ستظهر أيقونة تشغيل (▶) في أعلى شاشة الأذكار لبدء التمرير التلقائي مع شريط سفلي للتحكم بسرعة القراءة؛ يمكنك تجربتها مباشرة بالضغط على الأيقونة.</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleAutoScrollOption">
             <span class="switch-slider"></span>
           </label>
         </div>
