@@ -311,16 +311,17 @@ if (isRunningStandalone) {
   let isClosingStudioSafely = false;
 
   window.addEventListener('popstate', () => {
-    // إذا كان الرجوع ناتجاً عن إغلاق الاستوديو: التوقف فوراً والبقاء في شاشة قراءة الأذكار
+    // 0. إذا كان الرجوع بسبب إغلاق الاستوديو: التوقف فوراً والبقاء في شاشة قراءة الأذكار
     if (isClosingStudioSafely) {
       isClosingStudioSafely = false;
       return;
     }
 
-    // إذا كان استوديو تصميم الصورة مفتوحاً وسحب المستخدم الحافة: إغلاقه والبقاء في قراءة الأذكار
+    // فحص الاستوديو وإغلاقه فورياً بسحب الحافة دون أي تعليق
     const studioModal = document.getElementById('dhikrImageStudioModal');
-    if (studioModal && studioModal.classList.contains('show')) {
+    if (studioModal && (studioModal.classList.contains('show') || studioModal.style.display === 'flex')) {
       studioModal.classList.remove('show');
+      studioModal.style.display = 'none'; // إخفاء صريح ينهي المشكلة تماماً
       return;
     }
 
@@ -1723,8 +1724,11 @@ if (isRunningStandalone) {
         studioModal.classList.remove('show');
         studioModal.style.display = 'none';
       }
-      if (location.hash === '#studio') history.back();
-      else isClosingStudioSafely = false;
+      if (location.hash === '#studio') {
+        history.back();
+      } else {
+        isClosingStudioSafely = false;
+      }
     };
   }
 
@@ -3024,7 +3028,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.54', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.55', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
