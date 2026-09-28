@@ -82,21 +82,19 @@ if (isRunningStandalone) {
     fontSize: 21,
     fontFamily: "'Amiri', serif",
     vibrateOnZero: true,
+    vibrateZeroIntensity: 2, // 1: خفيف | 2: متوسط | 3: قوي
     vibrateOnClick: false,
     hideOnZero: true,
-    dismissAnimation: 'slide-up', // 'slide-up' | 'fade' | 'fold-in' | 'ascend-glow' | 'roll-up'
+    dismissAnimation: 'slide-up',
     tapAnywhere: true,
     confirmExit: true,
     quickScrollButtons: true
   };
 
   let dhikrSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
-  if (!dhikrSettings.dismissAnimation) {
-    dhikrSettings.dismissAnimation = 'slide-up';
-  }
-  if (dhikrSettings.quickScrollButtons === undefined) {
-    dhikrSettings.quickScrollButtons = true;
-  }
+  if (!dhikrSettings.dismissAnimation) dhikrSettings.dismissAnimation = 'slide-up';
+  if (dhikrSettings.quickScrollButtons === undefined) dhikrSettings.quickScrollButtons = true;
+  if (dhikrSettings.vibrateZeroIntensity === undefined) dhikrSettings.vibrateZeroIntensity = 2;
 
   function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(dhikrSettings));
@@ -511,11 +509,15 @@ if (isRunningStandalone) {
     });
   }
   
+  function openDhikrSettingsModalFromTop() {
+    syncSettingsUI();
+    const sheet = azkarSettingsModal.querySelector('.bottom-sheet');
+    if (sheet) sheet.scrollTop = 0; // فتح النافذة دائماً من بدايتها
+    azkarSettingsModal.classList.add('show');
+  }
+
   if (openDhikrSettingsFromMenu) {
-    openDhikrSettingsFromMenu.addEventListener('click', () => {
-      syncSettingsUI();
-      azkarSettingsModal.classList.add('show');
-    });
+    openDhikrSettingsFromMenu.addEventListener('click', openDhikrSettingsModalFromTop);
   }
 
   if (openAboutScreenBtn) openAboutScreenBtn.addEventListener('click', () => showScreen(screenAboutApp));
@@ -1292,7 +1294,8 @@ if (isRunningStandalone) {
     // 3. عند وصول العداد للصفر
     if (item.currentCount === 0) {
       if (dhikrSettings.vibrateOnZero && navigator.vibrate) {
-        navigator.vibrate([120, 60, 150]);
+        const pattern = VIBRATION_PATTERNS[dhikrSettings.vibrateZeroIntensity || 2] || [120, 60, 150];
+        navigator.vibrate(pattern);
       }
 
       // إذا كان خيار الإخفاء مفعلاً: تشغيل الرسم المتحرك المختار لمدة 440ms
@@ -2357,10 +2360,7 @@ if (isRunningStandalone) {
   const azkarSettingsModal = document.getElementById('azkarSettingsModal');
 
   if (openDhikrSettingsBtn) {
-    openDhikrSettingsBtn.addEventListener('click', () => {
-      syncSettingsUI();
-      azkarSettingsModal.classList.add('show');
-    });
+    openDhikrSettingsBtn.addEventListener('click', openDhikrSettingsModalFromTop);
   }
 
   azkarSettingsModal.addEventListener('click', (e) => {
@@ -2379,6 +2379,22 @@ if (isRunningStandalone) {
     document.getElementById('fontFamilySelector').value = dhikrSettings.fontFamily;
 
     document.getElementById('toggleVibrateOnZero').checked = dhikrSettings.vibrateOnZero;
+
+    const intensitySlider = document.getElementById('vibrateZeroIntensitySlider');
+    const intensityDisplay = document.getElementById('vibrateZeroIntensityDisplay');
+    const intensityBlock = document.getElementById('vibrateZeroIntensityBlock');
+    const labelsMap = { 1: 'خفيف', 2: 'متوسط', 3: 'قوي' };
+
+    if (intensitySlider && intensityDisplay) {
+      intensitySlider.value = dhikrSettings.vibrateZeroIntensity || 2;
+      intensityDisplay.textContent = labelsMap[intensitySlider.value] || 'متوسط';
+    }
+
+    if (intensityBlock) {
+      intensityBlock.style.opacity = dhikrSettings.vibrateOnZero ? '1' : '0.45';
+      intensityBlock.style.pointerEvents = dhikrSettings.vibrateOnZero ? 'auto' : 'none';
+    }
+    
     document.getElementById('toggleVibrateOnClick').checked = dhikrSettings.vibrateOnClick;
     document.getElementById('toggleHideOnZero').checked = dhikrSettings.hideOnZero;
     document.getElementById('toggleTapAnywhere').checked = dhikrSettings.tapAnywhere;
@@ -2432,10 +2448,43 @@ if (isRunningStandalone) {
     renderDhikrCards();
   });
 
-  document.getElementById('toggleVibrateOnZero').addEventListener('change', (e) => {
-    dhikrSettings.vibrateOnZero = e.target.checked;
-    saveSettings();
-  });
+  const toggleVibrateZeroEl = document.getElementById('toggleVibrateOnZero');
+  const intensityBlockEl = document.getElementById('vibrateZeroIntensityBlock');
+  const intensitySliderEl = document.getElementById('vibrateZeroIntensitySlider');
+  const intensityDisplayEl = document.getElementById('vibrateZeroIntensityDisplay');
+
+  // خريطة أنماط الاهتزاز لدرجات القوة الثلاث
+  const VIBRATION_PATTERNS = {
+    1: [65],                        // خفيف
+    2: [120, 60, 150],              // متوسط
+    3: [200, 70, 220, 70, 200]       // قوي
+  };
+
+  if (toggleVibrateZeroEl) {
+    toggleVibrateZeroEl.addEventListener('change', (e) => {
+      dhikrSettings.vibrateOnZero = e.target.checked;
+      saveSettings();
+      if (intensityBlockEl) {
+        intensityBlockEl.style.opacity = e.target.checked ? '1' : '0.45';
+        intensityBlockEl.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+      }
+    });
+  }
+
+  if (intensitySliderEl) {
+    intensitySliderEl.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      const labels = { 1: 'خفيف', 2: 'متوسط', 3: 'قوي' };
+      dhikrSettings.vibrateZeroIntensity = val;
+      if (intensityDisplayEl) intensityDisplayEl.textContent = labels[val] || 'متوسط';
+      saveSettings();
+
+      // إطلاق نبضة تجريبية فورية ليتلمس المستخدم القوة المختارة
+      if (navigator.vibrate) {
+        navigator.vibrate(VIBRATION_PATTERNS[val] || [120]);
+      }
+    });
+  }
 
   document.getElementById('toggleVibrateOnClick').addEventListener('change', (e) => {
     dhikrSettings.vibrateOnClick = e.target.checked;
@@ -3327,7 +3376,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.58', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.59', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
