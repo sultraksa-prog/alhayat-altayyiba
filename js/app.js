@@ -223,6 +223,36 @@ if (isRunningStandalone) {
   if (backToSettingsFromOtherBtn) {
     backToSettingsFromOtherBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
   }
+
+  // شاشات إعدادات مواقيت الصلاة وتعديل الدقائق
+  const screenPrayerSettings = document.getElementById('screen-prayer-settings');
+  const screenPrayerOffsets = document.getElementById('screen-prayer-offsets');
+  const openPrayerSettingsBtn = document.getElementById('openPrayerSettingsBtn');
+  const backToGeneralSettingsFromPrayerBtn = document.getElementById('backToGeneralSettingsFromPrayerBtn');
+  const openPrayerOffsetsScreenBtn = document.getElementById('openPrayerOffsetsScreenBtn');
+  const backToPrayerSettingsFromOffsetsBtn = document.getElementById('backToPrayerSettingsFromOffsetsBtn');
+
+  if (openPrayerSettingsBtn && screenPrayerSettings) {
+    openPrayerSettingsBtn.addEventListener('click', () => {
+      if (typeof syncPrayerSettingsUI === 'function') syncPrayerSettingsUI();
+      showScreen(screenPrayerSettings);
+    });
+  }
+  if (backToGeneralSettingsFromPrayerBtn) {
+    backToGeneralSettingsFromPrayerBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
+  }
+  if (openPrayerOffsetsScreenBtn && screenPrayerOffsets) {
+    openPrayerOffsetsScreenBtn.addEventListener('click', () => {
+      if (typeof syncPrayerSettingsUI === 'function') syncPrayerSettingsUI();
+      showScreen(screenPrayerOffsets);
+    });
+  }
+  if (backToPrayerSettingsFromOffsetsBtn) {
+    backToPrayerSettingsFromOffsetsBtn.addEventListener('click', () => showScreen(screenPrayerSettings));
+  }
+
+  // تصدير دالة التنقل لتكون متاحة لجميع الملفات
+  window.showScreen = showScreen;
   
   //
   
@@ -344,9 +374,13 @@ if (isRunningStandalone) {
       return;
     }
 
-    // 2. إذا كان المستخدم في شاشات الإعدادات الفرعية (حول التطبيق، إعدادات أخرى)، الرجوع يعيده لشاشة الإعدادات
-    if (activeScreen === screenAboutApp || (typeof screenOtherSettings !== 'undefined' && activeScreen === screenOtherSettings)) {
+    // 2. إذا كان المستخدم في شاشات الإعدادات الفرعية، الرجوع يعيده للشاشة السابقة بسلاسة
+    if (activeScreen === screenAboutApp || (typeof screenOtherSettings !== 'undefined' && activeScreen === screenOtherSettings) || activeScreen === screenPrayerSettings) {
       showScreen(screenGeneralSettings, false);
+      return;
+    }
+    if (activeScreen === screenPrayerOffsets) {
+      showScreen(screenPrayerSettings, false);
       return;
     }
 
@@ -3988,7 +4022,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.69', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.70', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
