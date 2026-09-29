@@ -1,1 +1,271 @@
 
+/* ==================== ملف تنسيقات إعدادات مواقيت الصلاة والأذان ==================== */
+
+/* 1. قائمة طرق الحساب الفلكية الـ 12 */
+.calc-methods-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 390px;
+  padding: 4px 2px;
+}
+
+.calc-method-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.calc-method-item:active {
+  transform: scale(0.99);
+}
+
+.calc-method-item.active {
+  background: #F0FDF4;
+  border-color: #16A34A;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.12);
+}
+
+.calc-method-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  text-align: right;
+}
+
+.calc-method-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.calc-method-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin: 3px 0 0 0;
+  font-weight: 600;
+}
+
+/* زر المعلومات الدائري الأنيق */
+.method-info-trigger-btn {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: var(--primary-blue);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.method-info-trigger-btn:active, .method-info-trigger-btn:hover {
+  background: #EEF6FC;
+  border-color: var(--primary-blue);
+  transform: scale(1.06);
+}
+
+/* 2. بطاقات مذهب حساب العصر */
+.madhab-options-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.madhab-select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.madhab-select-card.active {
+  background: #F0FDF4;
+  border-color: #16A34A;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.1);
+}
+
+.custom-radio-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #CBD5E1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: transparent;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.madhab-select-card.active .custom-radio-circle,
+.calc-method-item.active .custom-radio-circle {
+  background: #16A34A;
+  border-color: #16A34A;
+  color: #FFFFFF;
+}
+
+/* 3. صفوف تعديل الصلوات الست */
+.prayer-offset-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.prayer-offset-item-row:active {
+  background-color: #F8FAFC;
+}
+
+.prayer-offset-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.prayer-offset-val-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.prayer-offset-status.configured {
+  color: #15803D;
+  background: #DCFCE7;
+  padding: 3px 12px;
+  border-radius: 12px;
+  border: 1px solid #BBF7D0;
+  font-weight: 800;
+}
+
+/* 4. نافذة ضبط الدقائق والعداد التفاعلي المصقول */
+.prayer-icon-display-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: #ECFDF5;
+  border: 1.5px solid #BBF7D0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px auto;
+  box-shadow: 0 4px 14px rgba(11, 37, 69, 0.06);
+}
+
+.prayer-icon-display-circle svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.offset-stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 20px;
+  padding: 10px 16px;
+  max-width: 290px;
+  margin: 0 auto;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.btn-stepper-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1.5px solid #BCD8F0;
+  color: var(--primary-blue);
+  font-size: 24px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.btn-stepper-circle:active {
+  background: var(--primary-blue);
+  color: #FFFFFF;
+  transform: scale(0.92);
+}
+
+.offset-middle-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.btn-stepper-reset {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-right: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.btn-stepper-reset:active {
+  background: #F1F5F9;
+  transform: rotate(-180deg);
+}
+
+/* 5. زر تأكيد وحفظ الزمردي الفاخر */
+.btn-confirm-prayer-offset {
+  width: 100%;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #10B981 0%, #15803D 100%);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.28);
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-prayer-offset:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
+}
