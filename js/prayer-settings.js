@@ -1,7 +1,5 @@
+// ==================== محرك شاشات وإعدادات مواقيت الصلاة والمذاهب المصحح ====================
 
-// ==================== محرك شاشات وإعدادات مواقيت الصلاة والمذاهب ====================
-
-// 1. مصفوفة الطرق الفلكية الـ 12 المعتمدة دولياً وتفاصيلها الفلكية والجغرافية
 const CALCULATION_METHODS = [
   { id: 4, name: 'أم القرى – مكة المكرمة', desc: 'الفجر 18.5° • العشاء 90 دقيقة بعد المغرب', countries: 'المملكة العربية السعودية، اليمن، وبلدان الخليج العربي.', astro: 'تعتمد زاوية 18.5 درجة لصلاة الفجر، وتوقيتاً ثابتاً 90 دقيقة لصلاة العشاء بعد المغرب (120 دقيقة في رمضان).' },
   { id: 3, name: 'رابطة العالم الإسلامي', desc: 'الفجر 18° • العشاء 17°', countries: 'عموم العالم الإسلامي، بلاد الشام، شمال أفريقيا، وأوروبا.', astro: 'تعتمد زاوية 18 درجة للفجر و 17 درجة للعشاء، وهي الطريقة القياسية الأكثر انتشاراً عالمياً.' },
@@ -17,37 +15,54 @@ const CALCULATION_METHODS = [
   { id: 7, name: 'معهد الجيوفيزياء – جامعة طهران', desc: 'الفجر 17.7° • العشاء 14°', countries: 'إيران وبعض المجتمعات في العراق ولبنان.', astro: 'حسابات معهد الجيوفيزياء بجامعة طهران وفق المعايير الفلكية الإيرانية.' }
 ];
 
-// 2. خريطة الاقتران التلقائي الذكي للدول مع الطريقة والمذهب المعتمدين
+function getSafeLocationData() {
+  const defaultLoc = {
+    city: 'مكة المكرمة',
+    country: 'المملكة العربية السعودية',
+    lat: 21.4225,
+    lng: 39.8262,
+    method: 4,
+    asrMadhab: 0,
+    prayerOffsets: { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 }
+  };
+  try {
+    const saved = JSON.parse(localStorage.getItem('hayat_saved_location'));
+    if (saved && saved.lat && saved.lng) {
+      return Object.assign({}, defaultLoc, saved);
+    }
+  } catch(e) {}
+  return defaultLoc;
+}
+
 function getAutoCountryPrayerProfile(countryName) {
   const c = countryName || '';
   if (c.includes('السعودية') || c.includes('اليمن')) {
-    return { method: 4, asrMadhab: 0, tz: 3 }; // أم القرى • الجمهور
+    return { method: 4, asrMadhab: 0, tz: 3 };
   } else if (c.includes('مصر') || c.includes('السودان')) {
-    return { method: 5, asrMadhab: 0, tz: 2 }; // الهيئة المصرية • الجمهور
+    return { method: 5, asrMadhab: 0, tz: 2 };
   } else if (c.includes('الإمارات')) {
-    return { method: 16, asrMadhab: 0, tz: 4 }; // دبي • الجمهور
+    return { method: 16, asrMadhab: 0, tz: 4 };
   } else if (c.includes('الكويت')) {
-    return { method: 9, asrMadhab: 0, tz: 3 }; // الكويت • الجمهور
+    return { method: 9, asrMadhab: 0, tz: 3 };
   } else if (c.includes('قطر')) {
-    return { method: 10, asrMadhab: 0, tz: 3 }; // قطر • الجمهور
+    return { method: 10, asrMadhab: 0, tz: 3 };
   } else if (c.includes('تركيا') || c.includes('البوسنة') || c.includes('ألبانيا') || c.includes('كوسوفو')) {
-    return { method: 13, asrMadhab: 1, tz: 3 }; // ديانت تركيا • الحنفي
+    return { method: 13, asrMadhab: 1, tz: 3 };
   } else if (c.includes('باكستان') || c.includes('بنغلاديش') || c.includes('أفغانستان') || c.includes('الهند')) {
-    return { method: 1, asrMadhab: 1, tz: 5 }; // كراتشي • الحنفي
+    return { method: 1, asrMadhab: 1, tz: 5 };
   } else if (c.includes('سنغافورة') || c.includes('ماليزيا') || c.includes('إندونيسيا')) {
-    return { method: 11, asrMadhab: 0, tz: 8 }; // سنغافورة • الجمهور
+    return { method: 11, asrMadhab: 0, tz: 8 };
   } else if (c.includes('الولايات المتحدة') || c.includes('كندا')) {
-    return { method: 2, asrMadhab: 0, tz: -5 }; // ISNA أمريكا • الجمهور
+    return { method: 2, asrMadhab: 0, tz: -5 };
   } else {
-    return { method: 3, asrMadhab: 0, tz: 3 }; // رابطة العالم الإسلامي • الجمهور
+    return { method: 3, asrMadhab: 0, tz: 3 };
   }
 }
 
-// 3. مزامنة واجهة إعدادات المواقيت
 function syncPrayerSettingsUI() {
-  const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || {};
-  const curMethodId = savedLoc.method || 4;
-  const curMadhab = savedLoc.asrMadhab || 0;
+  const loc = getSafeLocationData();
+  const curMethodId = loc.method || 4;
+  const curMadhab = loc.asrMadhab || 0;
   const mObj = CALCULATION_METHODS.find(m => m.id === curMethodId) || CALCULATION_METHODS[0];
 
   const displayMethod = document.getElementById('displayCalcMethodName');
@@ -58,9 +73,8 @@ function syncPrayerSettingsUI() {
   if (displayMadhab) displayMadhab.textContent = (curMadhab === 1) ? 'الحنفي (ظل الشيء مثليه)' : 'الجمهور (الشافعي، المالكي، الحنبلي)';
   if (subtitle) subtitle.textContent = `${mObj.name.split('–')[0].trim()} • ${(curMadhab === 1 ? 'الحنفي' : 'الجمهور')}`;
 
-  // تحديث أرقام الصلوات في شاشة التعديل بالدقائق
   const pKeys = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-  const offsets = savedLoc.prayerOffsets || {};
+  const offsets = loc.prayerOffsets || {};
   pKeys.forEach(k => {
     const el = document.getElementById(`offsetStatus_${k}`);
     if (el) {
@@ -77,7 +91,6 @@ function syncPrayerSettingsUI() {
 }
 window.syncPrayerSettingsUI = syncPrayerSettingsUI;
 
-// 4. ربط وتفعيل النوافذ والشاشات التفاعلية
 document.addEventListener('DOMContentLoaded', () => {
   const screenPrayerSettings = document.getElementById('screen-prayer-settings');
   const screenPrayerOffsets = document.getElementById('screen-prayer-offsets');
@@ -109,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeEditingOffsetPrayer = 'Fajr';
   let tempEditingOffsetValue = 0;
 
-  // فتح شاشة إعدادات المواقيت
   if (openPrayerSettingsBtn) {
     openPrayerSettingsBtn.onclick = () => {
       syncPrayerSettingsUI();
@@ -133,12 +145,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // نافذة طرق الحساب
+  // رسم قائمة طرق الحساب مع زر معلومات SVG مصقول
   function renderCalculationMethodsList() {
     if (!calcMethodsListScroll) return;
     calcMethodsListScroll.innerHTML = '';
-    const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || {};
-    const curId = savedLoc.method || 4;
+    const loc = getSafeLocationData();
+    const curId = loc.method || 4;
 
     CALCULATION_METHODS.forEach(m => {
       const isSelected = (m.id === curId);
@@ -152,13 +164,20 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="calc-method-desc">${m.desc}</p>
           </div>
         </div>
-        <button type="button" class="method-info-trigger-btn" title="معلومات الطريقة">ℹ️</button>
+        <button type="button" class="method-info-trigger-btn" title="معلومات الطريقة">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </button>
       `;
 
       row.onclick = (e) => {
         if (e.target.closest('.method-info-trigger-btn')) return;
-        savedLoc.method = m.id;
-        localStorage.setItem('hayat_saved_location', JSON.stringify(savedLoc));
+        const currentLoc = getSafeLocationData();
+        currentLoc.method = m.id;
+        localStorage.setItem('hayat_saved_location', JSON.stringify(currentLoc));
         if (calcMethodModal) calcMethodModal.classList.remove('show');
         if (typeof window.applyPrayerSettingsUpdate === 'function') {
           window.applyPrayerSettingsUpdate();
@@ -193,8 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // نافذة مذهب العصر
   if (openAsrMadhabModalBtn) {
     openAsrMadhabModalBtn.onclick = () => {
-      const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || {};
-      const curMadhab = savedLoc.asrMadhab || 0;
+      const loc = getSafeLocationData();
+      const curMadhab = loc.asrMadhab || 0;
       document.querySelectorAll('.madhab-select-card').forEach(c => {
         const val = parseInt(c.getAttribute('data-madhab'), 10);
         c.classList.toggle('active', val === curMadhab);
@@ -211,9 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.madhab-select-card').forEach(card => {
     card.onclick = () => {
       const val = parseInt(card.getAttribute('data-madhab'), 10);
-      const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || {};
-      savedLoc.asrMadhab = val;
-      localStorage.setItem('hayat_saved_location', JSON.stringify(savedLoc));
+      const loc = getSafeLocationData();
+      loc.asrMadhab = val;
+      localStorage.setItem('hayat_saved_location', JSON.stringify(loc));
       if (asrMadhabModal) asrMadhabModal.classList.remove('show');
       if (typeof window.applyPrayerSettingsUpdate === 'function') {
         window.applyPrayerSettingsUpdate();
@@ -221,25 +240,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   });
 
-  // نافذة تعديل دقيقة الصلاة (العداد التفاعلي)
+  // نافذة تعديل دقيقة الصلاة مع جلب الوقت الفعلي
   const prayerNamesAr = { Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
 
   document.querySelectorAll('.prayer-offset-item-row').forEach(row => {
     row.onclick = () => {
       activeEditingOffsetPrayer = row.getAttribute('data-prayer-key');
-      const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || {};
-      const curVal = (savedLoc.prayerOffsets && savedLoc.prayerOffsets[activeEditingOffsetPrayer]) || 0;
+      const loc = getSafeLocationData();
+      const curVal = (loc.prayerOffsets && loc.prayerOffsets[activeEditingOffsetPrayer]) || 0;
       tempEditingOffsetValue = curVal;
 
       const titleEl = document.getElementById('offsetModalPrayerTitle');
       const numEl = document.getElementById('currentOffsetMinuteNum');
       
-      let curTime = '--:--';
-      if (typeof currentTimings !== 'undefined' && currentTimings && currentTimings[activeEditingOffsetPrayer]) {
-        curTime = formatTo12Hour(currentTimings[activeEditingOffsetPrayer]);
+      // جلب الوقت الفعلي المباشر للصلاة من التطبيق
+      let curTimeText = '';
+      if (typeof window.getCurrentPrayerTimeString === 'function') {
+        curTimeText = window.getCurrentPrayerTimeString(activeEditingOffsetPrayer);
       }
 
-      if (titleEl) titleEl.textContent = `${prayerNamesAr[activeEditingOffsetPrayer]} ${curTime}`;
+      if (titleEl) titleEl.textContent = `${prayerNamesAr[activeEditingOffsetPrayer]} ${curTimeText}`;
       if (numEl) numEl.textContent = `${curVal > 0 ? '+' : ''}${curVal}`;
 
       if (singlePrayerOffsetSheet) singlePrayerOffsetSheet.classList.add('show');
@@ -274,12 +294,13 @@ document.addEventListener('DOMContentLoaded', () => {
     closeSingleOffsetBtn.onclick = () => singlePrayerOffsetSheet.classList.remove('show');
   }
 
+  // حفظ التعديل فورياً وتطبيقه على كافة الشاشات
   if (btnConfirmSingleOffset) {
     btnConfirmSingleOffset.onclick = () => {
-      const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || {};
-      if (!savedLoc.prayerOffsets) savedLoc.prayerOffsets = {};
-      savedLoc.prayerOffsets[activeEditingOffsetPrayer] = tempEditingOffsetValue;
-      localStorage.setItem('hayat_saved_location', JSON.stringify(savedLoc));
+      const loc = getSafeLocationData();
+      if (!loc.prayerOffsets) loc.prayerOffsets = {};
+      loc.prayerOffsets[activeEditingOffsetPrayer] = tempEditingOffsetValue;
+      localStorage.setItem('hayat_saved_location', JSON.stringify(loc));
 
       if (singlePrayerOffsetSheet) singlePrayerOffsetSheet.classList.remove('show');
       syncPrayerSettingsUI();
