@@ -3501,90 +3501,136 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   let activeCountryFilter = 'all';
 
+  // قائمة دول العالم الشاملة (عربي + إنجليزي + أعلام)
+  const WORLD_COUNTRIES = [
+    { code: 'all', nameAr: 'جميع الدول', nameEn: 'All Countries', flag: '🌐' },
+    { code: 'SA', nameAr: 'المملكة العربية السعودية', nameEn: 'Saudi Arabia', flag: '🇸🇦' },
+    { code: 'EG', nameAr: 'مصر', nameEn: 'Egypt', flag: '🇪🇬' },
+    { code: 'YE', nameAr: 'اليمن', nameEn: 'Yemen', flag: '🇾🇪' },
+    { code: 'AE', nameAr: 'الإمارات العربية المتحدة', nameEn: 'United Arab Emirates', flag: '🇦🇪' },
+    { code: 'KW', nameAr: 'الكويت', nameEn: 'Kuwait', flag: '🇰🇼' },
+    { code: 'OM', nameAr: 'عُمان', nameEn: 'Oman', flag: '🇴🇲' },
+    { code: 'QA', nameAr: 'قطر', nameEn: 'Qatar', flag: '🇶🇦' },
+    { code: 'BH', nameAr: 'البحرين', nameEn: 'Bahrain', flag: '🇧🇭' },
+    { code: 'JO', nameAr: 'الأردن', nameEn: 'Jordan', flag: '🇯🇴' },
+    { code: 'PS', nameAr: 'فلسطين', nameEn: 'Palestine', flag: '🇵🇸' },
+    { code: 'SY', nameAr: 'سوريا', nameEn: 'Syria', flag: '🇸🇾' },
+    { code: 'LB', nameAr: 'لبنان', nameEn: 'Lebanon', flag: '🇱🇧' },
+    { code: 'IQ', nameAr: 'العراق', nameEn: 'Iraq', flag: '🇮🇶' },
+    { code: 'MA', nameAr: 'المغرب', nameEn: 'Morocco', flag: '🇲🇦' },
+    { code: 'DZ', nameAr: 'الجزائر', nameEn: 'Algeria', flag: '🇩🇿' },
+    { code: 'TN', nameAr: 'تونس', nameEn: 'Tunisia', flag: '🇹🇳' },
+    { code: 'SD', nameAr: 'السودان', nameEn: 'Sudan', flag: '🇸🇩' },
+    { code: 'LY', nameAr: 'ليبيا', nameEn: 'Libya', flag: '🇱🇾' },
+    { code: 'TR', nameAr: 'تركيا', nameEn: 'Turkey', flag: '🇹🇷' },
+    { code: 'ID', nameAr: 'إندونيسيا', nameEn: 'Indonesia', flag: '🇮🇩' },
+    { code: 'MY', nameAr: 'ماليزيا', nameEn: 'Malaysia', flag: '🇲🇾' },
+    { code: 'PK', nameAr: 'باكستان', nameEn: 'Pakistan', flag: '🇵🇰' },
+    { code: 'BD', nameAr: 'بنغلاديش', nameEn: 'Bangladesh', flag: '🇧🇩' },
+    { code: 'GB', nameAr: 'المملكة المتحدة (بريطانيا)', nameEn: 'United Kingdom', flag: '🇬🇧' },
+    { code: 'US', nameAr: 'الولايات المتحدة الأمريكية', nameEn: 'United States', flag: '🇺🇸' },
+    { code: 'CA', nameAr: 'كندا', nameEn: 'Canada', flag: '🇨🇦' },
+    { code: 'DE', nameAr: 'ألمانيا', nameEn: 'Germany', flag: '🇩🇪' },
+    { code: 'FR', nameAr: 'فرنسا', nameEn: 'France', flag: '🇫🇷' },
+    { code: 'AU', nameAr: 'أستراليا', nameEn: 'Australia', flag: '🇦🇺' }
+  ];
+
   const REGION_CITIES = [
-    // المملكة العربية السعودية
-    { name: 'مكة المكرمة', country: 'السعودية', lat: 21.4225, lng: 39.8262 },
-    { name: 'المدينة المنورة', country: 'السعودية', lat: 24.4672, lng: 39.6111 },
-    { name: 'الرياض', country: 'السعودية', lat: 24.7136, lng: 46.6753 },
-    { name: 'جدة', country: 'السعودية', lat: 21.5433, lng: 39.1728 },
-    { name: 'الدمام', country: 'السعودية', lat: 26.4207, lng: 50.0888 },
-    { name: 'الخبر', country: 'السعودية', lat: 26.2818, lng: 50.1989 },
-    { name: 'الظهران', country: 'السعودية', lat: 26.2886, lng: 50.1140 },
-    { name: 'الأحساء (الهفوف)', country: 'السعودية', lat: 25.3835, lng: 49.5862 },
-    { name: 'الجبيل', country: 'السعودية', lat: 27.0046, lng: 49.6606 },
-    { name: 'حفر الباطن', country: 'السعودية', lat: 28.4328, lng: 45.9708 },
-    { name: 'بريدة', country: 'السعودية', lat: 26.3260, lng: 43.9750 },
-    { name: 'عنيزة', country: 'السعودية', lat: 26.0844, lng: 43.9936 },
-    { name: 'حائل', country: 'السعودية', lat: 27.5219, lng: 41.6907 },
-    { name: 'تبوك', country: 'السعودية', lat: 28.3835, lng: 36.5662 },
-    { name: 'عرعر', country: 'السعودية', lat: 30.9753, lng: 41.0381 },
-    { name: 'سكاكا (الجوف)', country: 'السعودية', lat: 29.9697, lng: 40.2064 },
-    { name: 'القريات', country: 'السعودية', lat: 31.3318, lng: 37.3428 },
-    { name: 'أبها', country: 'السعودية', lat: 18.2164, lng: 42.5053 },
-    { name: 'خميس مشيط', country: 'السعودية', lat: 18.3064, lng: 42.7330 },
-    { name: 'جازان', country: 'السعودية', lat: 16.8892, lng: 42.5511 },
-    { name: 'صبيا', country: 'السعودية', lat: 17.1495, lng: 42.6254 },
-    { name: 'نجران', country: 'السعودية', lat: 17.4924, lng: 44.1277 },
-    { name: 'الباحة', country: 'السعودية', lat: 20.0129, lng: 41.4677 },
-    { name: 'الطائف', country: 'السعودية', lat: 21.2854, lng: 40.4222 },
-    { name: 'ينبع', country: 'السعودية', lat: 24.0891, lng: 38.0637 },
+    // المملكة العربية السعودية (مع إضافة الخرج)
+    { name: 'مكة المكرمة', country: 'السعودية', lat: 21.4225, lng: 39.8262, method: 4 },
+    { name: 'المدينة المنورة', country: 'السعودية', lat: 24.4672, lng: 39.6111, method: 4 },
+    { name: 'الرياض', country: 'السعودية', lat: 24.7136, lng: 46.6753, method: 4 },
+    { name: 'الخرج', country: 'السعودية', lat: 24.1554, lng: 47.3120, method: 4 },
+    { name: 'جدة', country: 'السعودية', lat: 21.5433, lng: 39.1728, method: 4 },
+    { name: 'الدمام', country: 'السعودية', lat: 26.4207, lng: 50.0888, method: 4 },
+    { name: 'الخبر', country: 'السعودية', lat: 26.2818, lng: 50.1989, method: 4 },
+    { name: 'الظهران', country: 'السعودية', lat: 26.2886, lng: 50.1140, method: 4 },
+    { name: 'الأحساء (الهفوف)', country: 'السعودية', lat: 25.3835, lng: 49.5862, method: 4 },
+    { name: 'الجبيل', country: 'السعودية', lat: 27.0046, lng: 49.6606, method: 4 },
+    { name: 'حفر الباطن', country: 'السعودية', lat: 28.4328, lng: 45.9708, method: 4 },
+    { name: 'بريدة', country: 'السعودية', lat: 26.3260, lng: 43.9750, method: 4 },
+    { name: 'عنيزة', country: 'السعودية', lat: 26.0844, lng: 43.9936, method: 4 },
+    { name: 'حائل', country: 'السعودية', lat: 27.5219, lng: 41.6907, method: 4 },
+    { name: 'تبوك', country: 'السعودية', lat: 28.3835, lng: 36.5662, method: 4 },
+    { name: 'عرعر', country: 'السعودية', lat: 30.9753, lng: 41.0381, method: 4 },
+    { name: 'سكاكا (الجوف)', country: 'السعودية', lat: 29.9697, lng: 40.2064, method: 4 },
+    { name: 'القريات', country: 'السعودية', lat: 31.3318, lng: 37.3428, method: 4 },
+    { name: 'أبها', country: 'السعودية', lat: 18.2164, lng: 42.5053, method: 4 },
+    { name: 'خميس مشيط', country: 'السعودية', lat: 18.3064, lng: 42.7330, method: 4 },
+    { name: 'جازان', country: 'السعودية', lat: 16.8892, lng: 42.5511, method: 4 },
+    { name: 'صبيا', country: 'السعودية', lat: 17.1495, lng: 42.6254, method: 4 },
+    { name: 'نجران', country: 'السعودية', lat: 17.4924, lng: 44.1277, method: 4 },
+    { name: 'الباحة', country: 'السعودية', lat: 20.0129, lng: 41.4677, method: 4 },
+    { name: 'الطائف', country: 'السعودية', lat: 21.2854, lng: 40.4222, method: 4 },
+    { name: 'ينبع', country: 'السعودية', lat: 24.0891, lng: 38.0637, method: 4 },
 
     // جمهورية مصر العربية
-    { name: 'القاهرة', country: 'مصر', lat: 30.0444, lng: 31.2357 },
-    { name: 'الإسكندرية', country: 'مصر', lat: 31.2001, lng: 29.9187 },
-    { name: 'الجيزة', country: 'مصر', lat: 30.0131, lng: 31.2089 },
-    { name: 'بورسعيد', country: 'مصر', lat: 31.2653, lng: 32.3019 },
-    { name: 'السويس', country: 'مصر', lat: 29.9668, lng: 32.5498 },
-    { name: 'المنصورة (الدقهلية)', country: 'مصر', lat: 31.0409, lng: 31.3785 },
-    { name: 'طنطا (الغربية)', country: 'مصر', lat: 30.7865, lng: 31.0004 },
-    { name: 'الزقازيق (الشرقية)', country: 'مصر', lat: 30.5877, lng: 31.5020 },
-    { name: 'أسيوط', country: 'مصر', lat: 27.1783, lng: 31.1859 },
-    { name: 'سوهاج', country: 'مصر', lat: 26.5590, lng: 31.6957 },
-    { name: 'الأقصر', country: 'مصر', lat: 25.6872, lng: 32.6396 },
-    { name: 'أسوان', country: 'مصر', lat: 24.0889, lng: 32.8998 },
+    { name: 'القاهرة', country: 'مصر', lat: 30.0444, lng: 31.2357, method: 5 },
+    { name: 'الإسكندرية', country: 'مصر', lat: 31.2001, lng: 29.9187, method: 5 },
+    { name: 'الجيزة', country: 'مصر', lat: 30.0131, lng: 31.2089, method: 5 },
+    { name: 'بورسعيد', country: 'مصر', lat: 31.2653, lng: 32.3019, method: 5 },
+    { name: 'السويس', country: 'مصر', lat: 29.9668, lng: 32.5498, method: 5 },
+    { name: 'المنصورة (الدقهلية)', country: 'مصر', lat: 31.0409, lng: 31.3785, method: 5 },
+    { name: 'طنطا (الغربية)', country: 'مصر', lat: 30.7865, lng: 31.0004, method: 5 },
+    { name: 'الزقازيق (الشرقية)', country: 'مصر', lat: 30.5877, lng: 31.5020, method: 5 },
+    { name: 'أسيوط', country: 'مصر', lat: 27.1783, lng: 31.1859, method: 5 },
+    { name: 'سوهاج', country: 'مصر', lat: 26.5590, lng: 31.6957, method: 5 },
+    { name: 'الأقصر', country: 'مصر', lat: 25.6872, lng: 32.6396, method: 5 },
+    { name: 'أسوان', country: 'مصر', lat: 24.0889, lng: 32.8998, method: 5 },
 
     // الجمهورية اليمنية
-    { name: 'صنعاء', country: 'اليمن', lat: 15.3694, lng: 44.1910 },
-    { name: 'عدن', country: 'اليمن', lat: 12.7855, lng: 45.0187 },
-    { name: 'تعز', country: 'اليمن', lat: 13.5795, lng: 44.0209 },
-    { name: 'الحديدة', country: 'اليمن', lat: 14.7978, lng: 42.9545 },
-    { name: 'المكلا (حضرموت)', country: 'اليمن', lat: 14.5425, lng: 49.1242 },
-    { name: 'إب', country: 'اليمن', lat: 13.9667, lng: 44.1667 },
-    { name: 'ذمار', country: 'اليمن', lat: 14.5428, lng: 44.4051 },
-    { name: 'مأرب', country: 'اليمن', lat: 15.4633, lng: 45.3258 },
+    { name: 'صنعاء', country: 'اليمن', lat: 15.3694, lng: 44.1910, method: 4 },
+    { name: 'عدن', country: 'اليمن', lat: 12.7855, lng: 45.0187, method: 4 },
+    { name: 'تعز', country: 'اليمن', lat: 13.5795, lng: 44.0209, method: 4 },
+    { name: 'الحديدة', country: 'اليمن', lat: 14.7978, lng: 42.9545, method: 4 },
+    { name: 'المكلا (حضرموت)', country: 'اليمن', lat: 14.5425, lng: 49.1242, method: 4 },
+    { name: 'إب', country: 'اليمن', lat: 13.9667, lng: 44.1667, method: 4 },
+    { name: 'ذمار', country: 'اليمن', lat: 14.5428, lng: 44.4051, method: 4 },
+    { name: 'مأرب', country: 'اليمن', lat: 15.4633, lng: 45.3258, method: 4 },
 
     // الإمارات
-    { name: 'أبوظبي', country: 'الإمارات', lat: 24.4539, lng: 54.3773 },
-    { name: 'دبي', country: 'الإمارات', lat: 25.2048, lng: 55.2708 },
-    { name: 'الشارقة', country: 'الإمارات', lat: 25.3463, lng: 55.4209 },
-    { name: 'عجمان', country: 'الإمارات', lat: 25.4052, lng: 55.5136 },
-    { name: 'رأس الخيمة', country: 'الإمارات', lat: 25.6741, lng: 55.9804 },
-    { name: 'الفجيرة', country: 'الإمارات', lat: 25.1288, lng: 56.3265 },
+    { name: 'أبوظبي', country: 'الإمارات', lat: 24.4539, lng: 54.3773, method: 4 },
+    { name: 'دبي', country: 'الإمارات', lat: 25.2048, lng: 55.2708, method: 4 },
+    { name: 'الشارقة', country: 'الإمارات', lat: 25.3463, lng: 55.4209, method: 4 },
+    { name: 'عجمان', country: 'الإمارات', lat: 25.4052, lng: 55.5136, method: 4 },
+    { name: 'رأس الخيمة', country: 'الإمارات', lat: 25.6741, lng: 55.9804, method: 4 },
+    { name: 'الفجيرة', country: 'الإمارات', lat: 25.1288, lng: 56.3265, method: 4 },
 
-    // الكويت وعمان وقطر والبحرين
-    { name: 'الكويت (العاصمة)', country: 'الكويت', lat: 29.3759, lng: 47.9774 },
-    { name: 'حولي', country: 'الكويت', lat: 29.3328, lng: 48.0282 },
-    { name: 'مسقط', country: 'عمان', lat: 23.5880, lng: 58.3829 },
-    { name: 'صلالة', country: 'عمان', lat: 17.0151, lng: 54.0924 },
-    { name: 'الدوحة', country: 'قطر', lat: 25.2854, lng: 51.5310 },
-    { name: 'الريان', country: 'قطر', lat: 25.2919, lng: 51.4244 },
-    { name: 'المنامة', country: 'البحرين', lat: 26.2285, lng: 50.5860 },
+    // الكويت وعمان وقطر والبحرين والأردن وفلسطين والشام والمغرب العربي
+    { name: 'الكويت (العاصمة)', country: 'الكويت', lat: 29.3759, lng: 47.9774, method: 4 },
+    { name: 'حولي', country: 'الكويت', lat: 29.3328, lng: 48.0282, method: 4 },
+    { name: 'مسقط', country: 'عمان', lat: 23.5880, lng: 58.3829, method: 4 },
+    { name: 'صلالة', country: 'عمان', lat: 17.0151, lng: 54.0924, method: 4 },
+    { name: 'الدوحة', country: 'قطر', lat: 25.2854, lng: 51.5310, method: 4 },
+    { name: 'المنامة', country: 'البحرين', lat: 26.2285, lng: 50.5860, method: 4 },
+    { name: 'القدس الشريف', country: 'فلسطين', lat: 31.7683, lng: 35.2137, method: 3 },
+    { name: 'غزة', country: 'فلسطين', lat: 31.5017, lng: 34.4668, method: 3 },
+    { name: 'عمّان', country: 'الأردن', lat: 31.9454, lng: 35.9284, method: 3 },
+    { name: 'دمشق', country: 'سوريا', lat: 33.5138, lng: 36.2765, method: 3 },
+    { name: 'بيروت', country: 'لبنان', lat: 33.8938, lng: 35.5018, method: 3 },
+    { name: 'بغداد', country: 'العراق', lat: 33.3152, lng: 44.3661, method: 3 },
+    { name: 'الرباط', country: 'المغرب', lat: 34.0209, lng: -6.8416, method: 3 },
+    { name: 'الدار البيضاء', country: 'المغرب', lat: 33.5731, lng: -7.5898, method: 3 },
+    { name: 'تونس (العاصمة)', country: 'تونس', lat: 36.8065, lng: 10.1815, method: 3 },
+    { name: 'الجزائر (العاصمة)', country: 'الجزائر', lat: 36.7538, lng: 3.0588, method: 3 },
+    { name: 'الخرطوم', country: 'السودان', lat: 15.5007, lng: 32.5599, method: 5 },
+    { name: 'طرابلس', country: 'ليبيا', lat: 32.8872, lng: 13.1913, method: 3 },
 
-    // المغرب وفلسطين وعواصم إسلامية
-    { name: 'الرباط', country: 'المغرب', lat: 34.0209, lng: -6.8416 },
-    { name: 'الدار البيضاء', country: 'المغرب', lat: 33.5731, lng: -7.5898 },
-    { name: 'مراكش', country: 'المغرب', lat: 31.6295, lng: -7.9811 },
-    { name: 'القدس الشريف', country: 'فلسطين', lat: 31.7683, lng: 35.2137 },
-    { name: 'غزة', country: 'فلسطين', lat: 31.5017, lng: 34.4668 },
-    { name: 'عمّان', country: 'الأردن', lat: 31.9454, lng: 35.9284 },
-    { name: 'دمشق', country: 'سوريا', lat: 33.5138, lng: 36.2765 },
-    { name: 'بيروت', country: 'لبنان', lat: 33.8938, lng: 35.5018 },
-    { name: 'بغداد', country: 'العراق', lat: 33.3152, lng: 44.3661 },
-    { name: 'تونس (العاصمة)', country: 'تونس', lat: 36.8065, lng: 10.1815 },
-    { name: 'الجزائر (العاصمة)', country: 'الجزائر', lat: 36.7538, lng: 3.0588 },
-    { name: 'إسطنبول', country: 'تركيا', lat: 41.0082, lng: 28.9784 },
-    { name: 'لندن', country: 'بريطانيا', lat: 51.5074, lng: -0.1278 },
-    { name: 'واشنطن', country: 'أمريكا', lat: 38.9072, lng: -77.0369 }
+    // دول إسلامية كبرى وعواصم عالمية
+    { name: 'إسطنبول', country: 'تركيا', lat: 41.0082, lng: 28.9784, method: 13 },
+    { name: 'أنقرة', country: 'تركيا', lat: 39.9334, lng: 32.8597, method: 13 },
+    { name: 'جاكرتا', country: 'إندونيسيا', lat: -6.2088, lng: 106.8456, method: 11 },
+    { name: 'كوالالمبور', country: 'ماليزيا', lat: 3.1390, lng: 101.6869, method: 11 },
+    { name: 'إسلام آباد', country: 'باكستان', lat: 33.6844, lng: 73.0479, method: 1 },
+    { name: 'كراتشي', country: 'باكستان', lat: 24.8607, lng: 67.0011, method: 1 },
+    { name: 'دكا', country: 'بنغلاديش', lat: 23.8103, lng: 90.4125, method: 1 },
+    { name: 'لندن', country: 'المملكة المتحدة (بريطانيا)', lat: 51.5074, lng: -0.1278, method: 3 },
+    { name: 'واشنطن', country: 'الولايات المتحدة الأمريكية', lat: 38.9072, lng: -77.0369, method: 2 },
+    { name: 'نيويورك', country: 'الولايات المتحدة الأمريكية', lat: 40.7128, lng: -74.0060, method: 2 },
+    { name: 'باريس', country: 'فرنسا', lat: 48.8566, lng: 2.3522, method: 12 },
+    { name: 'برلين', country: 'ألمانيا', lat: 52.5200, lng: 13.4050, method: 3 },
+    { name: 'تورونتو', country: 'كندا', lat: 43.6532, lng: -79.3832, method: 2 },
+    { name: 'سيدني', country: 'أستراليا', lat: -33.8688, lng: 151.2093, method: 3 }
   ];
 
   function normalizeArabic(text) {
@@ -3676,13 +3722,55 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   async function selectCity(name, lat, lng, country = '') {
-    const method = (country === 'مصر' || name.includes('مصر')) ? 5 : 4; 
-    userLocation = { city: name, country: country, lat: lat, lng: lng, method: method };
+    // 1. تحديد طريقة الحساب المعتمدة تلقائياً حسب الدولة
+    let method = 4;
+    if (country.includes('مصر') || name.includes('مصر')) method = 5;
+    else if (country.includes('باكستان') || country.includes('بنغلاديش')) method = 1;
+    else if (country.includes('تركيا')) method = 13;
+    else if (country.includes('أمريكا') || country.includes('كندا')) method = 2;
+    else if (country.includes('فرنسا')) method = 12;
+    else if (country.includes('إندونيسيا') || country.includes('ماليزيا')) method = 11;
+    else if (country.includes('المغرب') || country.includes('الأردن') || country.includes('فلسطين') || country.includes('بريطانيا')) method = 3;
+
+    // 2. تقدير فارق التوقيت الأوفلاين الدقيق بناءً على خط الطول الجغرافي
+    let tz = Math.round(lng / 15);
+    if (country.includes('السعودية') || country.includes('اليمن') || country.includes('العراق') || country.includes('الكويت') || country.includes('قطر') || country.includes('البحرين')) tz = 3;
+    else if (country.includes('الإمارات') || country.includes('عمان')) tz = 4;
+    else if (country.includes('مصر')) tz = 2;
+
+    userLocation = { city: name, country: country, lat: lat, lng: lng, method: method, timezoneOffset: tz };
     localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
+
+    // 3. مسح كاش المدينة القديمة فوراً لتفادي تكرار مواقيتها
+    localStorage.removeItem('hayat_cached_timings');
 
     if (cityNameText) cityNameText.textContent = name;
     if (manualLocationModal) manualLocationModal.classList.remove('show');
-    await fetchPrayerTimes();
+
+    // 4. إجراء الحساب الفلكي الشمسي الداخلي فوراً لتحديث الشاشة بلحظتها بدون نت
+    const targetDate = getTargetDateObject();
+    currentTimings = calculateLocalSolarTimings(targetDate, lat, lng, tz);
+
+    let localHijriData = null;
+    try {
+      const hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+      const parts = hf.formatToParts(targetDate);
+      let hd = 1, hm = 1, hy = 1448;
+      parts.forEach(p => {
+        if (p.type === 'day') hd = parseInt(p.value, 10);
+        if (p.type === 'month') hm = parseInt(p.value, 10);
+        if (p.type === 'year') hy = parseInt(p.value, 10);
+      });
+      const arMonths = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
+      localHijriData = { day: hd, month: { ar: arMonths[hm - 1] || 'رمضان' }, year: hy };
+    } catch(e) {}
+
+    updatePrayerUI({ timings: currentTimings, date: { hijri: localHijriData } });
+
+    // 5. استدعاء المزامنة في الخلفية للتأكد من المواقيت حال توفر الإنترنت
+    if (navigator.onLine) {
+      fetchPrayerTimes().catch(() => {});
+    }
   }
 
   async function searchCityOnline(query) {
