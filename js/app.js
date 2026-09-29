@@ -3311,18 +3311,22 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     };
   }
 
-  // جلب مواقيت الصلاة (مباشر عبر الرابط الدقيق مع حماية أوفلاين كاملة)
+  // جلب مواقيت الصلاة مع حماية قاطعة للإحداثيات في الكمبيوتر والجوال
   async function fetchPrayerTimes() {
+    // التأكد من وجود إحداثيات صالحة دائماً
+    userLocation.lat = userLocation.lat || DEFAULT_LOCATION.lat || 21.4225;
+    userLocation.lng = userLocation.lng || DEFAULT_LOCATION.lng || 39.8262;
+    userLocation.city = userLocation.city || DEFAULT_LOCATION.city || 'مكة المكرمة';
+    userLocation.method = userLocation.method || DEFAULT_LOCATION.method || 4;
+
     const cityNameEl = document.getElementById('cityNameText');
     if (cityNameEl) cityNameEl.textContent = userLocation.city;
 
     const targetDate = getTargetDateObject();
-    const methodNum = userLocation.method || 4;
+    const methodNum = userLocation.method;
     const timestamp = Math.floor(targetDate.getTime() / 1000);
     
-    // استخدام المسار المباشر المرفق بالـ timestamp يمنع أي 301 Redirect ويحل مشكلة CORS نهائياً
-    const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
-
+    const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;    
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Network response not ok');
@@ -3377,16 +3381,35 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // 2. تحديث الواجهة والصلوات واسم اليوم
-  function updatePrayerUI(apiData) {
-    const timings = apiData.timings;
+  // دالة ذكية تطبق فروق الدقائق اليدوية على أي توقيت قادم
+  function applyPrayerOffset(timeStr, offsetMinutes) {
+    if (!timeStr) return '';
+    const cleanTime = timeStr.split(' ')[0];
+    let [h, m] = cleanTime.split(':').map(Number);
+    let totalMinutes = (h * 60) + m + (parseInt(offsetMinutes, 10) || 0);
+    totalMinutes = (totalMinutes + 1440) % 1440;
+    const finalH = Math.floor(totalMinutes / 60);
+    const finalM = totalMinutes % 60;
+    return `${String(finalH).padStart(2, '0')}:${String(finalM).padStart(2, '0')}`;
+  }
 
+  // 2. تحديث الواجهة والصلوات وتطبيق التعديل اليدوي سواء كان أونلاين أو أوفلاين
+  function updatePrayerUI(apiData) {
+    const rawTimings = apiData.timings;
+    const offsets = userLocation.prayerOffsets || {};
+
+    // تصدير المواقيت المعدلة بعد إضافة الدقائق اليدوية
+    currentTimings = {};
     PRAYER_KEYS.forEach(p => {
+      const baseTime = rawTimings[p.key];
+      const offsetVal = offsets[p.key] || 0;
+      currentTimings[p.key] = applyPrayerOffset(baseTime, offsetVal);
+
       const row = document.querySelector(`.prayer-row[data-prayer="${p.key.toLowerCase()}"]`);
       if (row) {
         const timeEl = row.querySelector('.prayer-time');
-        if (timeEl && timings[p.key]) {
-          timeEl.textContent = formatTo12Hour(timings[p.key]);
+        if (timeEl) {
+          timeEl.textContent = formatTo12Hour(currentTimings[p.key]);
         }
       }
     });
@@ -3850,8 +3873,22 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   // دالة تحديث الحسابات فورياً عند تغيير أي خيار من شاشة إعدادات المواقيت المستقلة
   window.applyPrayerSettingsUpdate = function() {
-    const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || userLocation;
-    selectCity(savedLoc.city, savedLoc.lat, savedLoc.lng, savedLoc.country, savedLoc.method);
+    let loc = DEFAULT_LOCATION;
+    try {
+      const saved = JSON.parse(localStorage.getItem('hayat_saved_location'));
+      if (saved && saved.lat && saved.lng) loc = Object.assign({}, DEFAULT_LOCATION, saved);
+    } catch(e) {}
+
+    userLocation = loc;
+    selectCity(loc.city, loc.lat, loc.lng, loc.country, loc.method);
+  };
+
+  // تصدير الوقت الفعلي الحالي لنافذة تعديل الدقيقة
+  window.getCurrentPrayerTimeString = function(prayerKey) {
+    if (currentTimings && currentTimings[prayerKey]) {
+      return formatTo12Hour(currentTimings[prayerKey]);
+    }
+    return '--:--';
   };
 
   // البحث في الخريطة العالمية أونلاين
@@ -4022,7 +4059,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.70', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.71', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
