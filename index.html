@@ -657,34 +657,35 @@
       </div>
     </div>
 
-    <!-- 3. نافذة ضبط دقيقة الصلاة -->
+    <!-- 3. نافذة ضبط دقيقة الصلاة المصقولة -->
     <div class="bottom-sheet-backdrop" id="singlePrayerOffsetSheet" style="z-index: 330;">
       <div class="bottom-sheet" style="padding-bottom: 24px; text-align: center;">
         <div class="sheet-drag-handle"></div>
-        <div style="display: flex; justify-content: flex-start;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 13px; font-weight: 800; color: var(--text-secondary);">تعديل التوقيت</span>
           <button type="button" class="modal-btn-link" id="closeSingleOffsetBtn" style="font-size: 18px;">✕</button>
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: -10px; margin-bottom: 18px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: #ECFDF5; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 6px;">🌙</div>
-          <h3 id="offsetModalPrayerTitle" style="font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0;">الفجر 4:27 ص</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+          <div style="width: 52px; height: 52px; border-radius: 18px; background: #ECFDF5; border: 1.5px solid #BBF7D0; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 8px;">🌙</div>
+          <h3 id="offsetModalPrayerTitle" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0;">--</h3>
         </div>
 
-        <!-- عداد الدقائق التفاعلي -->
-        <div class="offset-stepper-box">
-          <button type="button" class="btn-offset-reset" id="btnResetOffsetVal" title="استعادة للصفر">🔄</button>
-          <div class="offset-counter-display">
-            <span id="currentOffsetMinuteNum" style="font-size: 26px; font-weight: 900; color: var(--text-main);">0</span>
-            <span style="font-size: 13.5px; font-weight: 700; color: var(--text-secondary); margin-right: 6px;">دقيقة</span>
+        <!-- العداد التفاعلي المصقول المنسجم مع الواجهة -->
+        <div class="offset-stepper-container">
+          <button type="button" class="btn-stepper-circle" id="btnDecrementOffset" title="إنقاص دقيقة">−</button>
+          <div class="offset-middle-display">
+            <span id="currentOffsetMinuteNum" style="font-size: 32px; font-weight: 900; color: var(--primary-deep); min-width: 44px;">0</span>
+            <span style="font-size: 14px; font-weight: 800; color: var(--text-secondary);">دقيقة</span>
           </div>
-          <div class="offset-arrows-col">
-            <button type="button" class="btn-offset-arrow" id="btnIncrementOffset">▲</button>
-            <button type="button" class="btn-offset-arrow" id="btnDecrementOffset">▼</button>
-          </div>
+          <button type="button" class="btn-stepper-circle" id="btnIncrementOffset" title="زيادة دقيقة">+</button>
+          <button type="button" class="btn-stepper-reset" id="btnResetOffsetVal" title="استعادة للصفر">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
         </div>
 
         <div style="margin-top: 24px;">
-          <button type="button" class="modal-btn-primary" id="btnConfirmSingleOffset" style="width: 100%; padding: 13px 0; font-size: 16px; background: #16A34A;">تأكيد</button>
+          <button type="button" class="modal-btn-primary" id="btnConfirmSingleOffset" style="width: 100%; padding: 13px 0; font-size: 15.5px; background: #16A34A; border-radius: 14px;">تأكيد وحفظ</button>
         </div>
       </div>
     </div>
