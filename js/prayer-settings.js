@@ -240,7 +240,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   });
 
-  // نافذة تعديل دقيقة الصلاة مع جلب الوقت الفعلي
+  // قاموس الأيقونات الفلكية الحقيقية الست المطابقة تماماً للشاشة الرئيسية
+  const PRAYER_ASTRONOMICAL_ICONS = {
+    Fajr: {
+      bg: '#ECFDF5',
+      border: '#BBF7D0',
+      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M13 2a5 5 0 0 0 5 5 5 5 0 0 0 2.5-.7A6.5 6.5 0 1 1 12.5.5c0 .5.2 1 .5 1.5z" fill="#16A34A"/><line x1="3" y1="16" x2="21" y2="16" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"/><line x1="6" y1="20" x2="18" y2="20" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"/></svg>`
+    },
+    Sunrise: {
+      bg: '#F0FDF4',
+      border: '#BBF7D0',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 13 A5 5 0 0 0 7 13" fill="#22C55E"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="5.6" y1="5.6" x2="7.4" y2="7.4"/><line x1="18.4" y1="5.6" x2="16.6" y2="7.4"/><line x1="3" y1="14" x2="21" y2="14"/><path d="M5 18c2-1 4 1 7 0s5 1 7 0"/></svg>`
+    },
+    Dhuhr: {
+      bg: '#ECFDF5',
+      border: '#A7F3D0',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#10B981"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>`
+    },
+    Asr: {
+      bg: '#F0F9FF',
+      border: '#BAE6FD',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#0284C7"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>`
+    },
+    Maghrib: {
+      bg: '#EFF6FF',
+      border: '#BFDBFE',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"><path d="M17 12.5 A5 5 0 0 0 7 12.5" fill="#2563EB"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="5.6" y1="5.6" x2="7.4" y2="7.4"/><line x1="18.4" y1="5.6" x2="16.6" y2="7.4"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><path d="M4 18c2.5-1.5 5 1.5 7.5 0s5 1.5 8.5 0"/></svg>`
+    },
+    Isha: {
+      bg: '#EEF2FF',
+      border: '#C7D2FE',
+      svg: `<svg viewBox="0 0 24 24" fill="#2563EB"><path d="M12.5 2a8.5 8.5 0 1 0 9.2 13 7 7 0 0 1-9.2-13z"/><path d="M18.5 3.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"/><path d="M21 8.5l.4.8.8.4-.8.4-.4.8-.4-.8-.8-.4.8-.4z"/></svg>`
+    }
+  };
+
   const prayerNamesAr = { Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
 
   document.querySelectorAll('.prayer-offset-item-row').forEach(row => {
@@ -252,8 +285,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const titleEl = document.getElementById('offsetModalPrayerTitle');
       const numEl = document.getElementById('currentOffsetMinuteNum');
-      
-      // جلب الوقت الفعلي المباشر للصلاة من التطبيق
+      const iconBox = document.getElementById('offsetModalPrayerIconBox');
+
+      // 1. توليد الأيقونة الفلكية الحقيقية مع خلفيتها المنسجمة
+      const prayerMeta = PRAYER_ASTRONOMICAL_ICONS[activeEditingOffsetPrayer] || PRAYER_ASTRONOMICAL_ICONS.Fajr;
+      if (iconBox) {
+        iconBox.innerHTML = prayerMeta.svg;
+        iconBox.style.backgroundColor = prayerMeta.bg;
+        iconBox.style.borderColor = prayerMeta.border;
+      }
+
+      // 2. جلب الوقت الفعلي المباشر للصلاة
       let curTimeText = '';
       if (typeof window.getCurrentPrayerTimeString === 'function') {
         curTimeText = window.getCurrentPrayerTimeString(activeEditingOffsetPrayer);
