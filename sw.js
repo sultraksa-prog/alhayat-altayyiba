@@ -1,12 +1,14 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.67';
+const CACHE_NAME = 'alhayat-cache-v2.1.68';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './css/calendar.css',
+  './css/prayer-settings.css',
   './js/app.js',
   './js/azkar-data.js',
   './js/locations-data.js',
+  './js/prayer-settings.js',
   './js/calendar.js',
   './manifest.webmanifest',
   './icon.svg',
