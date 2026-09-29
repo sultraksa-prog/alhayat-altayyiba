@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.65';
+const CACHE_NAME = 'alhayat-cache-v2.1.66';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './css/calendar.css',
   './js/app.js',
   './js/azkar-data.js',
+  './js/locations-data.js',
   './js/calendar.js',
   './manifest.webmanifest',
   './icon.svg',
