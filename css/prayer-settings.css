@@ -162,32 +162,55 @@
 }
 
 /* ==================== نافذة العداد التفاعلي لدقائق الصلاة ==================== */
+/* إطار الأيقونة الفلكية الديناميكية المنسجم مع الصلاة */
+.prayer-icon-display-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(11, 37, 69, 0.05);
+  transition: all 0.25s ease;
+}
+
+.prayer-icon-display-circle svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+
+/* صندوق العداد التفاعلي المصقول */
 .offset-stepper-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #FFFFFF;
-  border: 2px solid #E2E8F0;
-  border-radius: 20px;
-  padding: 10px 14px;
-  max-width: 280px;
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 22px;
+  padding: 8px 14px;
+  max-width: 290px;
   margin: 0 auto;
-  box-shadow: 0 4px 16px rgba(11, 37, 69, 0.06);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .btn-stepper-circle {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #EEF6FC;
+  background: #FFFFFF;
   border: 1.5px solid #BCD8F0;
   color: var(--primary-blue);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.15s ease;
 }
 
@@ -206,21 +229,43 @@
 }
 
 .btn-stepper-reset {
-  background: #F1F5F9;
+  background: #FFFFFF;
   border: 1px solid #CBD5E1;
   color: var(--text-secondary);
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  margin-right: 4px;
+  margin-right: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .btn-stepper-reset:active {
-  background: #E2E8F0;
-  transform: rotate(-90deg);
+  background: #F1F5F9;
+  transform: rotate(-180deg);
+}
+
+/* زر تأكيد وحفظ الفاخر المنسجم مع هوية التطبيق الملكية */
+.btn-confirm-prayer-offset {
+  width: 100%;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #10B981 0%, #15803D 100%);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.28);
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-prayer-offset:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
 }
