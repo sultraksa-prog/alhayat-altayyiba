@@ -3211,7 +3211,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // 1. المحرك الفلكي الشمسي الاحتياطي (يعمل 100% أوفلاين في حال انقطاع السيرفر أو النت)
-  function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3) {function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3, methodNum = 4, asrMadhab = 0, offsets = {}) {
+  function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3, methodNum = 4, asrMadhab = 0, offsets = {}) {
     const rad = Math.PI / 180, deg = 180 / Math.PI;
     const d = (targetDate.getTime() / 86400000) + 2440587.5 - 2451545.0;
     const M = (357.529 + 0.98560028 * d) % 360;
@@ -3875,50 +3875,6 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  // عرض نافذة دول العالم وقائمتها
-  function renderCountriesList(query = '') {
-    if (!countriesListScroll) return;
-    countriesListScroll.innerHTML = '';
-    const cleanQ = normalizeArabic(query.trim());
-    const cleanQEn = query.trim().toLowerCase();
-
-    const filtered = WORLD_COUNTRIES.filter(c => {
-      if (!cleanQ) return true;
-      if (c.code === 'all') return true;
-      const matchAr = normalizeArabic(c.nameAr).includes(cleanQ);
-      const matchEn = c.nameEn.toLowerCase().includes(cleanQEn);
-      return matchAr || matchEn;
-    });
-
-    filtered.forEach(c => {
-      const isSelected = (c.code === 'all' && activeCountrySelection === 'all') || (activeCountrySelection === c.nameAr);
-      const item = document.createElement('div');
-      item.className = `country-select-item ${isSelected ? 'active' : ''}`;
-      item.innerHTML = `
-        <div class="country-select-item-title">
-          <span>${c.flag}</span>
-          <span>${c.nameAr}</span>
-        </div>
-        <span class="country-select-item-en">${c.nameEn}</span>
-      `;
-      item.onclick = () => {
-        if (c.code === 'all') {
-          activeCountrySelection = 'all';
-          if (currentSelectedCountryText) currentSelectedCountryText.textContent = 'جميع الدول (All Countries)';
-          if (countryTriggerFlag) countryTriggerFlag.textContent = '🌐';
-        } else {
-          activeCountrySelection = c.nameAr;
-          if (currentSelectedCountryText) currentSelectedCountryText.textContent = `${c.nameAr} (${c.nameEn})`;
-          if (countryTriggerFlag) countryTriggerFlag.textContent = c.flag;
-        }
-
-        if (countrySelectModal) countrySelectModal.classList.remove('show');
-        renderQuickCities(manualCityInput ? manualCityInput.value : '');
-      };
-      countriesListScroll.appendChild(item);
-    });
-  }
-
   if (openCountrySelectModalBtn && countrySelectModal) {
     openCountrySelectModalBtn.onclick = () => {
       if (countrySearchInput) countrySearchInput.value = '';
@@ -4032,7 +3988,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.68', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.69', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
