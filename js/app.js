@@ -3489,7 +3489,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // 4. قاعدة بيانات المدن المعتمدة مع المغرب والشام والعواصم
+  // 4. محرك إدارة واختيار الموقع والدول الشامل (مع استبقاء خوارزمية ليفنشتاين)
   const locationBadge = document.getElementById('locationBadge');
   const cityNameText = document.getElementById('cityNameText');
   const manualLocationModal = document.getElementById('manualLocationModal');
@@ -3497,147 +3497,24 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   const manualCityInput = document.getElementById('manualCityInput');
   const closeManualLocationBtn = document.getElementById('closeManualLocationBtn');
   const autoDetectLocationBtn = document.getElementById('autoDetectLocationBtn');
-  const countryFilterBar = document.getElementById('countryFilterBar');
 
-  let activeCountryFilter = 'all';
+  // نافذة اختيار دول العالم
+  const countrySelectModal = document.getElementById('countrySelectModal');
+  const openCountrySelectModalBtn = document.getElementById('openCountrySelectModalBtn');
+  const closeCountrySelectBtn = document.getElementById('closeCountrySelectBtn');
+  const countrySearchInput = document.getElementById('countrySearchInput');
+  const countriesListScroll = document.getElementById('countriesListScroll');
+  const currentSelectedCountryText = document.getElementById('currentSelectedCountryText');
+  const countryTriggerFlag = document.getElementById('countryTriggerFlag');
 
-  // قائمة دول العالم الشاملة (عربي + إنجليزي + أعلام)
-  const WORLD_COUNTRIES = [
-    { code: 'all', nameAr: 'جميع الدول', nameEn: 'All Countries', flag: '🌐' },
-    { code: 'SA', nameAr: 'المملكة العربية السعودية', nameEn: 'Saudi Arabia', flag: '🇸🇦' },
-    { code: 'EG', nameAr: 'مصر', nameEn: 'Egypt', flag: '🇪🇬' },
-    { code: 'YE', nameAr: 'اليمن', nameEn: 'Yemen', flag: '🇾🇪' },
-    { code: 'AE', nameAr: 'الإمارات العربية المتحدة', nameEn: 'United Arab Emirates', flag: '🇦🇪' },
-    { code: 'KW', nameAr: 'الكويت', nameEn: 'Kuwait', flag: '🇰🇼' },
-    { code: 'OM', nameAr: 'عُمان', nameEn: 'Oman', flag: '🇴🇲' },
-    { code: 'QA', nameAr: 'قطر', nameEn: 'Qatar', flag: '🇶🇦' },
-    { code: 'BH', nameAr: 'البحرين', nameEn: 'Bahrain', flag: '🇧🇭' },
-    { code: 'JO', nameAr: 'الأردن', nameEn: 'Jordan', flag: '🇯🇴' },
-    { code: 'PS', nameAr: 'فلسطين', nameEn: 'Palestine', flag: '🇵🇸' },
-    { code: 'SY', nameAr: 'سوريا', nameEn: 'Syria', flag: '🇸🇾' },
-    { code: 'LB', nameAr: 'لبنان', nameEn: 'Lebanon', flag: '🇱🇧' },
-    { code: 'IQ', nameAr: 'العراق', nameEn: 'Iraq', flag: '🇮🇶' },
-    { code: 'MA', nameAr: 'المغرب', nameEn: 'Morocco', flag: '🇲🇦' },
-    { code: 'DZ', nameAr: 'الجزائر', nameEn: 'Algeria', flag: '🇩🇿' },
-    { code: 'TN', nameAr: 'تونس', nameEn: 'Tunisia', flag: '🇹🇳' },
-    { code: 'SD', nameAr: 'السودان', nameEn: 'Sudan', flag: '🇸🇩' },
-    { code: 'LY', nameAr: 'ليبيا', nameEn: 'Libya', flag: '🇱🇾' },
-    { code: 'TR', nameAr: 'تركيا', nameEn: 'Turkey', flag: '🇹🇷' },
-    { code: 'ID', nameAr: 'إندونيسيا', nameEn: 'Indonesia', flag: '🇮🇩' },
-    { code: 'MY', nameAr: 'ماليزيا', nameEn: 'Malaysia', flag: '🇲🇾' },
-    { code: 'PK', nameAr: 'باكستان', nameEn: 'Pakistan', flag: '🇵🇰' },
-    { code: 'BD', nameAr: 'بنغلاديش', nameEn: 'Bangladesh', flag: '🇧🇩' },
-    { code: 'GB', nameAr: 'المملكة المتحدة (بريطانيا)', nameEn: 'United Kingdom', flag: '🇬🇧' },
-    { code: 'US', nameAr: 'الولايات المتحدة الأمريكية', nameEn: 'United States', flag: '🇺🇸' },
-    { code: 'CA', nameAr: 'كندا', nameEn: 'Canada', flag: '🇨🇦' },
-    { code: 'DE', nameAr: 'ألمانيا', nameEn: 'Germany', flag: '🇩🇪' },
-    { code: 'FR', nameAr: 'فرنسا', nameEn: 'France', flag: '🇫🇷' },
-    { code: 'AU', nameAr: 'أستراليا', nameEn: 'Australia', flag: '🇦🇺' }
-  ];
-
-  const REGION_CITIES = [
-    // المملكة العربية السعودية (مع إضافة الخرج)
-    { name: 'مكة المكرمة', country: 'السعودية', lat: 21.4225, lng: 39.8262, method: 4 },
-    { name: 'المدينة المنورة', country: 'السعودية', lat: 24.4672, lng: 39.6111, method: 4 },
-    { name: 'الرياض', country: 'السعودية', lat: 24.7136, lng: 46.6753, method: 4 },
-    { name: 'الخرج', country: 'السعودية', lat: 24.1554, lng: 47.3120, method: 4 },
-    { name: 'جدة', country: 'السعودية', lat: 21.5433, lng: 39.1728, method: 4 },
-    { name: 'الدمام', country: 'السعودية', lat: 26.4207, lng: 50.0888, method: 4 },
-    { name: 'الخبر', country: 'السعودية', lat: 26.2818, lng: 50.1989, method: 4 },
-    { name: 'الظهران', country: 'السعودية', lat: 26.2886, lng: 50.1140, method: 4 },
-    { name: 'الأحساء (الهفوف)', country: 'السعودية', lat: 25.3835, lng: 49.5862, method: 4 },
-    { name: 'الجبيل', country: 'السعودية', lat: 27.0046, lng: 49.6606, method: 4 },
-    { name: 'حفر الباطن', country: 'السعودية', lat: 28.4328, lng: 45.9708, method: 4 },
-    { name: 'بريدة', country: 'السعودية', lat: 26.3260, lng: 43.9750, method: 4 },
-    { name: 'عنيزة', country: 'السعودية', lat: 26.0844, lng: 43.9936, method: 4 },
-    { name: 'حائل', country: 'السعودية', lat: 27.5219, lng: 41.6907, method: 4 },
-    { name: 'تبوك', country: 'السعودية', lat: 28.3835, lng: 36.5662, method: 4 },
-    { name: 'عرعر', country: 'السعودية', lat: 30.9753, lng: 41.0381, method: 4 },
-    { name: 'سكاكا (الجوف)', country: 'السعودية', lat: 29.9697, lng: 40.2064, method: 4 },
-    { name: 'القريات', country: 'السعودية', lat: 31.3318, lng: 37.3428, method: 4 },
-    { name: 'أبها', country: 'السعودية', lat: 18.2164, lng: 42.5053, method: 4 },
-    { name: 'خميس مشيط', country: 'السعودية', lat: 18.3064, lng: 42.7330, method: 4 },
-    { name: 'جازان', country: 'السعودية', lat: 16.8892, lng: 42.5511, method: 4 },
-    { name: 'صبيا', country: 'السعودية', lat: 17.1495, lng: 42.6254, method: 4 },
-    { name: 'نجران', country: 'السعودية', lat: 17.4924, lng: 44.1277, method: 4 },
-    { name: 'الباحة', country: 'السعودية', lat: 20.0129, lng: 41.4677, method: 4 },
-    { name: 'الطائف', country: 'السعودية', lat: 21.2854, lng: 40.4222, method: 4 },
-    { name: 'ينبع', country: 'السعودية', lat: 24.0891, lng: 38.0637, method: 4 },
-
-    // جمهورية مصر العربية
-    { name: 'القاهرة', country: 'مصر', lat: 30.0444, lng: 31.2357, method: 5 },
-    { name: 'الإسكندرية', country: 'مصر', lat: 31.2001, lng: 29.9187, method: 5 },
-    { name: 'الجيزة', country: 'مصر', lat: 30.0131, lng: 31.2089, method: 5 },
-    { name: 'بورسعيد', country: 'مصر', lat: 31.2653, lng: 32.3019, method: 5 },
-    { name: 'السويس', country: 'مصر', lat: 29.9668, lng: 32.5498, method: 5 },
-    { name: 'المنصورة (الدقهلية)', country: 'مصر', lat: 31.0409, lng: 31.3785, method: 5 },
-    { name: 'طنطا (الغربية)', country: 'مصر', lat: 30.7865, lng: 31.0004, method: 5 },
-    { name: 'الزقازيق (الشرقية)', country: 'مصر', lat: 30.5877, lng: 31.5020, method: 5 },
-    { name: 'أسيوط', country: 'مصر', lat: 27.1783, lng: 31.1859, method: 5 },
-    { name: 'سوهاج', country: 'مصر', lat: 26.5590, lng: 31.6957, method: 5 },
-    { name: 'الأقصر', country: 'مصر', lat: 25.6872, lng: 32.6396, method: 5 },
-    { name: 'أسوان', country: 'مصر', lat: 24.0889, lng: 32.8998, method: 5 },
-
-    // الجمهورية اليمنية
-    { name: 'صنعاء', country: 'اليمن', lat: 15.3694, lng: 44.1910, method: 4 },
-    { name: 'عدن', country: 'اليمن', lat: 12.7855, lng: 45.0187, method: 4 },
-    { name: 'تعز', country: 'اليمن', lat: 13.5795, lng: 44.0209, method: 4 },
-    { name: 'الحديدة', country: 'اليمن', lat: 14.7978, lng: 42.9545, method: 4 },
-    { name: 'المكلا (حضرموت)', country: 'اليمن', lat: 14.5425, lng: 49.1242, method: 4 },
-    { name: 'إب', country: 'اليمن', lat: 13.9667, lng: 44.1667, method: 4 },
-    { name: 'ذمار', country: 'اليمن', lat: 14.5428, lng: 44.4051, method: 4 },
-    { name: 'مأرب', country: 'اليمن', lat: 15.4633, lng: 45.3258, method: 4 },
-
-    // الإمارات
-    { name: 'أبوظبي', country: 'الإمارات', lat: 24.4539, lng: 54.3773, method: 4 },
-    { name: 'دبي', country: 'الإمارات', lat: 25.2048, lng: 55.2708, method: 4 },
-    { name: 'الشارقة', country: 'الإمارات', lat: 25.3463, lng: 55.4209, method: 4 },
-    { name: 'عجمان', country: 'الإمارات', lat: 25.4052, lng: 55.5136, method: 4 },
-    { name: 'رأس الخيمة', country: 'الإمارات', lat: 25.6741, lng: 55.9804, method: 4 },
-    { name: 'الفجيرة', country: 'الإمارات', lat: 25.1288, lng: 56.3265, method: 4 },
-
-    // الكويت وعمان وقطر والبحرين والأردن وفلسطين والشام والمغرب العربي
-    { name: 'الكويت (العاصمة)', country: 'الكويت', lat: 29.3759, lng: 47.9774, method: 4 },
-    { name: 'حولي', country: 'الكويت', lat: 29.3328, lng: 48.0282, method: 4 },
-    { name: 'مسقط', country: 'عمان', lat: 23.5880, lng: 58.3829, method: 4 },
-    { name: 'صلالة', country: 'عمان', lat: 17.0151, lng: 54.0924, method: 4 },
-    { name: 'الدوحة', country: 'قطر', lat: 25.2854, lng: 51.5310, method: 4 },
-    { name: 'المنامة', country: 'البحرين', lat: 26.2285, lng: 50.5860, method: 4 },
-    { name: 'القدس الشريف', country: 'فلسطين', lat: 31.7683, lng: 35.2137, method: 3 },
-    { name: 'غزة', country: 'فلسطين', lat: 31.5017, lng: 34.4668, method: 3 },
-    { name: 'عمّان', country: 'الأردن', lat: 31.9454, lng: 35.9284, method: 3 },
-    { name: 'دمشق', country: 'سوريا', lat: 33.5138, lng: 36.2765, method: 3 },
-    { name: 'بيروت', country: 'لبنان', lat: 33.8938, lng: 35.5018, method: 3 },
-    { name: 'بغداد', country: 'العراق', lat: 33.3152, lng: 44.3661, method: 3 },
-    { name: 'الرباط', country: 'المغرب', lat: 34.0209, lng: -6.8416, method: 3 },
-    { name: 'الدار البيضاء', country: 'المغرب', lat: 33.5731, lng: -7.5898, method: 3 },
-    { name: 'تونس (العاصمة)', country: 'تونس', lat: 36.8065, lng: 10.1815, method: 3 },
-    { name: 'الجزائر (العاصمة)', country: 'الجزائر', lat: 36.7538, lng: 3.0588, method: 3 },
-    { name: 'الخرطوم', country: 'السودان', lat: 15.5007, lng: 32.5599, method: 5 },
-    { name: 'طرابلس', country: 'ليبيا', lat: 32.8872, lng: 13.1913, method: 3 },
-
-    // دول إسلامية كبرى وعواصم عالمية
-    { name: 'إسطنبول', country: 'تركيا', lat: 41.0082, lng: 28.9784, method: 13 },
-    { name: 'أنقرة', country: 'تركيا', lat: 39.9334, lng: 32.8597, method: 13 },
-    { name: 'جاكرتا', country: 'إندونيسيا', lat: -6.2088, lng: 106.8456, method: 11 },
-    { name: 'كوالالمبور', country: 'ماليزيا', lat: 3.1390, lng: 101.6869, method: 11 },
-    { name: 'إسلام آباد', country: 'باكستان', lat: 33.6844, lng: 73.0479, method: 1 },
-    { name: 'كراتشي', country: 'باكستان', lat: 24.8607, lng: 67.0011, method: 1 },
-    { name: 'دكا', country: 'بنغلاديش', lat: 23.8103, lng: 90.4125, method: 1 },
-    { name: 'لندن', country: 'المملكة المتحدة (بريطانيا)', lat: 51.5074, lng: -0.1278, method: 3 },
-    { name: 'واشنطن', country: 'الولايات المتحدة الأمريكية', lat: 38.9072, lng: -77.0369, method: 2 },
-    { name: 'نيويورك', country: 'الولايات المتحدة الأمريكية', lat: 40.7128, lng: -74.0060, method: 2 },
-    { name: 'باريس', country: 'فرنسا', lat: 48.8566, lng: 2.3522, method: 12 },
-    { name: 'برلين', country: 'ألمانيا', lat: 52.5200, lng: 13.4050, method: 3 },
-    { name: 'تورونتو', country: 'كندا', lat: 43.6532, lng: -79.3832, method: 2 },
-    { name: 'سيدني', country: 'أستراليا', lat: -33.8688, lng: 151.2093, method: 3 }
-  ];
+  let activeCountrySelection = 'all';
 
   function normalizeArabic(text) {
     if (!text) return '';
     return text.trim().toLowerCase().replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\u064B-\u065F]/g, '').replace(/^ال/, '');
   }
 
+  // خوارزمية ليفنشتاين للتشابه الإملائي (محفوظة بالكامل دون أي مساس)
   function getWordSimilarity(s1, s2) {
     const n1 = normalizeArabic(s1);
     const n2 = normalizeArabic(s2);
@@ -3666,10 +3543,26 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     const rawQuery = filterText.trim();
     const query = normalizeArabic(rawQuery);
 
+    // التحقق هل الاستعلام يطابق اسم دولة معينة
+    const matchedCountry = WORLD_COUNTRIES.find(c => 
+      c.code !== 'all' && (
+        normalizeArabic(c.nameAr).includes(query) || 
+        c.nameEn.toLowerCase().includes(rawQuery.toLowerCase())
+      )
+    );
+
+    // 1. التصفية المباشرة (بالدولة والمدينة)
     const exactMatches = REGION_CITIES.filter(c => {
-      const matchCountry = activeCountryFilter === 'all' || c.country === activeCountryFilter;
-      const matchName = !query || normalizeArabic(c.name).includes(query) || normalizeArabic(c.country).includes(query);
-      return matchCountry && matchName;
+      const matchCountryFilter = (activeCountrySelection === 'all') || 
+                                 c.country.includes(activeCountrySelection) || 
+                                 (matchedCountry && c.country.includes(matchedCountry.nameAr));
+
+      if (!matchCountryFilter) return false;
+      if (!query) return true;
+
+      const cNameNorm = normalizeArabic(c.name);
+      const cCountryNorm = normalizeArabic(c.country);
+      return cNameNorm.includes(query) || cCountryNorm.includes(query) || (matchedCountry && c.country.includes(matchedCountry.nameAr));
     });
 
     if (exactMatches.length > 0) {
@@ -3678,18 +3571,26 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         btn.type = 'button';
         btn.className = 'quick-city-btn';
         btn.innerHTML = `<span>${c.name}</span><span class="city-sub-country">${c.country}</span>`;
-        btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country);
+        btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country, c.method);
         quickCitiesGrid.appendChild(btn);
       });
       return;
     }
 
+    // 2. خوارزمية اقتراح الـ 5 مدن عند الخطأ الإملائي (محفوظة وتعمل بدقة)
     if (rawQuery.length >= 2) {
-      const fuzzySuggestions = REGION_CITIES.map(c => ({
+      const targetList = (activeCountrySelection === 'all') 
+        ? REGION_CITIES 
+        : REGION_CITIES.filter(c => c.country.includes(activeCountrySelection));
+
+      const fuzzySuggestions = targetList.map(c => ({
         city: c,
-        score: Math.max(getWordSimilarity(rawQuery, c.name), getWordSimilarity(rawQuery, c.country))
+        score: Math.max(
+          getWordSimilarity(rawQuery, c.name),
+          getWordSimilarity(rawQuery, c.country)
+        )
       }))
-      .filter(item => item.score >= 0.55)
+      .filter(item => item.score >= 0.50)
       .sort((a, b) => b.score - a.score)
       .map(item => item.city);
 
@@ -3705,12 +3606,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           btn.className = 'quick-city-btn';
           btn.style.borderColor = '#FCD34D';
           btn.innerHTML = `<span>${c.name}</span><span class="city-sub-country">${c.country}</span>`;
-          btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country);
+          btn.onclick = () => selectCity(c.name, c.lat, c.lng, c.country, c.method);
           quickCitiesGrid.appendChild(btn);
         });
         return;
       }
 
+      // 3. البحث في الخريطة العالمية أونلاين في حال تعذر التطابق الداخلي
       const searchOnlineBtn = document.createElement('button');
       searchOnlineBtn.type = 'button';
       searchOnlineBtn.className = 'quick-city-btn';
@@ -3721,18 +3623,19 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
-  async function selectCity(name, lat, lng, country = '') {
-    // 1. تحديد طريقة الحساب المعتمدة تلقائياً حسب الدولة
-    let method = 4;
-    if (country.includes('مصر') || name.includes('مصر')) method = 5;
-    else if (country.includes('باكستان') || country.includes('بنغلاديش')) method = 1;
-    else if (country.includes('تركيا')) method = 13;
-    else if (country.includes('أمريكا') || country.includes('كندا')) method = 2;
-    else if (country.includes('فرنسا')) method = 12;
-    else if (country.includes('إندونيسيا') || country.includes('ماليزيا')) method = 11;
-    else if (country.includes('المغرب') || country.includes('الأردن') || country.includes('فلسطين') || country.includes('بريطانيا')) method = 3;
+  // اختيار المدينة مع الحساب الفلكي الفوري أوفلاين
+  async function selectCity(name, lat, lng, country = '', defaultMethod = null) {
+    let method = defaultMethod || 4;
+    if (!defaultMethod) {
+      if (country.includes('مصر') || name.includes('مصر')) method = 5;
+      else if (country.includes('باكستان') || country.includes('بنغلاديش')) method = 1;
+      else if (country.includes('تركيا')) method = 13;
+      else if (country.includes('أمريكا') || country.includes('كندا')) method = 2;
+      else if (country.includes('فرنسا')) method = 12;
+      else if (country.includes('إندونيسيا') || country.includes('ماليزيا')) method = 11;
+      else if (country.includes('المغرب') || country.includes('الأردن') || country.includes('فلسطين') || country.includes('بريطانيا')) method = 3;
+    }
 
-    // 2. تقدير فارق التوقيت الأوفلاين الدقيق بناءً على خط الطول الجغرافي
     let tz = Math.round(lng / 15);
     if (country.includes('السعودية') || country.includes('اليمن') || country.includes('العراق') || country.includes('الكويت') || country.includes('قطر') || country.includes('البحرين')) tz = 3;
     else if (country.includes('الإمارات') || country.includes('عمان')) tz = 4;
@@ -3740,14 +3643,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
     userLocation = { city: name, country: country, lat: lat, lng: lng, method: method, timezoneOffset: tz };
     localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
-
-    // 3. مسح كاش المدينة القديمة فوراً لتفادي تكرار مواقيتها
     localStorage.removeItem('hayat_cached_timings');
 
     if (cityNameText) cityNameText.textContent = name;
     if (manualLocationModal) manualLocationModal.classList.remove('show');
 
-    // 4. إجراء الحساب الفلكي الشمسي الداخلي فوراً لتحديث الشاشة بلحظتها بدون نت
+    // احتساب فلكي شمسي فوري للشاشة بدون انتظار الإنترنت
     const targetDate = getTargetDateObject();
     currentTimings = calculateLocalSolarTimings(targetDate, lat, lng, tz);
 
@@ -3767,19 +3668,19 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
     updatePrayerUI({ timings: currentTimings, date: { hijri: localHijriData } });
 
-    // 5. استدعاء المزامنة في الخلفية للتأكد من المواقيت حال توفر الإنترنت
     if (navigator.onLine) {
       fetchPrayerTimes().catch(() => {});
     }
   }
 
+  // البحث في الخريطة العالمية أونلاين
   async function searchCityOnline(query) {
     const cleanQuery = query.trim();
     if (!quickCitiesGrid) return;
 
     quickCitiesGrid.innerHTML = `
       <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 16px; font-size: 13.5px;">
-        جاري البحث عن مدن قريبة في الخريطة العالمية... ⏳
+        جاري البحث في الخريطة العالمية... ⏳
       </div>
     `;
 
@@ -3787,13 +3688,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&addressdetails=1&limit=5&accept-language=ar`;
       const res = await fetch(url);
       const data = await res.json();
-
       quickCitiesGrid.innerHTML = '';
 
       if (data && data.length > 0) {
         const header = document.createElement('div');
         header.style.cssText = 'grid-column: span 3; font-size: 12.5px; color: #1D5D9B; background: #EEF6FC; border: 1px solid #BCD8F0; padding: 8px 10px; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 6px;';
-        header.textContent = `📍 مدن قريبة تم العثور عليها للاسم: "${cleanQuery}"`;
+        header.textContent = `📍 نتائج تم العثور عليها للاسم: "${cleanQuery}"`;
         quickCitiesGrid.appendChild(header);
 
         data.forEach(item => {
@@ -3812,32 +3712,82 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           btn.onclick = () => selectCity(officialCity, parseFloat(item.lat), parseFloat(item.lon), country);
           quickCitiesGrid.appendChild(btn);
         });
-
       } else {
         quickCitiesGrid.innerHTML = `
           <div style="grid-column: span 3; text-align: center; color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; padding: 12px; border-radius: 10px; font-size: 13px;">
-            ⚠️ لم يتم العثور على أي مدينة مطابقة للاسم: "<strong>${cleanQuery}</strong>"<br>
-            <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">يرجى مراجعة الحروف أو الاختيار من القائمة.</span>
+            ⚠️ لم يتم العثور على أي مدينة مطابقة للاسم: "<strong>${cleanQuery}</strong>"
           </div>
         `;
       }
     } catch (err) {
       quickCitiesGrid.innerHTML = `
         <div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 14px; font-size: 13px;">
-          تعذر الاتصال بالخريطة حالياً، يرجى الاختيار من المدن المتاحة أعلاه.
+          تعذر الاتصال بالخريطة، يرجى الاختيار من المدن المخزنة.
         </div>
       `;
     }
   }
 
-  if (countryFilterBar) {
-    countryFilterBar.querySelectorAll('.country-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        countryFilterBar.querySelectorAll('.country-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        activeCountryFilter = chip.getAttribute('data-country');
+  // عرض نافذة دول العالم وقائمتها
+  function renderCountriesList(query = '') {
+    if (!countriesListScroll) return;
+    countriesListScroll.innerHTML = '';
+    const cleanQ = normalizeArabic(query.trim());
+    const cleanQEn = query.trim().toLowerCase();
+
+    const filtered = WORLD_COUNTRIES.filter(c => {
+      if (!cleanQ) return true;
+      if (c.code === 'all') return true;
+      const matchAr = normalizeArabic(c.nameAr).includes(cleanQ);
+      const matchEn = c.nameEn.toLowerCase().includes(cleanQEn);
+      return matchAr || matchEn;
+    });
+
+    filtered.forEach(c => {
+      const isSelected = (c.code === 'all' && activeCountrySelection === 'all') || (activeCountrySelection === c.nameAr);
+      const item = document.createElement('div');
+      item.className = `country-select-item ${isSelected ? 'active' : ''}`;
+      item.innerHTML = `
+        <div class="country-select-item-title">
+          <span>${c.flag}</span>
+          <span>${c.nameAr}</span>
+        </div>
+        <span class="country-select-item-en">${c.nameEn}</span>
+      `;
+      item.onclick = () => {
+        if (c.code === 'all') {
+          activeCountrySelection = 'all';
+          if (currentSelectedCountryText) currentSelectedCountryText.textContent = 'جميع الدول (All Countries)';
+          if (countryTriggerFlag) countryTriggerFlag.textContent = '🌐';
+        } else {
+          activeCountrySelection = c.nameAr;
+          if (currentSelectedCountryText) currentSelectedCountryText.textContent = `${c.nameAr} (${c.nameEn})`;
+          if (countryTriggerFlag) countryTriggerFlag.textContent = c.flag;
+        }
+
+        if (countrySelectModal) countrySelectModal.classList.remove('show');
         renderQuickCities(manualCityInput ? manualCityInput.value : '');
-      });
+      };
+      countriesListScroll.appendChild(item);
+    });
+  }
+
+  if (openCountrySelectModalBtn && countrySelectModal) {
+    openCountrySelectModalBtn.onclick = () => {
+      if (countrySearchInput) countrySearchInput.value = '';
+      renderCountriesList('');
+      countrySelectModal.classList.add('show');
+      setTimeout(() => { if (countrySearchInput) countrySearchInput.focus(); }, 150);
+    };
+  }
+
+  if (closeCountrySelectBtn && countrySelectModal) {
+    closeCountrySelectBtn.onclick = () => countrySelectModal.classList.remove('show');
+  }
+
+  if (countrySearchInput) {
+    countrySearchInput.addEventListener('input', (e) => {
+      renderCountriesList(e.target.value);
     });
   }
 
@@ -3856,9 +3806,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   if (locationBadge) {
     locationBadge.style.cursor = 'pointer';
-    locationBadge.addEventListener('click', () => {
-      openManualLocationModal();
-    });
+    locationBadge.addEventListener('click', openManualLocationModal);
   }
 
   if (autoDetectLocationBtn) {
@@ -3883,7 +3831,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
             selectCity(detectedCity, lat, lng, '');
           },
           (err) => {
-            alert('تعذر تحديد موقع GPS بدقة، يمكنك اختيار محافظتك من القائمة بالأسفل.');
+            alert('تعذر تحديد موقع GPS بدقة، يمكنك اختيار مدينتك من القائمة.');
             autoDetectLocationBtn.innerHTML = `<span>تحديد موقعي الحالي تلقائياً (GPS)</span>`;
           },
           { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
@@ -3937,7 +3885,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.65', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.66', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
