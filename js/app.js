@@ -3164,8 +3164,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== محرك مواقيت الصلاة والتواريخ الموحد ====================
   const DEFAULT_LOCATION = {
     city: 'مكة المكرمة',
+    country: 'المملكة العربية السعودية',
     lat: 21.4225,
-    lng: 39.8262
+    lng: 39.8262,
+    method: 4,
+    asrMadhab: 0,
+    prayerOffsets: { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 }
   };
 
   const PRAYER_KEYS = [
@@ -3207,7 +3211,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // 1. المحرك الفلكي الشمسي الاحتياطي (يعمل 100% أوفلاين في حال انقطاع السيرفر أو النت)
-  function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3) {
+  function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3) {function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3, methodNum = 4, asrMadhab = 0, offsets = {}) {
     const rad = Math.PI / 180, deg = 180 / Math.PI;
     const d = (targetDate.getTime() / 86400000) + 2440587.5 - 2451545.0;
     const M = (357.529 + 0.98560028 * d) % 360;
@@ -3226,26 +3230,50 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       return Math.acos(cosH) * deg / 15;
     };
 
-    const fajrH = getH(-18.5);
+    let fajrAngle = -18.5;
+    let ishaAngle = -17.0;
+    let isIshaInterval90 = true;
+
+    if (methodNum === 5) { fajrAngle = -19.5; ishaAngle = -17.5; isIshaInterval90 = false; }
+    else if (methodNum === 1) { fajrAngle = -18.0; ishaAngle = -18.0; isIshaInterval90 = false; }
+    else if (methodNum === 2) { fajrAngle = -15.0; ishaAngle = -15.0; isIshaInterval90 = false; }
+    else if (methodNum === 3) { fajrAngle = -18.0; ishaAngle = -17.0; isIshaInterval90 = false; }
+    else if (methodNum === 13) { fajrAngle = -18.0; ishaAngle = -17.0; isIshaInterval90 = false; }
+    else if (methodNum === 11) { fajrAngle = -20.0; ishaAngle = -18.0; isIshaInterval90 = false; }
+
+    const fajrH = getH(fajrAngle);
     const sunH = getH(-0.833);
-    const asrAlt = Math.atan(1 / (1 + Math.tan(Math.abs(lat - delta) * rad))) * deg;
+
+    // تطبيق مذهب العصر: 1 للجمهور، 2 للحنفي
+    const shadowFactor = (asrMadhab === 1) ? 2 : 1;
+    const asrAlt = Math.atan(1 / (shadowFactor + Math.tan(Math.abs(lat - delta) * rad))) * deg;
     const asrH = getH(asrAlt);
     const maghribDec = solarNoon + (sunH || 1.05);
 
-    const fmt = (dec) => {
+    // دالة التنسيق المعتمدة على Math.round وتطبيق دقائق التعديل اليدوي
+    const fmt = (dec, offsetKey) => {
       if (dec === null || isNaN(dec)) return '00:00';
       dec = (dec + 24) % 24;
-      const h = Math.floor(dec), m = Math.floor((dec - h) * 60);
+      let totalMinutes = Math.round(dec * 60);
+
+      const extraMinutes = (offsets && offsets[offsetKey]) ? parseInt(offsets[offsetKey], 10) : 0;
+      totalMinutes += extraMinutes;
+
+      totalMinutes = (totalMinutes + 1440) % 1440;
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     };
 
+    const ishaDec = isIshaInterval90 ? (maghribDec + 1.5) : (solarNoon + (getH(ishaAngle) || 1.5));
+
     return {
-      Fajr: fmt(solarNoon - (fajrH || 1.35)),
-      Sunrise: fmt(solarNoon - (sunH || 1.05)),
-      Dhuhr: fmt(solarNoon + (2 / 60)),
-      Asr: fmt(solarNoon + (asrH || 3.3)),
-      Maghrib: fmt(maghribDec),
-      Isha: fmt(maghribDec + 1.5)
+      Fajr: fmt(solarNoon - (fajrH || 1.35), 'Fajr'),
+      Sunrise: fmt(solarNoon - (sunH || 1.05), 'Sunrise'),
+      Dhuhr: fmt(solarNoon + (2 / 60), 'Dhuhr'),
+      Asr: fmt(solarNoon + (asrH || 3.3) + (2 / 60), 'Asr'), // +2 دقيقة احترازية
+      Maghrib: fmt(maghribDec + (2 / 60), 'Maghrib'),
+      Isha: fmt(ishaDec, 'Isha')
     };
   }
 
@@ -3731,33 +3759,38 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
 
   // اختيار المدينة مع الحساب الفلكي الفوري أوفلاين
-  async function selectCity(name, lat, lng, country = '', defaultMethod = null) {
-    let method = defaultMethod || 4;
-    if (!defaultMethod) {
-      if (country.includes('مصر') || name.includes('مصر')) method = 5;
-      else if (country.includes('باكستان') || country.includes('بنغلاديش')) method = 1;
-      else if (country.includes('تركيا')) method = 13;
-      else if (country.includes('أمريكا') || country.includes('كندا')) method = 2;
-      else if (country.includes('فرنسا')) method = 12;
-      else if (country.includes('إندونيسيا') || country.includes('ماليزيا')) method = 11;
-      else if (country.includes('المغرب') || country.includes('الأردن') || country.includes('فلسطين') || country.includes('بريطانيا')) method = 3;
+  async function selectCity(name, lat, lng, country = '', manualMethod = null) {
+    // جلب الإعداد التلقائي المعتمد لتلك الدولة من الملف المنفصل
+    let autoProfile = { method: 4, asrMadhab: 0, tz: 3 };
+    if (typeof getAutoCountryPrayerProfile === 'function') {
+      autoProfile = getAutoCountryPrayerProfile(country);
     }
 
-    let tz = Math.round(lng / 15);
-    if (country.includes('السعودية') || country.includes('اليمن') || country.includes('العراق') || country.includes('الكويت') || country.includes('قطر') || country.includes('البحرين')) tz = 3;
-    else if (country.includes('الإمارات') || country.includes('عمان')) tz = 4;
-    else if (country.includes('مصر')) tz = 2;
+    const method = manualMethod || autoProfile.method;
+    const asrMadhab = (typeof userLocation.asrMadhab !== 'undefined' && manualMethod) ? userLocation.asrMadhab : autoProfile.asrMadhab;
+    const tz = autoProfile.tz;
+    const savedOffsets = userLocation.prayerOffsets || { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 };
 
-    userLocation = { city: name, country: country, lat: lat, lng: lng, method: method, timezoneOffset: tz };
+    userLocation = {
+      city: name,
+      country: country,
+      lat: lat,
+      lng: lng,
+      method: method,
+      asrMadhab: asrMadhab,
+      timezoneOffset: tz,
+      prayerOffsets: savedOffsets
+    };
+
     localStorage.setItem('hayat_saved_location', JSON.stringify(userLocation));
     localStorage.removeItem('hayat_cached_timings');
 
     if (cityNameText) cityNameText.textContent = name;
     if (manualLocationModal) manualLocationModal.classList.remove('show');
 
-    // احتساب فلكي شمسي فوري للشاشة بدون انتظار الإنترنت
+    // حساب فلكي شمسي فوري للشاشة بدون نت
     const targetDate = getTargetDateObject();
-    currentTimings = calculateLocalSolarTimings(targetDate, lat, lng, tz);
+    currentTimings = calculateLocalSolarTimings(targetDate, lat, lng, tz, method, asrMadhab, savedOffsets);
 
     let localHijriData = null;
     try {
@@ -3774,11 +3807,18 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     } catch(e) {}
 
     updatePrayerUI({ timings: currentTimings, date: { hijri: localHijriData } });
+    if (typeof syncPrayerSettingsUI === 'function') syncPrayerSettingsUI();
 
     if (navigator.onLine) {
       fetchPrayerTimes().catch(() => {});
     }
   }
+
+  // دالة تحديث الحسابات فورياً عند تغيير أي خيار من شاشة إعدادات المواقيت المستقلة
+  window.applyPrayerSettingsUpdate = function() {
+    const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location')) || userLocation;
+    selectCity(savedLoc.city, savedLoc.lat, savedLoc.lng, savedLoc.country, savedLoc.method);
+  };
 
   // البحث في الخريطة العالمية أونلاين
   async function searchCityOnline(query) {
@@ -3992,7 +4032,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.67', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.68', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
