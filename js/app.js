@@ -3509,9 +3509,20 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   let activeCountrySelection = 'all';
 
+  // دالة متطورة لتنظيف وتجريد النصوص العربية والإنجليزية
   function normalizeArabic(text) {
     if (!text) return '';
-    return text.trim().toLowerCase().replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\u064B-\u065F]/g, '').replace(/^ال/, '');
+    return text
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .replace(/(^|\s)ال/g, '$1') // حذف الـ التعريف من بداية أي كلمة في الجملة
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   // خوارزمية ليفنشتاين للتشابه الإملائي (محفوظة بالكامل دون أي مساس)
@@ -3537,32 +3548,81 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return maxLen === 0 ? 1 : 1 - distance / maxLen;
   }
 
+  // دالة ذكية تفحص انتماء المدينة للدولة المختارة ثنائياً (عربي وإنجليزي واسم مركب)
+  function isCityBelongsToCountry(cityObj, countryTarget) {
+    if (!countryTarget || countryTarget === 'all') return true;
+    
+    const targetNorm = normalizeArabic(countryTarget);
+    const cityCountryNorm = normalizeArabic(cityObj.country);
+
+    // 1. فحص التطابق بالاتجاهين
+    if (cityCountryNorm.includes(targetNorm) || targetNorm.includes(cityCountryNorm)) {
+      return true;
+    }
+
+    // 2. فحص عبر مصفوفة WORLD_COUNTRIES إن وُجدت
+    if (typeof WORLD_COUNTRIES !== 'undefined') {
+      const matched = WORLD_COUNTRIES.find(w => 
+        w.code !== 'all' && (
+          normalizeArabic(w.nameAr).includes(targetNorm) ||
+          targetNorm.includes(normalizeArabic(w.nameAr)) ||
+          w.nameEn.toLowerCase().includes(countryTarget.toLowerCase()) ||
+          countryTarget.toLowerCase().includes(w.nameEn.toLowerCase())
+        )
+      );
+
+      if (matched) {
+        const ar = normalizeArabic(matched.nameAr);
+        const en = matched.nameEn.toLowerCase();
+        if (cityCountryNorm.includes(ar) || ar.includes(cityCountryNorm)) return true;
+        if (cityObj.country.toLowerCase().includes(en) || en.includes(cityObj.country.toLowerCase())) return true;
+      }
+    }
+
+    return false;
+  }
+
   function renderQuickCities(filterText = '') {
     if (!quickCitiesGrid) return;
     quickCitiesGrid.innerHTML = '';
     const rawQuery = filterText.trim();
     const query = normalizeArabic(rawQuery);
 
-    // التحقق هل الاستعلام يطابق اسم دولة معينة
-    const matchedCountry = WORLD_COUNTRIES.find(c => 
-      c.code !== 'all' && (
-        normalizeArabic(c.nameAr).includes(query) || 
-        c.nameEn.toLowerCase().includes(rawQuery.toLowerCase())
-      )
-    );
+    // فحص هل كتب المستخدم اسم دولة في مربع البحث
+    let matchedCountryFromSearch = null;
+    if (typeof WORLD_COUNTRIES !== 'undefined' && rawQuery) {
+      matchedCountryFromSearch = WORLD_COUNTRIES.find(c => 
+        c.code !== 'all' && (
+          normalizeArabic(c.nameAr).includes(query) || 
+          query.includes(normalizeArabic(c.nameAr)) ||
+          c.nameEn.toLowerCase().includes(rawQuery.toLowerCase())
+        )
+      );
+    }
 
-    // 1. التصفية المباشرة (بالدولة والمدينة)
+    // 1. فلترة وتصفية المدن المباشرة
     const exactMatches = REGION_CITIES.filter(c => {
-      const matchCountryFilter = (activeCountrySelection === 'all') || 
-                                 c.country.includes(activeCountrySelection) || 
-                                 (matchedCountry && c.country.includes(matchedCountry.nameAr));
-
+      // أ) فلترة الدولة المختارة من القائمة المنبثقة
+      const matchCountryFilter = isCityBelongsToCountry(c, activeCountrySelection);
       if (!matchCountryFilter) return false;
-      if (!query) return true;
 
+      // إذا لم يكتب أي نص بحث، اعرض كافة مدن هذه الدولة
+      if (!rawQuery) return true;
+
+      // ب) مطابقة اسم المدينة
       const cNameNorm = normalizeArabic(c.name);
+      if (cNameNorm.includes(query) || query.includes(cNameNorm)) return true;
+
+      // ج) مطابقة في حال كتب المستخدم اسم الدولة في مربع البحث
+      if (matchedCountryFromSearch && isCityBelongsToCountry(c, matchedCountryFromSearch.nameAr)) {
+        return true;
+      }
+
+      // د) مطابقة اسم الدولة المباشر المسجل مع المدينة
       const cCountryNorm = normalizeArabic(c.country);
-      return cNameNorm.includes(query) || cCountryNorm.includes(query) || (matchedCountry && c.country.includes(matchedCountry.nameAr));
+      if (cCountryNorm.includes(query) || query.includes(cCountryNorm)) return true;
+
+      return false;
     });
 
     if (exactMatches.length > 0) {
@@ -3581,7 +3641,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     if (rawQuery.length >= 2) {
       const targetList = (activeCountrySelection === 'all') 
         ? REGION_CITIES 
-        : REGION_CITIES.filter(c => c.country.includes(activeCountrySelection));
+        : REGION_CITIES.filter(c => isCityBelongsToCountry(c, activeCountrySelection));
 
       const fuzzySuggestions = targetList.map(c => ({
         city: c,
@@ -3621,6 +3681,53 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       searchOnlineBtn.onclick = () => searchCityOnline(rawQuery);
       quickCitiesGrid.appendChild(searchOnlineBtn);
     }
+  }
+
+  // عرض نافذة دول العالم وقائمتها
+  function renderCountriesList(query = '') {
+    if (!countriesListScroll || typeof WORLD_COUNTRIES === 'undefined') return;
+    countriesListScroll.innerHTML = '';
+    const cleanQ = normalizeArabic(query.trim());
+    const cleanQEn = query.trim().toLowerCase();
+
+    const filtered = WORLD_COUNTRIES.filter(c => {
+      if (!cleanQ) return true;
+      if (c.code === 'all') return true;
+      const matchAr = normalizeArabic(c.nameAr).includes(cleanQ);
+      const matchEn = c.nameEn.toLowerCase().includes(cleanQEn);
+      return matchAr || matchEn;
+    });
+
+    filtered.forEach(c => {
+      const isSelected = (c.code === 'all' && activeCountrySelection === 'all') || (activeCountrySelection === c.nameAr);
+      const item = document.createElement('div');
+      item.className = `country-select-item ${isSelected ? 'active' : ''}`;
+      item.innerHTML = `
+        <div class="country-select-item-title">
+          <span>${c.flag}</span>
+          <span>${c.nameAr}</span>
+        </div>
+        <span class="country-select-item-en">${c.nameEn}</span>
+      `;
+      item.onclick = () => {
+        if (c.code === 'all') {
+          activeCountrySelection = 'all';
+          if (currentSelectedCountryText) currentSelectedCountryText.textContent = 'جميع الدول (All Countries)';
+          if (countryTriggerFlag) countryTriggerFlag.textContent = '🌐';
+        } else {
+          activeCountrySelection = c.nameAr;
+          if (currentSelectedCountryText) currentSelectedCountryText.textContent = `${c.nameAr} (${c.nameEn})`;
+          if (countryTriggerFlag) countryTriggerFlag.textContent = c.flag;
+        }
+
+        // تفريغ مربع البحث لتظهر كافة مدن الدولة المختارة فوراً
+        if (manualCityInput) manualCityInput.value = '';
+
+        if (countrySelectModal) countrySelectModal.classList.remove('show');
+        renderQuickCities('');
+      };
+      countriesListScroll.appendChild(item);
+    });
   }
 
   // اختيار المدينة مع الحساب الفلكي الفوري أوفلاين
@@ -3885,7 +3992,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.66', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.67', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
