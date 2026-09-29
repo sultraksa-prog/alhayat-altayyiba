@@ -2165,22 +2165,18 @@
           <span>أو اختر المحافظة يدوياً</span>
         </div>
 
-        <!-- شريط تصفية الدول السريعة -->
-        <div class="country-filter-bar" id="countryFilterBar">
-          <button type="button" class="country-chip active" data-country="all">الكل</button>
-          <button type="button" class="country-chip" data-country="السعودية">السعودية</button>
-          <button type="button" class="country-chip" data-country="مصر">مصر</button>
-          <button type="button" class="country-chip" data-country="اليمن">اليمن</button>
-          <button type="button" class="country-chip" data-country="الإمارات">الإمارات</button>
-          <button type="button" class="country-chip" data-country="الكويت">الكويت</button>
-          <button type="button" class="country-chip" data-country="عمان">عُمان</button>
-          <button type="button" class="country-chip" data-country="قطر">قطر</button>
-          <button type="button" class="country-chip" data-country="البحرين">البحرين</button>
+        <!-- زر اختيار الدولة الشامل المطور -->
+        <div class="country-picker-trigger-row" style="margin-bottom: 8px;">
+          <button type="button" class="country-trigger-btn" id="openCountrySelectModalBtn">
+            <span class="country-trigger-icon" id="countryTriggerFlag">🌐</span>
+            <span class="country-trigger-name" id="currentSelectedCountryText">جميع الدول (All Countries)</span>
+            <span class="country-trigger-arrow">▼</span>
+          </button>
         </div>
 
-        <!-- مربع البحث المباشر -->
+        <!-- مربع البحث المباشر الذكي الشامل للدول والمدن والمحافظات -->
         <div class="search-input-box" style="margin-bottom: 10px;">
-          <input type="text" id="manualCityInput" placeholder="ابحث باسم المحافظة أو المدينة...">
+          <input type="text" id="manualCityInput" placeholder="ابحث باسم الدولة أو المدينة أو المحافظة...">
         </div>
 
         <!-- قائمة المحافظات والمدن -->
@@ -2189,6 +2185,20 @@
         <div class="modal-actions-row" style="margin-top: 10px;">
           <button type="button" class="modal-btn-link" id="closeManualLocationBtn">إلغاء</button>
         </div>
+      </div>
+    </div>
+
+    <!-- نافذة اختيار دول العالم المنبثقة بالبحث الثنائي -->
+    <div class="custom-modal-backdrop" id="countrySelectModal" style="z-index: 350;">
+      <div class="custom-modal-card" style="max-height: 85vh; display: flex; flex-direction: column; padding: 18px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 class="modal-card-title" style="color: var(--primary-blue); margin: 0; font-size: 16px;">اختر الدولة (Select Country)</h3>
+          <button type="button" class="modal-btn-link" id="closeCountrySelectBtn" style="font-size: 18px;">✕</button>
+        </div>
+        <div class="search-input-box" style="margin-bottom: 10px;">
+          <input type="text" id="countrySearchInput" placeholder="ابحث باسم الدولة (عربي / English)...">
+        </div>
+        <div class="countries-list-scroll" id="countriesListScroll"></div>
       </div>
     </div>
 
