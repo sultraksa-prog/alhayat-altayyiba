@@ -794,7 +794,7 @@
       </div>
     </div>
 
-    <!-- 6. نافذة اختيار وقت صلاة الجمعة والخطبة -->
+    <!-- 6. نافذة اختيار وقت صلاة الجمعة والخطبة المطورة -->
     <div class="custom-modal-backdrop" id="fridaySettingsModal" style="z-index: 340;">
       <div class="custom-modal-card" style="max-width: 330px; padding: 20px 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -806,7 +806,8 @@
         </div>
 
         <div class="madhab-options-group">
-          <div class="madhab-select-card active" data-friday-mode="zawal">
+          <!-- خيار الزوال -->
+          <div class="madhab-select-card active" data-friday-mode="zawal" id="cardFridayZawal">
             <span class="custom-radio-circle">✓</span>
             <div style="text-align: right;">
               <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">عند الزوال (الرسمي والجمهور)</h4>
@@ -814,13 +815,28 @@
             </div>
           </div>
 
-          <div class="madhab-select-card" data-friday-mode="hanbali_early">
+          <!-- خيار التبكير الحنبلي مع حقل الدقائق -->
+          <div class="madhab-select-card" data-friday-mode="hanbali_early" id="cardFridayEarly">
             <span class="custom-radio-circle"></span>
-            <div style="text-align: right;">
+            <div style="text-align: right; width: 100%;">
               <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">التبكير قبل الزوال (الحنبلي)</h4>
-              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">تقديم بدء الخطبة 25 دقيقة قبل الزوال (رخصة المذهب الحنبلي في بعض الجوامع)</p>
+              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">رخصة المذهب الحنبلي لتقديم بدء الخطبة عن وقت الزوال</p>
+              
+              <!-- حقل تحديد الدقائق -->
+              <div class="friday-custom-early-box" id="fridayEarlyMinutesWrapper" style="display: none; margin-top: 8px;">
+                <label style="font-size: 11.5px; font-weight: 700; color: var(--primary-blue); display: block; margin-bottom: 4px;">التبكير قبل الزوال بمقدار (دقيقة):</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="number" id="inputFridayEarlyMinutes" min="5" max="60" value="25" class="friday-minute-input">
+                  <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">دقيقة</span>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- زر حفظ واعتماد وقت صلاة الجمعة -->
+        <div style="margin-top: 18px;">
+          <button type="button" class="btn-confirm-prayer-offset" id="btnSaveFridaySettings" style="width: 100%; padding: 11px 0; font-size: 14.5px;">حفظ واعتماد</button>
         </div>
       </div>
     </div>
