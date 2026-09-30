@@ -276,3 +276,74 @@
   transform: scale(0.98) !important;
   box-shadow: 0 2px 8px var(--action-btn-shadow) !important;
 }
+
+/* ==================== تنسيقات إعدادات الإقامة ورمضان المحدثة ==================== */
+.iqamah-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.iqamah-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+}
+
+.iqamah-row-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.iqamah-row-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iqamah-step-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: var(--primary-blue);
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.iqamah-step-btn:active {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.iqamah-val-text {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  min-width: 50px;
+  text-align: center;
+}
+
+.ramadan-custom-input-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.ramadan-custom-input-box input:focus {
+  border-color: #16A34A;
+}
+
