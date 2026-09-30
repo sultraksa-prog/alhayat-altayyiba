@@ -3456,6 +3456,8 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     }
   }
 
+  let dateAutoCycleSeconds = 0;
+
   function renderDateDisplay() {
     const dateTextDisplay = document.getElementById('dateTextDisplay');
     const dayNameDisplay = document.getElementById('dayNameDisplay');
@@ -3463,14 +3465,20 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     if (dayNameDisplay) dayNameDisplay.textContent = currentDayName;
     if (dateTextDisplay) {
       dateTextDisplay.style.opacity = '0';
+      dateTextDisplay.style.transform = 'translateY(-3px)';
       setTimeout(() => {
-        dateTextDisplay.textContent = (activeDateMode === 'hijri') ? (currentHijriText || '9 ربيع الثاني، 1448 هـ') : currentGregorianText;
+        dateTextDisplay.textContent = (activeDateMode === 'hijri') 
+          ? (currentHijriText || '19 ربيع الثاني، 1448 هـ') 
+          : currentGregorianText;
         dateTextDisplay.style.opacity = '1';
-      }, 100);
+        dateTextDisplay.style.transform = 'translateY(0)';
+      }, 160);
     }
   }
 
-  function toggleDateMode() {
+  // دالة تقليب التاريخ (تُصفّر عداد الـ 15 ثانية عند النقر اليدوي)
+  function toggleDateMode(resetCycle = true) {
+    if (resetCycle) dateAutoCycleSeconds = 0;
     activeDateMode = (activeDateMode === 'hijri') ? 'gregorian' : 'hijri';
     renderDateDisplay();
   }
@@ -3515,6 +3523,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
       countdownCycleSeconds++;
       let now = new Date();
+      // التناوب التلقائي للتاريخ كل 15 ثانية بين الهجري والميلادي
+      dateAutoCycleSeconds++;
+      if (dateAutoCycleSeconds % 15 === 0) {
+        toggleDateMode(false);
+      }
+      
       if (userLocation.timezone) {
         try {
           now = new Date(new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
@@ -3748,9 +3762,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // قلب التاريخ محصور فقط بالنقر على النص أو مؤشر ⇅ (وليس كامل الحاوية)
-  if (dateFlipBtn) dateFlipBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
-  if (dateTextClickArea) dateTextClickArea.addEventListener('click', (e) => { e.stopPropagation(); toggleDateMode(); });
+  // تقليب يدوي فوري للتاريخ عند النقر مع إعادة ضبط عداد الـ 15 ثانية
+  if (dateTextClickArea) {
+    dateTextClickArea.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDateMode(true);
+    });
+  }
 
   // السحب العمودي فقط على كرت التاريخ
   if (dateStripContainer) {
@@ -4276,7 +4294,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.82', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.83', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
