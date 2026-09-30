@@ -133,29 +133,31 @@
         </div>
       </section>
 
-      <!-- كرت التاريخ الذكي -->
-      <!-- كرت التاريخ الذكي المطور -->
+      <!-- كرت التاريخ الذكي المطور (تناوب تلقائي + أسهم دائرية بارزة) -->
       <section class="date-strip" id="dateStripContainer">
-        <!-- زر "اليوم" العائم أعلى يسار حاوية التاريخ -->
+        <!-- زر "اليوم" العائم -->
         <button type="button" class="return-today-pill" id="returnTodayBtn" style="display: none;">اليوم</button>
 
-        <!-- السهم الأيمن: اليوم السابق -->
+        <!-- السهم الأيمن: اليوم السابق (مؤطر وسميك) -->
         <button type="button" class="date-nav-btn" id="prevDayBtn" title="اليوم السابق">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
         </button>
 
-        <!-- مساحة التاريخ واسم اليوم -->
+        <!-- مساحة التاريخ واسم اليوم (قابلة للنقر للتقليب اليدوي) -->
         <div class="date-info-central">
-          <div class="date-main-row" id="dateTextClickArea" title="انقر أو اسحب لقلب التاريخ">
-            <span class="day-name-badge" id="dayNameDisplay">الأحد</span>
-            <span id="dateTextDisplay">9 ربيع الثاني، 1448 هـ</span>
-            <span class="date-flip-indicator" id="dateFlipBtn">⇅</span>
+          <div class="date-main-row" id="dateTextClickArea" title="انقر للتبديل بين التاريخ الهجري والميلادي">
+            <span class="day-name-badge" id="dayNameDisplay">--</span>
+            <span id="dateTextDisplay">--</span>
           </div>
         </div>
 
-        <!-- السهم الأيسر: اليوم التالي -->
+        <!-- السهم الأيسر: اليوم التالي (مؤطر وسميك) -->
         <button type="button" class="date-nav-btn" id="nextDayBtn" title="اليوم التالي">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
         </button>
       </section>
 
