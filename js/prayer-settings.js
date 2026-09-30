@@ -357,4 +357,56 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   syncPrayerSettingsUI();
+
+  // ==================== منظومة مدد الإقامة والجمعة ورمضان ====================
+  // مدد الإقامة الافتراضية النظامية المعتمدة
+  const DEFAULT_IQAMAH_MINUTES = {
+    Fajr: 20,
+    Dhuhr: 15,
+    Asr: 15,
+    Maghrib: 10, // 10 دقائق رسمياً وسنة
+    Isha: 15
+  };
+
+  function getIqamahSettings() {
+    return JSON.parse(localStorage.getItem('hayat_iqamah_settings')) || DEFAULT_IQAMAH_MINUTES;
+  }
+
+  function getFridayMethodSetting() {
+    return localStorage.getItem('hayat_friday_method') || 'zawal'; // 'zawal' | 'hanbali_early'
+  }
+
+  // ربط أزرار الإعدادات في شاشة المواقيت
+  const toggleRamadanIshaRule = document.getElementById('toggleRamadanIshaRule');
+  const togglePrayerExpirationWarning = document.getElementById('togglePrayerExpirationWarning');
+  const openFridaySettingsModalBtn = document.getElementById('openFridaySettingsModalBtn');
+  const displayFridayMadhabText = document.getElementById('displayFridayMadhabText');
+
+  if (toggleRamadanIshaRule) {
+    toggleRamadanIshaRule.checked = localStorage.getItem('hayat_ramadan_isha_rule') !== 'false';
+    toggleRamadanIshaRule.onchange = (e) => {
+      localStorage.setItem('hayat_ramadan_isha_rule', e.target.checked);
+      if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
+    };
+  }
+
+  if (togglePrayerExpirationWarning) {
+    togglePrayerExpirationWarning.checked = localStorage.getItem('hayat_show_expiration_warning') !== 'false';
+    togglePrayerExpirationWarning.onchange = (e) => {
+      localStorage.setItem('hayat_show_expiration_warning', e.target.checked);
+    };
+  }
+
+  if (openFridaySettingsModalBtn) {
+    openFridaySettingsModalBtn.onclick = () => {
+      const curMethod = getFridayMethodSetting();
+      const newMethod = (curMethod === 'zawal') ? 'hanbali_early' : 'zawal';
+      localStorage.setItem('hayat_friday_method', newMethod);
+      if (displayFridayMadhabText) {
+        displayFridayMadhabText.textContent = (newMethod === 'zawal') ? 'عند الزوال (مذهب الجمهور والمعتمد رسمياً)' : 'التبكير قبل الزوال بـ 25 دقيقة (المذهب الحنبلي)';
+      }
+      if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
+    };
+  }
+  
 });
