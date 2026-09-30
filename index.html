@@ -48,9 +48,9 @@
         </div>
       </header>
 
-      <!-- كرت الصلاة العلوي الكبير المطور (محاذاة لليمين + ساعة حية + مسار زمني) -->
+      <!-- كرت الصلاة العلوي الرشيق المدمج (بدون طبقة شفافة + محاذاة لليمين + مسار زمني نحيف) -->
       <section class="hero-card">
-        <!-- العلامة المائية الفاخرة لصرح الحياة الطيبة (تستقر في اليسار) -->
+        <!-- العلامة المائية الفاخرة لصرح الحياة الطيبة تستقر في اليسار -->
         <div class="mosque-watermark">
           <svg viewBox="0 0 512 512" width="100%" height="100%">
             <defs>
@@ -82,57 +82,48 @@
           </svg>
         </div>
 
-        <div class="hero-content-rtl">
-          <!-- 1. الساعة الحية الرقمية بالثواني (الجهة اليمنى) -->
-          <div class="hero-live-clock-section">
-            <span class="live-clock-label">الوقت الحالي</span>
-            <div class="live-clock-digits-row">
-              <span class="live-clock-num" id="liveClockDisplay">--:--:--</span>
+        <div class="hero-compact-content">
+          <!-- شريط تنبيه قرب خروج وقت الصلاة -->
+          <div class="prayer-expiration-banner" id="prayerExpirationBanner" style="display: none;">
+            <span class="warning-icon">⚠️</span>
+            <span id="prayerExpirationText">يوشك وقت الصلاة على الخروج</span>
+          </div>
+
+          <!-- الصف العلوي المدمج: الساعة الحية بدون ثواني + وسم الصلاة -->
+          <div class="hero-top-info-row">
+            <div class="hero-live-clock-badge">
+              <span class="live-clock-digits" id="liveClockDisplay">--:--</span>
               <span class="live-clock-period" id="liveClockPeriod">--</span>
+            </div>
+
+            <div class="hero-prayer-status-badge">
+              <span class="timeline-pulse-dot"></span>
+              <span id="currentPrayerStatusTag">باقي على الصلاة</span>
+              <span class="ramadan-active-pill" id="ramadanActivePill" style="display: none;">🌙 رمضان</span>
             </div>
           </div>
 
-          <!-- 2. كرت المسار الزمني والعد التنازلي بين الصلاتين (نموذج الصورة 2 الفاخر) -->
-          <div class="prayer-timeline-card" id="prayerTimelineCard">
-            <!-- تنبيه قرب خروج وقت الصلاة -->
-            <div class="prayer-expiration-banner" id="prayerExpirationBanner" style="display: none;">
-              <span class="warning-icon">⚠️</span>
-              <span id="prayerExpirationText">يوشك وقت الصلاة على الخروج</span>
-            </div>
+          <!-- العداد التنازلي الكبير للصلاة القادمة -->
+          <div class="hero-countdown-row">
+            <span class="hero-countdown-digits" id="countdownTimer">00 : 00 : 00</span>
+          </div>
 
-            <div class="timeline-header-row">
-              <div class="timeline-title-group">
-                <span class="timeline-pulse-dot"></span>
-                <span class="timeline-status-tag" id="currentPrayerStatusTag">باقي على الصلاة</span>
+          <!-- مسار التقدم الزمني المندمج النحيف -->
+          <div class="hero-timeline-section">
+            <div class="hero-timeline-track">
+              <div class="hero-timeline-fill" id="timelineTrackProgress"></div>
+              <div class="hero-timeline-knob" id="timelineTrackThumb"></div>
+            </div>
+            <div class="hero-timeline-labels">
+              <div class="timeline-node-item node-prev">
+                <span class="node-name" id="prevPrayerNameDisplay">--</span>
+                <span class="node-time" id="prevPrayerTimeDisplay">--:--</span>
               </div>
-              <span class="ramadan-active-pill" id="ramadanActivePill" style="display: none;">🌙 رمضان</span>
-            </div>
-
-            <!-- العداد التنازلي الكبير للصلاة القادمة -->
-            <div class="timeline-countdown-display">
-              <span class="countdown-large-num" id="countdownTimer">00 : 00 : 00</span>
-            </div>
-
-            <!-- شريط ومسار التقدم الزمني المنزلق بين الصلاة السابقة والقادمة -->
-            <div class="timeline-slider-track-box">
-              <div class="timeline-track-rail">
-                <div class="timeline-track-progress" id="timelineTrackProgress"></div>
-                <div class="timeline-track-thumb" id="timelineTrackThumb"></div>
-              </div>
-
-              <!-- أطراف الصلاة السابقة والقادمة -->
-              <div class="timeline-endpoints-row">
-                <div class="timeline-endpoint endpoint-prev">
-                  <span class="ep-name" id="prevPrayerNameDisplay">--</span>
-                  <span class="ep-time" id="prevPrayerTimeDisplay">--:--</span>
-                </div>
-                <div class="timeline-endpoint endpoint-next">
-                  <span class="ep-name" id="nextPrayerNameDisplay">--</span>
-                  <span class="ep-time" id="nextPrayerTimeDisplay">--:--</span>
-                </div>
+              <div class="timeline-node-item node-next">
+                <span class="node-name" id="nextPrayerNameDisplay">--</span>
+                <span class="node-time" id="nextPrayerTimeDisplay">--:--</span>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -564,8 +555,8 @@
 
           <hr class="setting-divider" style="margin: 12px 0;">
 
-          <!-- 4. مدة الإقامة بين الأذان والصلاة -->
-          <div class="other-setting-row clickable" id="openIqamahSettingsScreenBtn">
+         <!-- 4. مدة الإقامة بين الأذان والصلاة -->
+          <div class="other-setting-row clickable" id="openIqamahSettingsModalBtn">
             <div style="text-align: right;">
               <h4 class="other-setting-title">المدة بين الأذان والإقامة</h4>
               <span style="font-size: 12px; color: var(--primary-blue); font-weight: 700;" id="displayIqamahSummary">الفجر 20د • المغرب 10د • بقية الفروض 15د</span>
@@ -587,16 +578,13 @@
 
           <hr class="setting-divider" style="margin: 12px 0;">
 
-          <!-- 6. قاعدة رمضان للعشاء (ساعتان) -->
-          <div class="setting-toggle-row" style="padding: 2px 0;">
-            <div class="setting-text-col">
-              <h4 class="setting-title" style="font-size: 14px;">تطبيق توقيت رمضان للعشاء (ساعتان)</h4>
-              <p class="setting-desc" style="font-size: 11.5px;">تأخير أذان العشاء في رمضان إلى ساعتين بعد المغرب وفق تقويم أم القرى</p>
+          <!-- 6. توقيت صلاة العشاء في رمضان (نافذة الخيارات المرنة) -->
+          <div class="other-setting-row clickable" id="openRamadanIshaModalBtn">
+            <div style="text-align: right;">
+              <h4 class="other-setting-title">توقيت صلاة العشاء في رمضان</h4>
+              <span style="font-size: 12px; color: var(--primary-blue); font-weight: 700;" id="displayRamadanIshaText">ساعتان بعد المغرب (120 دقيقة)</span>
             </div>
-            <label class="ios-switch">
-              <input type="checkbox" id="toggleRamadanIshaRule" checked>
-              <span class="switch-slider"></span>
-            </label>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           </div>
 
           <hr class="setting-divider" style="margin: 12px 0;">
@@ -781,6 +769,102 @@
         <p id="infoMethodAstro" style="font-size: 12px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 18px;"></p>
         <div class="modal-actions-row" style="justify-content: center; margin-top: 0;">
           <button type="button" class="modal-btn-primary" id="closeMethodInfoBtn" style="padding: 8px 34px;">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. نافذة ضبط مدة الإقامة بين الأذان والصلاة -->
+    <div class="bottom-sheet-backdrop" id="iqamahSettingsModal" style="z-index: 340;">
+      <div class="bottom-sheet" style="max-height: 85vh; display: flex; flex-direction: column;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header" style="margin-bottom: 10px;">
+          <h3 class="sheet-title" style="margin: 0; font-size: 16px;">مدة الإقامة بين الأذان والصلاة</h3>
+          <button type="button" class="modal-btn-link" id="closeIqamahModalBtn" style="font-size: 18px;">✕</button>
+        </div>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">حدد الدقائق الفاصلة بين رفع الأذان وإقامة الصلاة لكل فريضة:</p>
+        
+        <div class="iqamah-items-list" id="iqamahItemsListContainer">
+          <!-- صفوف الفروض الخمسة تتولد تلقائياً مع العداد -->
+        </div>
+
+        <div style="margin-top: 18px; display: flex; gap: 10px;">
+          <button type="button" class="modal-btn-link" id="btnResetIqamahDefaults" style="flex: 1; padding: 10px 0; border: 1px solid #CBD5E1; border-radius: 12px; font-size: 13.5px;">القيم الافتراضية</button>
+          <button type="button" class="btn-confirm-prayer-offset" id="btnSaveIqamahSettings" style="flex: 2; padding: 10px 0; font-size: 15px;">حفظ واعتماد</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. نافذة اختيار وقت صلاة الجمعة والخطبة -->
+    <div class="custom-modal-backdrop" id="fridaySettingsModal" style="z-index: 340;">
+      <div class="custom-modal-card" style="max-width: 330px; padding: 20px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🕌</span>
+            <h3 class="modal-card-title" style="margin: 0; font-size: 16px;">وقت صلاة الجمعة</h3>
+          </div>
+          <button type="button" class="modal-btn-link" id="closeFridayModalBtn" style="font-size: 18px;">✕</button>
+        </div>
+
+        <div class="madhab-options-group">
+          <div class="madhab-select-card active" data-friday-mode="zawal">
+            <span class="custom-radio-circle">✓</span>
+            <div style="text-align: right;">
+              <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">عند الزوال (الرسمي والجمهور)</h4>
+              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">صعود الخطيب والأذان مع دخول وقت الظهر (المعتمد في أوقاف المملكة والعالم)</p>
+            </div>
+          </div>
+
+          <div class="madhab-select-card" data-friday-mode="hanbali_early">
+            <span class="custom-radio-circle"></span>
+            <div style="text-align: right;">
+              <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">التبكير قبل الزوال (الحنبلي)</h4>
+              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">تقديم بدء الخطبة 25 دقيقة قبل الزوال (رخصة المذهب الحنبلي في بعض الجوامع)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. نافذة توقيت صلاة العشاء في رمضان (ساعتان / ساعة ونصف / مخصص) -->
+    <div class="custom-modal-backdrop" id="ramadanIshaModal" style="z-index: 340;">
+      <div class="custom-modal-card" style="max-width: 330px; padding: 20px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🌙</span>
+            <h3 class="modal-card-title" style="margin: 0; font-size: 16px;">العشاء في شهر رمضان</h3>
+          </div>
+          <button type="button" class="modal-btn-link" id="closeRamadanIshaBtn" style="font-size: 18px;">✕</button>
+        </div>
+
+        <div class="madhab-options-group">
+          <!-- خيار 1: ساعتان -->
+          <div class="madhab-select-card active" data-ramadan-mode="120">
+            <span class="custom-radio-circle">✓</span>
+            <div style="text-align: right;">
+              <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">ساعتان بعد المغرب (120 دقيقة)</h4>
+              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">تقويم أم القرى بالمملكة العربية السعودية ودول الخليج</p>
+            </div>
+          </div>
+
+          <!-- خيار 2: ساعة ونصف -->
+          <div class="madhab-select-card" data-ramadan-mode="90">
+            <span class="custom-radio-circle"></span>
+            <div style="text-align: right;">
+              <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">ساعة ونصف بعد المغرب (90 دقيقة)</h4>
+              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">المعتمد في شمال اليمن وبعض البلدان الإسلامية</p>
+            </div>
+          </div>
+
+          <!-- خيار 3: مخصص -->
+          <div class="madhab-select-card" data-ramadan-mode="custom">
+            <span class="custom-radio-circle"></span>
+            <div style="text-align: right; width: 100%;">
+              <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">توقيت مخصص (بالدقائق)</h4>
+              <div class="ramadan-custom-input-box" id="ramadanCustomInputWrapper" style="display: none; margin-top: 6px;">
+                <input type="number" id="customRamadanMinutesInput" min="60" max="150" placeholder="اكتب عدد الدقائق (مثلاً: 100)">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
