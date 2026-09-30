@@ -877,10 +877,16 @@
             <div style="text-align: right; width: 100%;">
               <h4 style="font-size: 14.5px; font-weight: 800; margin: 0; color: var(--text-main);">توقيت مخصص (بالدقائق)</h4>
               <div class="ramadan-custom-input-box" id="ramadanCustomInputWrapper" style="display: none; margin-top: 6px;">
-                <input type="number" id="customRamadanMinutesInput" min="60" max="150" placeholder="اكتب عدد الدقائق (مثلاً: 100)">
+                <input type="number" id="customRamadanMinutesInput" min="60" max="180" placeholder="اكتب عدد الدقائق (مثلاً: 100)">
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- أزرار الإلغاء والحفظ والاعتماد -->
+        <div style="margin-top: 18px; display: flex; gap: 10px;">
+          <button type="button" class="modal-btn-link" id="cancelRamadanIshaBtn" style="flex: 1; padding: 10px 0; border: 1px solid #CBD5E1; border-radius: 12px; font-size: 13.5px; color: var(--text-secondary);">إلغاء</button>
+          <button type="button" class="btn-confirm-prayer-offset" id="btnSaveRamadanIsha" style="flex: 2; padding: 10px 0; font-size: 15px;">حفظ واعتماد</button>
         </div>
       </div>
     </div>
