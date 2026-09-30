@@ -20,37 +20,41 @@ const PRAYER_ASTRONOMICAL_ICONS = {
   Fajr: {
     bg: '#ECFDF5',
     border: '#BBF7D0',
-    svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M13 2a5 5 0 0 0 5 5 5 5 0 0 0 2.5-.7A6.5 6.5 0 1 1 12.5.5c0 .5.2 1 .5 1.5z" fill="#16A34A"/><line x1="3" y1="16" x2="21" y2="16" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"/><line x1="6" y1="20" x2="18" y2="20" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"/></svg>`
+    svg: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none"><path d="M13 2a5 5 0 0 0 5 5 5 5 0 0 0 2.5-.7A6.5 6.5 0 1 1 12.5.5c0 .5.2 1 .5 1.5z" fill="#16A34A"/><line x1="3" y1="16" x2="21" y2="16" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"/><line x1="6" y1="20" x2="18" y2="20" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"/></svg>`
   },
   Sunrise: {
     bg: '#F0FDF4',
     border: '#BBF7D0',
-    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 13 A5 5 0 0 0 7 13" fill="#22C55E"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="5.6" y1="5.6" x2="7.4" y2="7.4"/><line x1="18.4" y1="5.6" x2="16.6" y2="7.4"/><line x1="3" y1="14" x2="21" y2="14"/><path d="M5 18c2-1 4 1 7 0s5 1 7 0"/></svg>`
+    svg: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 13 A5 5 0 0 0 7 13" fill="#22C55E"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="5.6" y1="5.6" x2="7.4" y2="7.4"/><line x1="18.4" y1="5.6" x2="16.6" y2="7.4"/><line x1="3" y1="14" x2="21" y2="14"/><path d="M5 18c2-1 4 1 7 0s5 1 7 0"/></svg>`
   },
   Dhuhr: {
     bg: '#ECFDF5',
     border: '#A7F3D0',
-    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#10B981"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>`
+    svg: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#10B981"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>`
   },
   Asr: {
     bg: '#F0F9FF',
     border: '#BAE6FD',
-    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#0284C7"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>`
+    svg: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#0284C7"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></svg>`
   },
   Maghrib: {
     bg: '#EFF6FF',
     border: '#BFDBFE',
-    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"><path d="M17 12.5 A5 5 0 0 0 7 12.5" fill="#2563EB"/>
+    svg: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"><path d="M17 12.5 A5 5 0 0 0 7 12.5" fill="#2563EB"/>
     <line x1="12" y1="3" x2="12" y2="5.5"/><line x1="5.6" y1="5.6" x2="7.4" y2="7.4"/><line x1="18.4" y1="5.6" x2="16.6" y2="7.4"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><path d="M4 18c2.5-1.5 5 1.5 7.5 0s5 1.5 8.5 0"/></svg>`
   },
   Isha: {
     bg: '#EEF2FF',
     border: '#C7D2FE',
-    svg: `<svg viewBox="0 0 24 24" fill="#2563EB"><path d="M12.5 2a8.5 8.5 0 1 0 9.2 13 7 7 0 0 1-9.2-13z"/><path d="M18.5 3.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"/><path d="M21 8.5l.4.8.8.4-.8.4-.4.8-.4-.8-.8-.4.8-.4z"/></svg>`
+    svg: `<svg viewBox="0 0 24 24" width="32" height="32" fill="#2563EB"><path d="M12.5 2a8.5 8.5 0 1 0 9.2 13 7 7 0 0 1-9.2-13z"/>
+    <path d="M18.5 3.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"/>
+    <path d="M21 8.5l.4.8.8.4-.8.4-.4.8-.4-.8-.8-.4.8-.4z"/></svg>`
   }
 };
 
 const prayerNamesAr = { Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
+
+const defaultIqamahValues = { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 10, Isha: 15 };
 
 function getSafeLocationData() {
   const defaultLoc = {
@@ -96,6 +100,7 @@ function getAutoCountryPrayerProfile(countryName) {
   }
 }
 
+// تحديث عناوين وملخصات الشاشة
 function syncPrayerSettingsUI() {
   const loc = getSafeLocationData();
   const curMethodId = loc.method || 4;
@@ -105,11 +110,40 @@ function syncPrayerSettingsUI() {
   const displayMethod = document.getElementById('displayCalcMethodName');
   const displayMadhab = document.getElementById('displayAsrMadhabName');
   const subtitle = document.getElementById('prayerSettingsSubtitle');
+  const summaryIqamah = document.getElementById('displayIqamahSummary');
+  const fridayText = document.getElementById('displayFridayMadhabText');
+  const ramadanText = document.getElementById('displayRamadanIshaText');
 
   if (displayMethod) displayMethod.textContent = mObj.name;
   if (displayMadhab) displayMadhab.textContent = (curMadhab === 1) ? 'الحنفي (ظل الشيء مثليه)' : 'الجمهور (الشافعي، المالكي، الحنبلي)';
   if (subtitle) subtitle.textContent = `${mObj.name.split('–')[0].trim()} • ${(curMadhab === 1 ? 'الحنفي' : 'الجمهور')}`;
 
+  // ملخص الإقامة
+  const savedIq = JSON.parse(localStorage.getItem('hayat_iqamah_settings')) || defaultIqamahValues;
+  if (summaryIqamah) {
+    summaryIqamah.textContent = `الفجر ${savedIq.Fajr}د • المغرب ${savedIq.Maghrib}د • البقية ${savedIq.Dhuhr}د`;
+  }
+
+  // ملخص الجمعة
+  const fMode = localStorage.getItem('hayat_friday_method') || 'zawal';
+  if (fridayText) {
+    fridayText.textContent = (fMode === 'zawal') 
+      ? 'عند الزوال (مذهب الجمهور والمعتمد رسمياً)' 
+      : 'التبكير قبل الزوال بـ 25 دقيقة (المذهب الحنبلي)';
+  }
+
+  // ملخص رمضان
+  const rMode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
+  if (ramadanText) {
+    if (rMode === '120') ramadanText.textContent = 'ساعتان بعد المغرب (120 دقيقة)';
+    else if (rMode === '90') ramadanText.textContent = 'ساعة ونصف بعد المغرب (90 دقيقة)';
+    else {
+      const cMin = localStorage.getItem('hayat_ramadan_isha_custom_min') || '100';
+      ramadanText.textContent = `توقيت مخصص (${cMin} دقيقة بعد المغرب)`;
+    }
+  }
+
+  // تحديث حالة تعديل الدقائق في شاشة الصلوات الست
   const pKeys = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
   const offsets = loc.prayerOffsets || {};
   pKeys.forEach(k => {
@@ -156,9 +190,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const infoMethodCountries = document.getElementById('infoMethodCountries');
   const infoMethodAstro = document.getElementById('infoMethodAstro');
 
+  // أزرار النوافذ الثلاث (الإقامة، الجمعة، رمضان)
+  const openIqamahSettingsModalBtn = document.getElementById('openIqamahSettingsModalBtn');
+  const iqamahSettingsModal = document.getElementById('iqamahSettingsModal');
+  const closeIqamahModalBtn = document.getElementById('closeIqamahModalBtn');
+  const iqamahItemsListContainer = document.getElementById('iqamahItemsListContainer');
+  const btnResetIqamahDefaults = document.getElementById('btnResetIqamahDefaults');
+  const btnSaveIqamahSettings = document.getElementById('btnSaveIqamahSettings');
+
+  const openFridaySettingsModalBtn = document.getElementById('openFridaySettingsModalBtn');
+  const fridaySettingsModal = document.getElementById('fridaySettingsModal');
+  const closeFridayModalBtn = document.getElementById('closeFridayModalBtn');
+
+  const openRamadanIshaModalBtn = document.getElementById('openRamadanIshaModalBtn');
+  const ramadanIshaModal = document.getElementById('ramadanIshaModal');
+  const closeRamadanIshaBtn = document.getElementById('closeRamadanIshaBtn');
+  const ramadanCustomWrapper = document.getElementById('ramadanCustomInputWrapper');
+  const customRamadanInput = document.getElementById('customRamadanMinutesInput');
+
+  const togglePrayerExpirationWarning = document.getElementById('togglePrayerExpirationWarning');
+
   let activeEditingOffsetPrayer = 'Fajr';
   let tempEditingOffsetValue = 0;
+  let tempIqamahValues = Object.assign({}, defaultIqamahValues);
 
+  // 1. التنقل بين الشاشات
   if (openPrayerSettingsBtn) {
     openPrayerSettingsBtn.onclick = () => {
       syncPrayerSettingsUI();
@@ -186,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // 2. نافذة طرق الحساب الـ 12
   function renderCalculationMethodsList() {
     if (!calcMethodsListScroll) return;
     calcMethodsListScroll.innerHTML = '';
@@ -219,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentLoc.method = m.id;
         localStorage.setItem('hayat_saved_location', JSON.stringify(currentLoc));
         if (calcMethodModal) calcMethodModal.classList.remove('show');
+        syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') {
           window.applyPrayerSettingsUpdate();
         }
@@ -249,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closeCalcMethodBtn.onclick = () => calcMethodModal.classList.remove('show');
   }
 
+  // 3. نافذة مذهب العصر
   if (openAsrMadhabModalBtn) {
     openAsrMadhabModalBtn.onclick = () => {
       const loc = getSafeLocationData();
@@ -266,19 +325,21 @@ document.addEventListener('DOMContentLoaded', () => {
     closeAsrMadhabBtn.onclick = () => asrMadhabModal.classList.remove('show');
   }
 
-  document.querySelectorAll('.madhab-select-card').forEach(card => {
+  document.querySelectorAll('.madhab-select-card[data-madhab]').forEach(card => {
     card.onclick = () => {
       const val = parseInt(card.getAttribute('data-madhab'), 10);
       const loc = getSafeLocationData();
       loc.asrMadhab = val;
       localStorage.setItem('hayat_saved_location', JSON.stringify(loc));
       if (asrMadhabModal) asrMadhabModal.classList.remove('show');
+      syncPrayerSettingsUI();
       if (typeof window.applyPrayerSettingsUpdate === 'function') {
         window.applyPrayerSettingsUpdate();
       }
     };
   });
 
+  // 4. نافذة تعديل دقائق الصلاة
   document.querySelectorAll('.prayer-offset-item-row').forEach(row => {
     row.onclick = () => {
       activeEditingOffsetPrayer = row.getAttribute('data-prayer-key');
@@ -352,21 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  if (closeMethodInfoBtn) {
-    closeMethodInfoBtn.onclick = () => methodInfoModal.classList.remove('show');
-  }
-
-  // ==================== 1. نافذة وضبط مدد الإقامة ====================
-  const openIqamahSettingsModalBtn = document.getElementById('openIqamahSettingsModalBtn');
-  const iqamahSettingsModal = document.getElementById('iqamahSettingsModal');
-  const closeIqamahModalBtn = document.getElementById('closeIqamahModalBtn');
-  const iqamahItemsListContainer = document.getElementById('iqamahItemsListContainer');
-  const btnResetIqamahDefaults = document.getElementById('btnResetIqamahDefaults');
-  const btnSaveIqamahSettings = document.getElementById('btnSaveIqamahSettings');
-
-  const defaultIqamahValues = { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 10, Isha: 15 };
-  let tempIqamahValues = Object.assign({}, defaultIqamahValues);
-
+  // 5. نافذة ضبط مدد الإقامة
   function renderIqamahRows() {
     if (!iqamahItemsListContainer) return;
     iqamahItemsListContainer.innerHTML = '';
@@ -434,23 +481,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSaveIqamahSettings.onclick = () => {
       localStorage.setItem('hayat_iqamah_settings', JSON.stringify(tempIqamahValues));
       iqamahSettingsModal.classList.remove('show');
-      const summary = document.getElementById('displayIqamahSummary');
-      if (summary) {
-        summary.textContent = `الفجر ${tempIqamahValues.Fajr}د • المغرب ${tempIqamahValues.Maghrib}د • البقية ${tempIqamahValues.Dhuhr}د`;
-      }
+      syncPrayerSettingsUI();
       if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
     };
   }
 
-  // ==================== 2. نافذة صلاة الجمعة الفقهية ====================
-  const openFridaySettingsModalBtn = document.getElementById('openFridaySettingsModalBtn');
-  const fridaySettingsModal = document.getElementById('fridaySettingsModal');
-  const closeFridayModalBtn = document.getElementById('closeFridayModalBtn');
-  const displayFridayMadhabText = document.getElementById('displayFridayMadhabText');
-
+  // 6. نافذة صلاة الجمعة
   if (openFridaySettingsModalBtn && fridaySettingsModal) {
     openFridaySettingsModalBtn.onclick = () => {
-      const curMode = localStorage.getItem('hayat_friday_mode') || 'zawal';
+      const curMode = localStorage.getItem('hayat_friday_method') || 'zawal';
       fridaySettingsModal.querySelectorAll('.madhab-select-card').forEach(c => {
         const m = c.getAttribute('data-friday-mode');
         c.classList.toggle('active', m === curMode);
@@ -468,39 +507,15 @@ document.addEventListener('DOMContentLoaded', () => {
     fridaySettingsModal.querySelectorAll('.madhab-select-card').forEach(card => {
       card.onclick = () => {
         const mode = card.getAttribute('data-friday-mode');
-        localStorage.setItem('hayat_friday_mode', mode);
+        localStorage.setItem('hayat_friday_method', mode);
         fridaySettingsModal.classList.remove('show');
-        if (displayFridayMadhabText) {
-          displayFridayMadhabText.textContent = (mode === 'zawal') 
-            ? 'عند الزوال (مذهب الجمهور والمعتمد رسمياً)' 
-            : 'التبكير قبل الزوال بـ 25 دقيقة (المذهب الحنبلي)';
-        }
+        syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
       };
     });
   }
 
-  // ==================== 3. نافذة خيارات صلاة العشاء في رمضان (ساعتان / ساعة ونصف / مخصص) ====================
-  const openRamadanIshaModalBtn = document.getElementById('openRamadanIshaModalBtn');
-  const ramadanIshaModal = document.getElementById('ramadanIshaModal');
-  const closeRamadanIshaBtn = document.getElementById('closeRamadanIshaBtn');
-  const displayRamadanIshaText = document.getElementById('displayRamadanIshaText');
-  const ramadanCustomWrapper = document.getElementById('ramadanCustomInputWrapper');
-  const customRamadanInput = document.getElementById('customRamadanMinutesInput');
-
-  function updateRamadanIshaDisplay() {
-    const mode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
-    if (!displayRamadanIshaText) return;
-    if (mode === '120') {
-      displayRamadanIshaText.textContent = 'ساعتان بعد المغرب (120 دقيقة)';
-    } else if (mode === '90') {
-      displayRamadanIshaText.textContent = 'ساعة ونصف بعد المغرب (90 دقيقة)';
-    } else {
-      const customMin = localStorage.getItem('hayat_ramadan_isha_custom_min') || '100';
-      displayRamadanIshaText.textContent = `توقيت مخصص (${customMin} دقيقة بعد المغرب)`;
-    }
-  }
-
+  // 7. نافذة عشاء رمضان المرنة
   if (openRamadanIshaModalBtn && ramadanIshaModal) {
     openRamadanIshaModalBtn.onclick = () => {
       const curMode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
@@ -545,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         localStorage.setItem('hayat_ramadan_isha_mode', mode);
         ramadanIshaModal.classList.remove('show');
-        updateRamadanIshaDisplay();
+        syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
       };
     });
@@ -558,47 +573,13 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('hayat_ramadan_isha_mode', 'custom');
         localStorage.setItem('hayat_ramadan_isha_custom_min', val.toString());
         if (ramadanIshaModal) ramadanIshaModal.classList.remove('show');
-        updateRamadanIshaDisplay();
+        syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
       }
     };
   }
 
-  updateRamadanIshaDisplay();
-  syncPrayerSettingsUI();
-
-  // ==================== منظومة مدد الإقامة والجمعة ورمضان ====================
-  // مدد الإقامة الافتراضية النظامية المعتمدة
-  const DEFAULT_IQAMAH_MINUTES = {
-    Fajr: 20,
-    Dhuhr: 15,
-    Asr: 15,
-    Maghrib: 10, // 10 دقائق رسمياً وسنة
-    Isha: 15
-  };
-
-  function getIqamahSettings() {
-    return JSON.parse(localStorage.getItem('hayat_iqamah_settings')) || DEFAULT_IQAMAH_MINUTES;
-  }
-
-  function getFridayMethodSetting() {
-    return localStorage.getItem('hayat_friday_method') || 'zawal'; // 'zawal' | 'hanbali_early'
-  }
-
-  // ربط أزرار الإعدادات في شاشة المواقيت
-  const toggleRamadanIshaRule = document.getElementById('toggleRamadanIshaRule');
-  const togglePrayerExpirationWarning = document.getElementById('togglePrayerExpirationWarning');
-  const openFridaySettingsModalBtn = document.getElementById('openFridaySettingsModalBtn');
-  const displayFridayMadhabText = document.getElementById('displayFridayMadhabText');
-
-  if (toggleRamadanIshaRule) {
-    toggleRamadanIshaRule.checked = localStorage.getItem('hayat_ramadan_isha_rule') !== 'false';
-    toggleRamadanIshaRule.onchange = (e) => {
-      localStorage.setItem('hayat_ramadan_isha_rule', e.target.checked);
-      if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
-    };
-  }
-
+  // 8. مفتاح تنبيه خروج وقت الصلاة
   if (togglePrayerExpirationWarning) {
     togglePrayerExpirationWarning.checked = localStorage.getItem('hayat_show_expiration_warning') !== 'false';
     togglePrayerExpirationWarning.onchange = (e) => {
@@ -606,16 +587,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  if (openFridaySettingsModalBtn) {
-    openFridaySettingsModalBtn.onclick = () => {
-      const curMethod = getFridayMethodSetting();
-      const newMethod = (curMethod === 'zawal') ? 'hanbali_early' : 'zawal';
-      localStorage.setItem('hayat_friday_method', newMethod);
-      if (displayFridayMadhabText) {
-        displayFridayMadhabText.textContent = (newMethod === 'zawal') ? 'عند الزوال (مذهب الجمهور والمعتمد رسمياً)' : 'التبكير قبل الزوال بـ 25 دقيقة (المذهب الحنبلي)';
-      }
-      if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
-    };
+  if (closeMethodInfoBtn) {
+    closeMethodInfoBtn.onclick = () => methodInfoModal.classList.remove('show');
   }
-  
+
+  syncPrayerSettingsUI();
 });
