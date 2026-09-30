@@ -3299,7 +3299,25 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     };
 
-    const ishaDec = isIshaInterval90 ? (maghribDec + 1.5) : (solarNoon + (getH(ishaAngle) || 1.5));
+    // احتساب العشاء في رمضان بناءً على خيار المستخدم (120د، 90د، أو مخصص)
+    let ishaGapHours = 1.5; // الافتراضي 90 دقيقة
+    let isRamadanMonth = false;
+    try {
+      const hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { month: 'numeric' });
+      isRamadanMonth = (parseInt(hf.format(targetDate), 10) === 9);
+    } catch(e) {}
+
+    if (isRamadanMonth) {
+      const rMode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
+      if (rMode === '120') ishaGapHours = 2.0; // ساعتان
+      else if (rMode === '90') ishaGapHours = 1.5; // ساعة ونصف
+      else {
+        const cMin = parseInt(localStorage.getItem('hayat_ramadan_isha_custom_min'), 10) || 100;
+        ishaGapHours = cMin / 60;
+      }
+    }
+
+    const ishaDec = isIshaInterval90 ? (maghribDec + ishaGapHours) : (solarNoon + (getH(ishaAngle) || ishaGapHours));
 
     return {
       Fajr: fmt(solarNoon - (fajrH || 1.35), 'Fajr'),
@@ -3575,7 +3593,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         }
       }
 
-      // 7. تحريك المسار الزمني ونسبة السلايدر بين الفرضين (نموذج الصورة 2)
+      // 7. تحريك المسار الزمني وربط بيانات الصلاة السابقة والقادمة (تطابق كامل للمعرّفات)
       let prevTimeMs = prevP.date.getTime();
       let nextTimeMs = targetTime.getTime();
       if (prevTimeMs > nextTimeMs) {
@@ -3588,18 +3606,20 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
       const trackFill = document.getElementById('timelineTrackProgress');
       const trackThumb = document.getElementById('timelineTrackThumb');
-      const prevNodeName = document.getElementById('prevPrayerNodeName');
-      const prevNodeTime = document.getElementById('prevPrayerNodeTime');
-      const nextNodeName = document.getElementById('nextPrayerNodeName');
-      const nextNodeTime = document.getElementById('nextPrayerNodeTime');
+      
+      // استهداف المعرّفات الموحدة في الـ HTML
+      const prevNameEl = document.getElementById('prevPrayerNameDisplay');
+      const prevTimeEl = document.getElementById('prevPrayerTimeDisplay');
+      const nextNameEl = document.getElementById('nextPrayerNameDisplay');
+      const nextTimeEl = document.getElementById('nextPrayerTimeDisplay');
 
       if (trackFill) trackFill.style.width = `${progressPercent}%`;
       if (trackThumb) trackThumb.style.right = `${progressPercent}%`;
 
-      if (prevNodeName) prevNodeName.textContent = prevP.name;
-      if (prevNodeTime) prevNodeTime.textContent = formatTo12Hour(prevP.rawTime);
-      if (nextNodeName) nextNodeName.textContent = nextP.name;
-      if (nextNodeTime) nextNodeTime.textContent = formatTo12Hour(nextP.rawTime);
+      if (prevNameEl) prevNameEl.textContent = prevP.name;
+      if (prevTimeEl) prevTimeEl.textContent = formatTo12Hour(prevP.rawTime);
+      if (nextNameEl) nextNameEl.textContent = nextP.name;
+      if (nextTimeEl) nextTimeEl.textContent = formatTo12Hour(nextP.rawTime);
 
       // تنشيط صف الصلاة النشطة
       document.querySelectorAll('.prayer-row').forEach(row => row.classList.remove('active-prayer'));
@@ -4123,7 +4143,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   // تم إلغاء تثبيت الهيدر ليتحرك وينسحب طبيعياً مع الصفحة
   
-  // 0. تشغيل الساعة الرقمية اللحظية الحية بالثواني
+  // 0. تشغيل الساعة الرقمية اللحظية الهادئة (ساعة ودقيقة فقط)
   function startLiveClockEngine() {
     const clockDisp = document.getElementById('liveClockDisplay');
     const clockPeriod = document.getElementById('liveClockPeriod');
@@ -4139,11 +4159,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
       let h = now.getHours();
       const m = now.getMinutes();
-      const s = now.getSeconds();
       const period = (h >= 12) ? 'م' : 'ص';
       h = h % 12 || 12;
 
-      clockDisp.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      // عرض الساعة والدقيقة فقط
+      clockDisp.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       if (clockPeriod) clockPeriod.textContent = period;
     }
     tick();
@@ -4172,7 +4192,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.76', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.77', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
