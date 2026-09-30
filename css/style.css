@@ -299,175 +299,131 @@ body {
   cursor: pointer;
 }
 
-/* كرت الصلاة العلوي المطور بالهوية الملكية ومحاذاة اليمين */
+/* كرت الصلاة العلوي الرشيق المندمج مباشرة بدون كروت شفافة متداخلة */
 .hero-card {
   background: var(--hero-gradient);
   color: #FFFFFF;
   margin-top: -68px;
-  padding: 82px 18px 24px 18px;
-  border-bottom-left-radius: 28px;
-  border-bottom-right-radius: 28px;
+  padding: 76px 18px 16px 18px; /* تقليص الحشو العلوي والسفلي ليكون رشيقاً */
+  border-bottom-left-radius: 26px;
+  border-bottom-right-radius: 26px;
   position: relative;
   overflow: hidden;
 }
 
-/* العلامة المائية للمئذنة تستقر في أقصى اليسار ليتنفس النص في اليمين */
 .mosque-watermark {
   position: absolute;
-  top: 12px;
-  left: -16px;
-  width: 200px;
-  height: 200px;
-  opacity: 0.18;
+  top: 10px;
+  left: -20px;
+  width: 175px;
+  height: 175px;
+  opacity: 0.16;
   pointer-events: none;
   z-index: 1;
   filter: drop-shadow(0 0 16px rgba(252, 211, 77, 0.25));
-  transition: opacity 0.3s ease;
 }
 
-/* حاوية المحتوى: محاذاة طبيعية لليمين (RTL Start) */
-.hero-content-rtl {
+.hero-compact-content {
   position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* محاذاة لليمين طبيعياً في لغة الضاد */
-  text-align: right;
   width: 100%;
-}
-
-/* الساعة الرقمية الحية الكبيرة */
-.hero-live-clock-section {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.live-clock-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #FCD34D;
-  display: flex;
-  align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
 }
 
-.live-clock-digits-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  direction: ltr; /* الحفاظ على ترتيب الأرقام المتناسق */
-}
-
-.live-clock-num {
-  font-size: 40px;
-  font-weight: 900;
-  color: #FFFFFF;
-  line-height: 1;
-  letter-spacing: 1px;
-}
-
-.live-clock-period {
-  font-size: 17px;
-  font-weight: 800;
-  color: #FEF3C7;
-}
-
-/* كرت المسار الزمني والعداد التنازلي بين الصلاتين (نموذج الصورة 2) */
-.prayer-timeline-card {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 20px;
-  padding: 14px 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.timeline-header-row {
+/* الصف العلوي: الساعة الحية بدون ثواني وحالة الصلاة المدمجة */
+.hero-top-info-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
 }
 
-.timeline-title-group {
+.hero-live-clock-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  direction: ltr;
+}
+
+.live-clock-digits {
+  font-size: 26px;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+.live-clock-period {
+  font-size: 14px;
+  font-weight: 800;
+  color: #FDE68A;
+}
+
+.hero-prayer-status-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #FFFFFF;
 }
 
 .timeline-pulse-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #10B981;
-  box-shadow: 0 0 10px #10B981;
+  box-shadow: 0 0 8px #10B981;
   animation: pulseGreen 1.8s infinite;
-}
-
-@keyframes pulseGreen {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.8; }
-}
-
-.timeline-status-tag {
-  font-size: 14px;
-  font-weight: 800;
-  color: #FFFFFF;
 }
 
 .ramadan-active-pill {
   background: #FEF3C7;
   color: #92400E;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 1px 7px;
+  border-radius: 10px;
 }
 
 /* العداد التنازلي الكبير للصلاة القادمة */
-.timeline-countdown-display {
+.hero-countdown-row {
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   direction: ltr;
-  padding: 2px 0 6px 0;
+  padding: 2px 0 4px 0;
 }
 
-.countdown-large-num {
-  font-size: 38px;
+.hero-countdown-digits {
+  font-size: 34px;
   font-weight: 900;
   color: #FDE68A;
   letter-spacing: 2px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  line-height: 1;
 }
 
-/* شريط ومسار التقدم المنزلق */
-.timeline-slider-track-box {
+/* مسار التقدم الزمني النحيف المدمج في الكرت */
+.hero-timeline-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 4px;
+  margin-top: 2px;
 }
 
-.timeline-track-rail {
+.hero-timeline-track {
   width: 100%;
-  height: 8px;
+  height: 6px;
   background: rgba(255, 255, 255, 0.22);
   border-radius: 9999px;
   position: relative;
   overflow: visible;
 }
 
-.timeline-track-progress {
+.hero-timeline-fill {
   position: absolute;
   top: 0;
   right: 0;
@@ -478,40 +434,56 @@ body {
   transition: width 0.3s ease;
 }
 
-.timeline-track-thumb {
+.hero-timeline-knob {
   position: absolute;
   top: 50%;
   right: 35%;
   transform: translate(50%, -50%);
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #FFFFFF;
-  border: 3px solid #FCD34D;
-  box-shadow: 0 0 10px rgba(252, 211, 77, 0.8);
+  border: 2.5px solid #FCD34D;
+  box-shadow: 0 0 8px rgba(252, 211, 77, 0.9);
   transition: right 0.3s ease;
 }
 
-/* أطراف الصلاة السابقة والقادمة */
-.timeline-endpoints-row {
+/* بيانات الصلاة السابقة والقادمة أسفل المسار */
+.hero-timeline-labels {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: #E2E8F0;
 }
 
-.timeline-endpoint {
+.timeline-node-item {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 5px;
 }
 
-.endpoint-prev { align-items: flex-start; text-align: right; }
-.endpoint-next { align-items: flex-end; text-align: left; }
+.node-prev { direction: rtl; }
+.node-next { direction: rtl; }
 
-.ep-name { color: #CBD5E1; font-size: 11px; }
-.ep-time { color: #FFFFFF; font-weight: 800; font-size: 13px; direction: ltr; }
+.node-name { color: #CBD5E1; font-weight: 700; }
+.node-time { color: #FFFFFF; font-weight: 800; direction: ltr; font-size: 12px; }
+
+/* شريط التحذير بقرب خروج وقت الصلاة */
+.prayer-expiration-banner {
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid #F87171;
+  color: #FEF2F2;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  animation: pulseRed 2s infinite;
+}
 
 /* شريط التحذير بقرب انتهاء وقت الصلاة */
 .prayer-expiration-banner {
