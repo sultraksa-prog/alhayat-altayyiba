@@ -163,6 +163,24 @@ function syncPrayerSettingsUI() {
 window.syncPrayerSettingsUI = syncPrayerSettingsUI;
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  // دالة إظهار رسالة النجاح المنبثقة
+  function showSettingsSuccessToast(message) {
+    let toast = document.getElementById('settingsFeedbackToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'settingsFeedbackToast';
+      toast.className = 'settings-feedback-toast';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span>✨</span><span>${message}</span>`;
+    toast.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
+  }
+  
   const screenPrayerSettings = document.getElementById('screen-prayer-settings');
   const screenPrayerOffsets = document.getElementById('screen-prayer-offsets');
   const screenGeneralSettings = document.getElementById('screen-general-settings');
@@ -479,40 +497,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnSaveIqamahSettings && iqamahSettingsModal) {
     btnSaveIqamahSettings.onclick = () => {
-      localStorage.setItem('hayat_iqamah_settings', JSON.stringify(tempIqamahValues));
-      iqamahSettingsModal.classList.remove('show');
-      syncPrayerSettingsUI();
-      if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
+      try {
+        localStorage.setItem('hayat_iqamah_settings', JSON.stringify(tempIqamahValues));
+        iqamahSettingsModal.classList.remove('show');
+        syncPrayerSettingsUI();
+        if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
+        showSettingsSuccessToast('تم حفظ واعتماد مدد الإقامة بنجاح');
+      } catch (err) {
+        alert('تعذر حفظ البيانات في الذاكرة، يرجى المحاولة ثانية.');
+      }
     };
   }
 
-  // 6. نافذة صلاة الجمعة
+  // 6. نافذة صلاة الجمعة المطورة (اختيار الطريقة وتحديد الدقائق وحفظ الاعتماد)
+  const fridayEarlyWrapper = document.getElementById('fridayEarlyMinutesWrapper');
+  const inputFridayEarlyMinutes = document.getElementById('inputFridayEarlyMinutes');
+  const btnSaveFridaySettings = document.getElementById('btnSaveFridaySettings');
+  let selectedFridayMode = localStorage.getItem('hayat_friday_method') || 'zawal';
+
   if (openFridaySettingsModalBtn && fridaySettingsModal) {
     openFridaySettingsModalBtn.onclick = () => {
-      const curMode = localStorage.getItem('hayat_friday_method') || 'zawal';
+      selectedFridayMode = localStorage.getItem('hayat_friday_method') || 'zawal';
+      const savedMinutes = localStorage.getItem('hayat_friday_early_minutes') || '25';
+      if (inputFridayEarlyMinutes) inputFridayEarlyMinutes.value = savedMinutes;
+
       fridaySettingsModal.querySelectorAll('.madhab-select-card').forEach(c => {
         const m = c.getAttribute('data-friday-mode');
-        c.classList.toggle('active', m === curMode);
+        const isActive = (m === selectedFridayMode);
+        c.classList.toggle('active', isActive);
         const circle = c.querySelector('.custom-radio-circle');
-        if (circle) circle.textContent = (m === curMode) ? '✓' : '';
+        if (circle) circle.textContent = isActive ? '✓' : '';
       });
+
+      if (fridayEarlyWrapper) {
+        fridayEarlyWrapper.style.display = (selectedFridayMode === 'hanbali_early') ? 'block' : 'none';
+      }
+
       fridaySettingsModal.classList.add('show');
     };
   }
+
   if (closeFridayModalBtn && fridaySettingsModal) {
     closeFridayModalBtn.onclick = () => fridaySettingsModal.classList.remove('show');
   }
 
   if (fridaySettingsModal) {
     fridaySettingsModal.querySelectorAll('.madhab-select-card').forEach(card => {
-      card.onclick = () => {
-        const mode = card.getAttribute('data-friday-mode');
-        localStorage.setItem('hayat_friday_method', mode);
+      card.onclick = (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        selectedFridayMode = card.getAttribute('data-friday-mode');
+
+        fridaySettingsModal.querySelectorAll('.madhab-select-card').forEach(c => {
+          c.classList.remove('active');
+          const circle = c.querySelector('.custom-radio-circle');
+          if (circle) circle.textContent = '';
+        });
+
+        card.classList.add('active');
+        const activeCircle = card.querySelector('.custom-radio-circle');
+        if (activeCircle) activeCircle.textContent = '✓';
+
+        if (fridayEarlyWrapper) {
+          fridayEarlyWrapper.style.display = (selectedFridayMode === 'hanbali_early') ? 'block' : 'none';
+          if (selectedFridayMode === 'hanbali_early' && inputFridayEarlyMinutes) {
+            inputFridayEarlyMinutes.focus();
+          }
+        }
+      };
+    });
+  }
+
+  // زر حفظ واعتماد وقت صلاة الجمعة مع رسالة النجاح
+  if (btnSaveFridaySettings && fridaySettingsModal) {
+    btnSaveFridaySettings.onclick = () => {
+      try {
+        localStorage.setItem('hayat_friday_method', selectedFridayMode);
+
+        if (selectedFridayMode === 'hanbali_early' && inputFridayEarlyMinutes) {
+          const val = parseInt(inputFridayEarlyMinutes.value, 10);
+          const cleanVal = (val && val >= 5 && val <= 60) ? val : 25;
+          localStorage.setItem('hayat_friday_early_minutes', cleanVal.toString());
+        }
+
         fridaySettingsModal.classList.remove('show');
         syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
-      };
-    });
+        showSettingsSuccessToast('تم اعتماد وقت صلاة الجمعة بنجاح');
+      } catch (err) {
+        alert('حدث خطأ أثناء الحفظ، يرجى المحاولة ثانية.');
+      }
+    };
   }
 
   // 7. نافذة عشاء رمضان المرنة
