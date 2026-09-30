@@ -1,6 +1,13 @@
 
 /* ==================== ملف تنسيقات إعدادات مواقيت الصلاة والأذان ==================== */
 
+/* المتغيرات التصميمية المركزية للأزرار التفاعلية (Design Tokens) */
+:root {
+  --action-btn-bg: linear-gradient(135deg, #1D5D9B 0%, #113F67 60%, #09203F 100%);
+  --action-btn-shadow: rgba(29, 93, 155, 0.32);
+  --action-btn-text: #FFFFFF;
+}
+
 /* 1. قائمة طرق الحساب الفلكية الـ 12 */
 .calc-methods-list-scroll {
   flex: 1;
@@ -249,23 +256,23 @@
   transform: rotate(-180deg);
 }
 
-/* 5. زر تأكيد وحفظ الزمردي الفاخر */
+/* 5. زر تأكيد وحفظ الملكي المربوط بالمتغيرات المركزية */
 .btn-confirm-prayer-offset {
-  width: 100%;
-  padding: 14px 0;
-  font-size: 16px;
-  font-weight: 800;
-  font-family: inherit;
-  color: #FFFFFF;
-  background: linear-gradient(135deg, #10B981 0%, #15803D 100%);
-  border: none;
-  border-radius: 16px;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.28);
-  transition: all 0.2s ease;
+  width: 100% !important;
+  padding: 14px 0 !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  font-family: inherit !important;
+  color: var(--action-btn-text) !important;
+  background: var(--action-btn-bg) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 20px var(--action-btn-shadow) !important;
+  transition: all 0.2s ease !important;
 }
 
 .btn-confirm-prayer-offset:active {
-  transform: scale(0.98);
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
+  transform: scale(0.98) !important;
+  box-shadow: 0 2px 8px var(--action-btn-shadow) !important;
 }
