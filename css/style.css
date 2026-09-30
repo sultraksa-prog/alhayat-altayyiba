@@ -332,7 +332,7 @@ body {
   gap: 6px;
 }
 
-/* الصف العلوي: الساعة الحية بدون ثواني وحالة الصلاة المدمجة */
+/* الصف العلوي: الحالة وزر ! باليمين، والساعة الحية باليسار */
 .hero-top-info-row {
   display: flex;
   align-items: center;
@@ -340,19 +340,209 @@ body {
   width: 100%;
 }
 
+/* اليمين: حالة الصلاة وزر المعلومة الشرعية */
+.hero-prayer-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+/* زر علامة التعجب للمعلومة الفقهية */
+.hero-fiqh-info-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #FDE68A;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.hero-fiqh-info-btn:active {
+  background: #FCD34D;
+  color: #09203F;
+  transform: scale(0.9);
+}
+
+/* اليسار: الساعة الرقمية الحية النابضة */
 .hero-live-clock-badge {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 5px;
   direction: ltr;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .live-clock-digits {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 900;
   color: #FFFFFF;
   line-height: 1;
   letter-spacing: 0.5px;
+}
+
+/* وميض النقطتين الحيتين في الساعة كل ثانية */
+.clock-colon-blink {
+  display: inline-block;
+  animation: colonBlink 1s infinite;
+  color: #FCD34D;
+}
+
+@keyframes colonBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.2; }
+}
+
+.live-clock-period {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #FDE68A;
+}
+
+/* تنسيق العداد التبادلي القابل للنقر */
+.hero-countdown-row {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.hero-countdown-row:active {
+  transform: scale(0.97);
+}
+
+/* وضع انتهاء الفرض الحالي (اللون العنبري المضيء) */
+.hero-countdown-row.mode-expiration .hero-countdown-digits {
+  color: #F59E0B !important;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+}
+
+/* علامة منتصف الليل الشرعي على المسار المنزلق */
+.timeline-midnight-marker {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 12px;
+  background: #FCD34D;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(252, 211, 77, 0.9);
+  z-index: 2;
+  transform: translateX(50%);
+}
+
+/* ==================== تنسيقات نافذة الفقه والمراجع ==================== */
+.fiqh-modal-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.fiqh-info-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.fiqh-info-card.highlight-night {
+  background: #F0FDF4;
+  border-color: #BBF7D0;
+}
+
+.fiqh-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fiqh-card-head h4 {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #064E3B;
+  margin: 0;
+}
+
+.fiqh-badge-gold {
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.fiqh-hadith-text {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.hadith-quote {
+  font-family: 'Amiri', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #15803D;
+  display: block;
+  margin-top: 2px;
+}
+
+.fiqh-explanation {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.fiqh-calc-box {
+  background: #FFFFFF;
+  border: 1px dashed #10B981;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: #047857;
+  line-height: 1.5;
+}
+
+.fiqh-prayers-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fiqh-prayer-item {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.fp-name {
+  font-weight: 800;
+  color: var(--primary-blue);
+  margin-left: 4px;
+}
+
+.fp-desc {
+  color: var(--text-main);
 }
 
 .live-clock-period {
