@@ -589,66 +589,83 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 7. نافذة عشاء رمضان المرنة
+  // 7. نافذة عشاء رمضان المرنة المطورة (مع زري الحفظ والإلغاء ورسالة النجاح)
+  const cancelRamadanIshaBtn = document.getElementById('cancelRamadanIshaBtn');
+  const btnSaveRamadanIsha = document.getElementById('btnSaveRamadanIsha');
+  const displayRamadanIshaText = document.getElementById('displayRamadanIshaText');
+  let tempRamadanMode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
+
+  function renderRamadanCardsSelection() {
+    if (!ramadanIshaModal) return;
+    ramadanIshaModal.querySelectorAll('.madhab-select-card').forEach(c => {
+      const m = c.getAttribute('data-ramadan-mode');
+      const isSelected = (m === tempRamadanMode);
+      c.classList.toggle('active', isSelected);
+      const circle = c.querySelector('.custom-radio-circle');
+      if (circle) circle.textContent = isSelected ? '✓' : '';
+    });
+
+    if (ramadanCustomWrapper) {
+      ramadanCustomWrapper.style.display = (tempRamadanMode === 'custom') ? 'block' : 'none';
+    }
+    if (customRamadanInput && tempRamadanMode === 'custom') {
+      customRamadanInput.value = localStorage.getItem('hayat_ramadan_isha_custom_min') || '100';
+    }
+  }
+
   if (openRamadanIshaModalBtn && ramadanIshaModal) {
     openRamadanIshaModalBtn.onclick = () => {
-      const curMode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
-      ramadanIshaModal.querySelectorAll('.madhab-select-card').forEach(c => {
-        const m = c.getAttribute('data-ramadan-mode');
-        c.classList.toggle('active', m === curMode);
-        const circle = c.querySelector('.custom-radio-circle');
-        if (circle) circle.textContent = (m === curMode) ? '✓' : '';
-      });
-
-      if (ramadanCustomWrapper) {
-        ramadanCustomWrapper.style.display = (curMode === 'custom') ? 'block' : 'none';
-      }
-      if (customRamadanInput) {
-        customRamadanInput.value = localStorage.getItem('hayat_ramadan_isha_custom_min') || '100';
-      }
+      tempRamadanMode = localStorage.getItem('hayat_ramadan_isha_mode') || '120';
+      renderRamadanCardsSelection();
       ramadanIshaModal.classList.add('show');
     };
   }
 
+  // زرا الإلغاء والإغلاق دون حفظ أي تعديل
   if (closeRamadanIshaBtn && ramadanIshaModal) {
     closeRamadanIshaBtn.onclick = () => ramadanIshaModal.classList.remove('show');
   }
+  if (cancelRamadanIshaBtn && ramadanIshaModal) {
+    cancelRamadanIshaBtn.onclick = () => ramadanIshaModal.classList.remove('show');
+  }
 
+  // التحديد البصري فقط عند النقر على الخيارات (دون حفظ أو إغلاق فوري)
   if (ramadanIshaModal) {
     ramadanIshaModal.querySelectorAll('.madhab-select-card').forEach(card => {
       card.onclick = (e) => {
         if (e.target.tagName === 'INPUT') return;
-        const mode = card.getAttribute('data-ramadan-mode');
-
-        if (mode === 'custom') {
-          ramadanIshaModal.querySelectorAll('.madhab-select-card').forEach(c => {
-            c.classList.remove('active');
-            c.querySelector('.custom-radio-circle').textContent = '';
-          });
-          card.classList.add('active');
-          card.querySelector('.custom-radio-circle').textContent = '✓';
-          if (ramadanCustomWrapper) ramadanCustomWrapper.style.display = 'block';
-          if (customRamadanInput) customRamadanInput.focus();
-          return;
+        tempRamadanMode = card.getAttribute('data-ramadan-mode');
+        renderRamadanCardsSelection();
+        if (tempRamadanMode === 'custom' && customRamadanInput) {
+          customRamadanInput.focus();
         }
-
-        localStorage.setItem('hayat_ramadan_isha_mode', mode);
-        ramadanIshaModal.classList.remove('show');
-        syncPrayerSettingsUI();
-        if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
       };
     });
   }
 
-  if (customRamadanInput) {
-    customRamadanInput.onchange = () => {
-      const val = parseInt(customRamadanInput.value, 10);
-      if (val && val >= 60 && val <= 180) {
-        localStorage.setItem('hayat_ramadan_isha_mode', 'custom');
-        localStorage.setItem('hayat_ramadan_isha_custom_min', val.toString());
-        if (ramadanIshaModal) ramadanIshaModal.classList.remove('show');
+  // زر حفظ واعتماد توقيت رمضان مع رسالة النجاح
+  if (btnSaveRamadanIsha && ramadanIshaModal) {
+    btnSaveRamadanIsha.onclick = () => {
+      try {
+        if (tempRamadanMode === 'custom') {
+          const val = parseInt(customRamadanInput.value, 10);
+          if (!val || val < 45 || val > 180) {
+            alert('يرجى كتابة عدد دقائق صالح بين 45 و 180 دقيقة');
+            customRamadanInput.focus();
+            return;
+          }
+          localStorage.setItem('hayat_ramadan_isha_custom_min', val.toString());
+        }
+
+        localStorage.setItem('hayat_ramadan_isha_mode', tempRamadanMode);
+        ramadanIshaModal.classList.remove('show');
         syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
+        
+        // إظهار رسالة النجاح الفورية
+        showSettingsSuccessToast('تم اعتماد توقيت العشاء في رمضان بنجاح');
+      } catch (err) {
+        alert('حدث خطأ أثناء حفظ التوقيت، يرجى المحاولة ثانية.');
       }
     };
   }
