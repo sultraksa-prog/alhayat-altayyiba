@@ -3519,9 +3519,20 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         const d = new Date(now.getTime());
         d.setHours(h, m, 0, 0);
 
-        // تعديل التبكير الحنبلي للجمعة إن تم تفعيله
+        // تعديل التبكير الحنبلي للجمعة بحسب الدقائق المحددة بدقة
+        let formattedRowTime = currentTimings[p.key];
         if (p.key === 'Dhuhr' && isFriday && localStorage.getItem('hayat_friday_method') === 'hanbali_early') {
-          d.setMinutes(d.getMinutes() - 25);
+          const earlyMins = parseInt(localStorage.getItem('hayat_friday_early_minutes'), 10) || 25;
+          d.setMinutes(d.getMinutes() - earlyMins);
+
+          // تعديل الوقت المعروض في صف الجمعة بجدول الصلوات ليعكس الموعد المبكر
+          const earlyHours = d.getHours();
+          const earlyMinutes = d.getMinutes();
+          formattedRowTime = `${String(earlyHours).padStart(2, '0')}:${String(earlyMinutes).padStart(2, '0')}`;
+          const dhuhrRowTimeEl = document.querySelector('.prayer-row[data-prayer="dhuhr"] .prayer-time');
+          if (dhuhrRowTimeEl) {
+            dhuhrRowTimeEl.textContent = formatTo12Hour(formattedRowTime);
+          }
         }
 
         prayerDates.push({ key: p.key, name: pName, date: d, rawTime: currentTimings[p.key] });
@@ -4192,7 +4203,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.78', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.79', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
