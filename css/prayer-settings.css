@@ -396,3 +396,10 @@
   opacity: 1;
   pointer-events: auto;
 }
+
+/* مظهر التنبيه والتحذير الأنيق المنسجم مع الهوية */
+.settings-feedback-toast.warning {
+  border-color: #F59E0B !important;
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3) !important;
+}
+
