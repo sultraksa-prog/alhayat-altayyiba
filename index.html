@@ -89,30 +89,35 @@
             <span id="prayerExpirationText">يوشك وقت الصلاة على الخروج</span>
           </div>
 
-          <!-- الصف العلوي المدمج: الساعة الحية بدون ثواني + وسم الصلاة -->
+          <!-- الصف العلوي المتزن: الحالة وزر ! باليمين، والساعة الحية النابضة باليسار -->
           <div class="hero-top-info-row">
-            <div class="hero-live-clock-badge">
-              <span class="live-clock-digits" id="liveClockDisplay">--:--</span>
-              <span class="live-clock-period" id="liveClockPeriod">--</span>
-            </div>
-
+            <!-- اليمين: حالة الصلاة + زر التعجب للمعلومة الشرعية ! -->
             <div class="hero-prayer-status-badge">
               <span class="timeline-pulse-dot"></span>
               <span id="currentPrayerStatusTag">باقي على الصلاة</span>
+              <button type="button" class="hero-fiqh-info-btn" id="openPrayerFiqhInfoBtn" title="بيان مواقيت الصلوات الشرعية ومنتصف الليل">!</button>
               <span class="ramadan-active-pill" id="ramadanActivePill" style="display: none;">🌙 رمضان</span>
+            </div>
+
+            <!-- اليسار: الساعة الرقمية الحية النابضة (تكتكة النقطتين) -->
+            <div class="hero-live-clock-badge" title="الوقت الفعلي الحالي">
+              <span class="live-clock-digits" id="liveClockDisplay">--:--</span>
+              <span class="live-clock-period" id="liveClockPeriod">--</span>
             </div>
           </div>
 
-          <!-- العداد التنازلي الكبير للصلاة القادمة -->
-          <div class="hero-countdown-row">
+          <!-- العداد التنازلي التبادلي الذكي (قابل للنقر للقلب الفوري) -->
+          <div class="hero-countdown-row" id="countdownFlipContainer" title="انقر للتبديل بين الصلاة القادمة وانتهاء وقت الفرض">
             <span class="hero-countdown-digits" id="countdownTimer">00 : 00 : 00</span>
           </div>
 
-          <!-- مسار التقدم الزمني المندمج النحيف -->
+          <!-- مسار التقدم الزمني مع علامة منتصف الليل الشرعي الفاصلة -->
           <div class="hero-timeline-section">
             <div class="hero-timeline-track">
               <div class="hero-timeline-fill" id="timelineTrackProgress"></div>
               <div class="hero-timeline-knob" id="timelineTrackThumb"></div>
+              <!-- علامة منتصف الليل الفاصلة على المسار -->
+              <div class="timeline-midnight-marker" id="timelineMidnightMarker" style="display: none;" title="منتصف الليل الشرعي (نهاية وقت العشاء)"></div>
             </div>
             <div class="hero-timeline-labels">
               <div class="timeline-node-item node-prev">
@@ -890,6 +895,65 @@
         </div>
       </div>
     </div>  
+
+    <!-- 8. نافذة بيان أوقات الصلوات الشرعية ومنتصف الليل مع المراجع -->
+    <div class="bottom-sheet-backdrop" id="prayerFiqhInfoModal" style="z-index: 350;">
+      <div class="bottom-sheet" style="max-height: 86vh; display: flex; flex-direction: column;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header" style="margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 22px;">📖</span>
+            <h3 class="sheet-title" style="margin: 0; font-size: 16px;">المواقيت الشرعية وحدود الصلوات</h3>
+          </div>
+          <button type="button" class="modal-btn-link" id="closePrayerFiqhBtn" style="font-size: 18px;">✕</button>
+        </div>
+
+        <div class="fiqh-modal-body-scroll">
+          <!-- بطاقة منتصف الليل والعشاء -->
+          <div class="fiqh-info-card highlight-night">
+            <div class="fiqh-card-head">
+              <span class="fiqh-badge-gold">تحقيق فقهي هام</span>
+              <h4>وقت انتهاء صلاة العشاء (منتصف الليل الشرعي)</h4>
+            </div>
+            <p class="fiqh-hadith-text">
+              ثبت في <strong>صحيح مسلم (حديث رقم 612)</strong> عن عبد الله بن عمرو رضي الله عنهما أن رسول الله ﷺ قال:<br>
+              <span class="hadith-quote">«وَوَقْتُ صَلَاةِ الْعِشَاءِ إِلَى نِصْفِ اللَّيْلِ الأَوْسَطِ»</span>
+            </p>
+            <p class="fiqh-explanation">
+              <strong>أقوال المحققين من أهل العلم:</strong> قرر أئمة التحقيق (كالإمام ابن تيمية وابن باز وابن عثيمين رحمهم الله) أن وقت الاختيار لصلاة العشاء ينتهي يقيناً بانتصاف الليل، وما بعده وقت ضرورة فقط لأصحاب الأعذار.
+            </p>
+            <div class="fiqh-calc-box">
+              <strong>كيف يُحسب منتصف الليل الشرعي؟</strong><br>
+              هو ليس الساعة 12:00 ليلاً دائماً، بل يُحسب فلكياً وشرعياً بـ <u>(نصف المدة الزمنية الواقعة بين أذان المغرب وأذان الفجر)</u>.
+            </div>
+          </div>
+
+          <!-- تفصيل حدود سائر الصلوات الخمس -->
+          <div class="fiqh-prayers-grid">
+            <div class="fiqh-prayer-item">
+              <span class="fp-name">صلاة الفجر:</span>
+              <span class="fp-desc">يبدأ من طلوع الفجر الصادق، وينتهي بطلوع أول قرص الشمس (الشروق).</span>
+            </div>
+            <div class="fiqh-prayer-item">
+              <span class="fp-name">صلاة الظهر:</span>
+              <span class="fp-desc">يبدأ من زوال الشمس عن كبد السماء، وينتهي بدخول وقت العصر (إذا صار ظل كل شيء مثله).</span>
+            </div>
+            <div class="fiqh-prayer-item">
+              <span class="fp-name">صلاة العصر:</span>
+              <span class="fp-desc">يبدأ بمصير ظل الشيء مثله، ووقت الاختيار ينتهي باصفرار الشمس، ويمتد وقت الضرورة للغروب.</span>
+            </div>
+            <div class="fiqh-prayer-item">
+              <span class="fp-name">صلاة المغرب:</span>
+              <span class="fp-desc">يبدأ بغروب كامل قرص الشمس، وينتهي بمغيب الشفق الأحمر (وهو موعد أذان العشاء).</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <button type="button" class="btn-confirm-prayer-offset" id="confirmCloseFiqhModalBtn" style="width: 100%; padding: 11px 0; font-size: 15px;">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ==================== الشاشة: حول تطبيق الحياة الطيبة ==================== -->
     <div id="screen-about-app" class="screen-view">
