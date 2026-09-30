@@ -164,8 +164,8 @@ window.syncPrayerSettingsUI = syncPrayerSettingsUI;
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // دالة إظهار رسالة النجاح المنبثقة
-  function showSettingsSuccessToast(message) {
+  // دالة إظهار الرسائل المنبثقة الفاخرة (نجاح / تحذير) المتوافقة مع هوية التطبيق
+  function showSettingsFeedbackToast(message, type = 'success') {
     let toast = document.getElementById('settingsFeedbackToast');
     if (!toast) {
       toast = document.createElement('div');
@@ -173,14 +173,27 @@ document.addEventListener('DOMContentLoaded', () => {
       toast.className = 'settings-feedback-toast';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = `<span>✨</span><span>${message}</span>`;
+    
+    const icon = (type === 'warning') ? '⚠️' : '✨';
+    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    
+    if (type === 'warning') {
+      toast.classList.add('warning');
+    } else {
+      toast.classList.remove('warning');
+    }
+
     toast.classList.add('show');
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => {
       toast.classList.remove('show');
-    }, 2800);
+    }, 3200);
   }
-  
+
+  // للتوافق مع أي استدعاءات سابقة
+  function showSettingsSuccessToast(message) {
+    showSettingsFeedbackToast(message, 'success');
+  }
   const screenPrayerSettings = document.getElementById('screen-prayer-settings');
   const screenPrayerOffsets = document.getElementById('screen-prayer-offsets');
   const screenGeneralSettings = document.getElementById('screen-general-settings');
@@ -643,17 +656,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // زر حفظ واعتماد توقيت رمضان مع رسالة النجاح
+  // زر حفظ واعتماد توقيت رمضان مع رسائل التنبيه والنجاح المطابقة لهوية التطبيق
   if (btnSaveRamadanIsha && ramadanIshaModal) {
     btnSaveRamadanIsha.onclick = () => {
       try {
         if (tempRamadanMode === 'custom') {
           const val = parseInt(customRamadanInput.value, 10);
-          if (!val || val < 45 || val > 180) {
-            alert('يرجى كتابة عدد دقائق صالح بين 45 و 180 دقيقة');
-            customRamadanInput.focus();
+
+          // 1. التحقق من إدخال رقم صحيح
+          if (!val || isNaN(val)) {
+            showSettingsFeedbackToast('يرجى كتابة عدد دقائق صالح', 'warning');
+            if (customRamadanInput) customRamadanInput.focus();
             return;
           }
+
+          // 2. التحقق من سقف الساعتين (120 دقيقة)
+          if (val > 120) {
+            showSettingsFeedbackToast('لا يمكن أن يتجاوز فارق العشاء في رمضان ساعتين (120 دقيقة)', 'warning');
+            if (customRamadanInput) customRamadanInput.focus();
+            return;
+          }
+
+          // 3. التحقق من الحد الأدنى المعقول (60 دقيقة - ساعة بعد المغرب)
+          if (val < 60) {
+            showSettingsFeedbackToast('الحد الأدنى لفارق العشاء في رمضان هو 60 دقيقة', 'warning');
+            if (customRamadanInput) customRamadanInput.focus();
+            return;
+          }
+
           localStorage.setItem('hayat_ramadan_isha_custom_min', val.toString());
         }
 
@@ -662,10 +692,10 @@ document.addEventListener('DOMContentLoaded', () => {
         syncPrayerSettingsUI();
         if (typeof window.applyPrayerSettingsUpdate === 'function') window.applyPrayerSettingsUpdate();
         
-        // إظهار رسالة النجاح الفورية
-        showSettingsSuccessToast('تم اعتماد توقيت العشاء في رمضان بنجاح');
+        // إظهار رسالة النجاح الفاخرة
+        showSettingsFeedbackToast('تم اعتماد توقيت العشاء في رمضان بنجاح', 'success');
       } catch (err) {
-        alert('حدث خطأ أثناء حفظ التوقيت، يرجى المحاولة ثانية.');
+        showSettingsFeedbackToast('تعذر حفظ التوقيت، يرجى المحاولة ثانية', 'warning');
       }
     };
   }
