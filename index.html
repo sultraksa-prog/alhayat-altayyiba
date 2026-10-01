@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/calendar.css">
   <link rel="stylesheet" href="css/prayer-settings.css">
+  <link rel="stylesheet" href="css/alarms.css">
 </head>
 <body>
 
@@ -342,6 +343,18 @@
             </svg>
           </div>
           <span class="tool-title">التقويم</span>
+        </div>
+
+        <!-- 4.1 المنبه والتذكيرات المركزية -->
+        <div class="tool-card" id="openAlarmHubTileBtn">
+          <div class="tool-icon-box" style="background:#FFF1F2; color:#E11D48; border-color:#FECDD3;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="13" r="8"/>
+              <path d="M12 9v4l2 2"/>
+              <path d="M5 3L2 6M19 3l3 3"/>
+            </svg>
+          </div>
+          <span class="tool-title">المنبه</span>
         </div>
 
         <!-- 5. الأدعية (أكف الضراعة والابتهال) -->
@@ -954,6 +967,204 @@
         <div style="margin-top: 14px;">
           <button type="button" class="btn-confirm-prayer-offset" id="confirmCloseFiqhModalBtn" style="width: 100%; padding: 11px 0; font-size: 15px;">حسناً، فهمت</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ==================== الشاشة: إعدادات إشعار وأذان الصلاة المفصلة ==================== -->
+    <div id="screen-prayer-alarm-detail" class="screen-view">
+      <header class="alarm-nav-header">
+        <button class="nav-back-btn" id="backFromAlarmDetailBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <!-- القائمة المنسدلة لاختيار الصلاة أو "كل الصلوات" -->
+        <button type="button" class="alarm-header-selector-btn" id="alarmHeaderSelectorBtn">
+          <span id="alarmHeaderContextTitle">إشعار صلاة المغرب</span>
+          <span>▼</span>
+        </button>
+
+        <div class="alarm-header-tools">
+          <button type="button" class="btn-alarm-tool-icon" id="openPermissionsDiagBtn" title="فحص وتشخيص الصلاحيات">🔍</button>
+        </div>
+      </header>
+
+      <div class="other-settings-body">
+        <!-- 1. المفتاح الكلي للإشعار -->
+        <div class="other-settings-card">
+          <div class="other-setting-row">
+            <div>
+              <h4 class="other-setting-title">تفعيل الإشعار والأذان</h4>
+              <p class="other-setting-desc">تشغيل الأذان والتنبيهات المخصصة لهذه الفريضة</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleMasterPrayerAlarm" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. خلفية شاشة الأذان -->
+        <span class="other-settings-sec-label">خلفية شاشة الأذان عند الرنين</span>
+        <div class="adhan-bg-gallery" id="adhanBgGalleryContainer">
+          <div class="adhan-bg-card active" data-bg-id="bg1" style="background-image:url('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80');"><span class="adhan-bg-check">✓</span></div>
+          <div class="adhan-bg-card" data-bg-id="bg2" style="background-image:url('https://images.unsplash.com/photo-1564769625905-50e93615e769?auto=format&fit=crop&w=400&q=80');"><span class="adhan-bg-check">✓</span></div>
+          <div class="adhan-bg-card" data-bg-id="bg3" style="background-image:url('https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=400&q=80');"><span class="adhan-bg-check">✓</span></div>
+          <div class="adhan-bg-card" data-bg-id="bg4" style="background-image:url('https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=400&q=80');"><span class="adhan-bg-check">✓</span></div>
+        </div>
+
+        <!-- 3. إعدادات الصوت واختيار المؤذن -->
+        <span class="other-settings-sec-label">إعدادات الصوت والمؤذن</span>
+        <div class="other-settings-card">
+          <div class="other-setting-row clickable" id="openAudioSelectionModalBtn">
+            <div>
+              <h4 class="other-setting-title">صوت الأذان والتنبيه</h4>
+              <span style="font-size:12px; color:var(--primary-blue); font-weight:700;" id="currentSelectedAudioName">أذان مكة المكرمة</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
+
+          <hr class="setting-divider" style="margin:12px 0;">
+
+          <!-- الاهتزاز -->
+          <div class="setting-toggle-row" style="padding:0;">
+            <div class="setting-text-col">
+              <h4 class="setting-title" style="font-size:14px;">الاهتزاز مع الأذان</h4>
+              <p class="setting-desc" style="font-size:11.5px;">اهتزاز الهاتف أثناء رفع الأذان للتنبيه في الأماكن الصامتة</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="togglePrayerVibration" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. الوضع الهزاز التلقائي أثناء الصلاة -->
+        <span class="other-settings-sec-label">السكينة والخشوع في المسجد</span>
+        <div class="other-settings-card">
+          <div class="setting-toggle-row" style="padding:0;">
+            <div class="setting-text-col">
+              <h4 class="setting-title" style="font-size:14px; color:#15803D;">وضع الهزاز التلقائي أثناء الصلاة</h4>
+              <p class="setting-desc" style="font-size:11.5px;">تحويل الهاتف لهزاز وكتم الأصوات تلقائياً (من بعد الأذان وحتى انقضاء الإقامة بـ 15 دقيقة)</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleAutoSilentDuringPrayer" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- زر المعاينة الحية لشاشة الأذان -->
+        <div style="margin-top:16px;">
+          <button type="button" class="sheet-action-btn-secondary" onclick="triggerAdhanFullScreen('المغرب', '5:38 م')" style="background:#FFFFFF;">
+            <span>معاينة شاشة الأذان الكاملة 👁️</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== الشاشة: مدير التنبيهات والمنبه المركزي ==================== -->
+    <div id="screen-alarm-hub" class="screen-view">
+      <header class="section-nav-header">
+        <button class="nav-back-btn" id="backFromAlarmHubBtn">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <h2 class="section-page-title">المنبه والتذكيرات</h2>
+        <div style="width: 24px;"></div>
+      </header>
+
+      <div class="other-settings-body">
+        <!-- التبويبات الثلاثة -->
+        <div class="alarm-tabs-bar">
+          <button type="button" class="alarm-tab-chip active" data-tab="prayers">تنبيهات الصلوات</button>
+          <button type="button" class="alarm-tab-chip" data-tab="general">منبهات عامة</button>
+          <button type="button" class="alarm-tab-chip" data-tab="calendar">تذكيرات التقويم</button>
+        </div>
+
+        <div class="alarms-cards-stack" id="alarmsCardsStack"></div>
+      </div>
+    </div>
+
+    <!-- نافذة منبثقة لاختيار الصلاة في الهيدر (مع خيار كل الصلوات) -->
+    <div class="bottom-sheet-backdrop" id="alarmContextModal" style="z-index: 350;">
+      <div class="bottom-sheet" style="max-height:85vh; overflow-y:auto;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">اختر الصلاة لضبط إعداداتها</h3>
+          <button type="button" class="modal-btn-link" id="closeAlarmContextBtn">✕</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="country-select-item context-prayer-select-item" data-context-key="All" style="background:#ECFDF5; border-color:#86EFAC;">
+            <div class="country-select-item-title"><span>🌟</span><span style="color:#15803D;">كل الصلوات (تطبيق شامل لكافة الفروض)</span></div>
+          </div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Fajr"><div class="country-select-item-title"><span>🌙</span><span>صلاة الفجر</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Sunrise"><div class="country-select-item-title"><span>🌅</span><span>الشروق</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Dhuhr"><div class="country-select-item-title"><span>☀️</span><span>صلاة الظهر</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Asr"><div class="country-select-item-title"><span>🌤️</span><span>صلاة العصر</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Maghrib"><div class="country-select-item-title"><span>🌇</span><span>صلاة المغرب</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Isha"><div class="country-select-item-title"><span>🌌</span><span>صلاة العشاء</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Friday"><div class="country-select-item-title"><span>🕌</span><span>صلاة الجمعة (خاصة)</span></div></div>
+          <div class="country-select-item context-prayer-select-item" data-context-key="Eid"><div class="country-select-item-title"><span>🎉</span><span>صلاة وتكبيرات العيدين</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- نافذة اختيار المؤذن ورفع أذان مخصص من هاتف المستخدم -->
+    <div class="bottom-sheet-backdrop" id="adhanAudioSelectModal" style="z-index: 350;">
+      <div class="bottom-sheet" style="max-height:85vh; display:flex; flex-direction:column;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">اختر صوت الأذان</h3>
+          <button type="button" class="modal-btn-link" id="closeAdhanAudioModalBtn">✕</button>
+        </div>
+        <div class="muezzin-list-scroll" id="muezzinListScroll"></div>
+
+        <!-- زر رفع أذان مخصص من هاتف المستخدم مع الحفظ في IndexedDB أوفلاين -->
+        <label class="btn-upload-custom-adhan">
+          <span>📁 رفع أذان من جهازي (MP3 / WAV)</span>
+          <input type="file" id="inputUploadCustomAdhan" accept="audio/*" style="display:none;">
+        </label>
+      </div>
+    </div>
+
+    <!-- نافذة فحص وتشخيص الصلاحيات مع أزرار الإصلاح -->
+    <div class="bottom-sheet-backdrop" id="permissionsDiagModal" style="z-index: 360;">
+      <div class="bottom-sheet" style="max-height:85vh; overflow-y:auto;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">التحقق من أذونات الأذان والتنبيهات</h3>
+          <button type="button" class="modal-btn-link" id="closePermissionsDiagBtn">✕</button>
+        </div>
+        <div class="diagnostic-items-col">
+          <div class="diag-item-card granted" id="diagCardNotification">
+            <div><h4 style="font-size:14px; font-weight:800; margin:0;">أذونات الإشعارات</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لإطلاق صوت وتنبيه الصلاة في موعدها</p></div>
+            <button type="button" class="btn-diag-fix" id="btnFixNotification" style="display:none;">إصلاح الآن</button>
+            <span class="diag-status-badge">مفعل ✓</span>
+          </div>
+
+          <div class="diag-item-card granted">
+            <div><h4 style="font-size:14px; font-weight:800; margin:0;">تحسين البطارية (التشغيل الدائم)</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لضمان عدم إغلاق الأندرويد للتطبيق في الخلفية</p></div>
+            <span class="diag-status-badge">مفعل ✓</span>
+          </div>
+
+          <div class="diag-item-card granted">
+            <div><h4 style="font-size:14px; font-weight:800; margin:0;">الظهور فوق التطبيقات والنافذة العائمة</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لإظهار شاشة الأذان أثناء استخدام تطبيقات أخرى</p></div>
+            <span class="diag-status-badge">مفعل ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة الأذان الكاملة ملء الشاشة (#screen-adhan-fullscreen) -->
+    <div class="adhan-fullscreen-view" id="screen-adhan-fullscreen">
+      <div class="adhan-fs-content">
+        <h2 class="adhan-fs-top-title" id="adhanFsPrayerTitle">أذان المغرب</h2>
+        <span class="adhan-fs-time" id="adhanFsPrayerTime">05:38 م</span>
+        <button type="button" class="btn-pray-now-action" onclick="closeAdhanFullScreen()">صَلِّ الآن 🕌</button>
+      </div>
+
+      <div class="adhan-fs-bottom-links">
+        <button type="button" class="btn-adhan-fs-sublink" onclick="closeAdhanFullScreen(); if(typeof showScreen==='function') showScreen(document.getElementById('screen-qibla'));">🧭 القبلة</button>
+        <button type="button" class="btn-adhan-fs-sublink" onclick="closeAdhanFullScreen();">✕ إغلاق وتخطي</button>
       </div>
     </div>
 
@@ -2789,6 +3000,7 @@
  <script src="js/azkar-data.js"></script>
   <script src="js/locations-data.js"></script>
   <script src="js/prayer-settings.js"></script>
+  <script src="js/alarm-engine.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/app.js"></script>
 </body>
