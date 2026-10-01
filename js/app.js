@@ -3661,9 +3661,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         
         if (now >= islamicMidnight) {
           hasPrayerEnded = true;
-          endedNoticeLabel = 'انتهى وقت صلاة العشاء (منتصف الليل)';
+          endedNoticeLabel = 'انتهى وقت صلاة العشاء';
         } else {
-          expirationLabel = 'متبقي على نهاية وقت العشاء (منتصف الليل)';
+          expirationLabel = 'متبقي على نهاية وقت العشاء';
         }
       } else if (prevP.key === 'Fajr') {
         const sunriseDate = prayerDates.find(p => p.key === 'Sunrise').date;
