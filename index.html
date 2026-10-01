@@ -1109,6 +1109,8 @@
             <span>معاينة شاشة الأذان الكاملة 👁️</span>
           </button>
         </div>
+      </div>
+    </div> <!-- إغلاق screen-prayer-alarm-detail وتحرير باقي الشاشات -->
 
     <!-- ==================== الشاشة: مدير التنبيهات والمنبه المركزي ==================== -->
     <div id="screen-alarm-hub" class="screen-view">
@@ -1135,7 +1137,7 @@
       <button class="fab-btn" id="openAddGeneralAlarmFabBtn" title="إضافة منبه جديد">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-    </div>
+    </div> <!-- إغلاق screen-alarm-hub -->
 
     <!-- نافذة منبثقة لاختيار الصلاة في الهيدر (مع خيار كل الصلوات) -->
     <div class="bottom-sheet-backdrop" id="alarmContextModal" style="z-index: 350;">
@@ -3168,8 +3170,10 @@
       </div>
     </div>
 
+  </div> <!-- إغلاق app-container الرئيسي -->
+
   <video id="tasbeehPipVideo" muted playsinline style="display: none; width: 1px; height: 1px;"></video>
- <script src="js/azkar-data.js"></script>
+  <script src="js/azkar-data.js"></script>
   <script src="js/locations-data.js"></script>
   <script src="js/prayer-settings.js"></script>
   <script src="js/alarm-engine.js"></script>
