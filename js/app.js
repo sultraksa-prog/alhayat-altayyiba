@@ -3702,6 +3702,16 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const seconds = diffSec % 60;
       const nextPrayerCountdownText = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
 
+      // فحص ثانية دخول الوقت لإطلاق الأذان التلقائي فوراً
+      if (diffFromPrevSec === 0 || diffFromPrevSec === 1) {
+        if (!window.lastTriggeredPrayerKey || window.lastTriggeredPrayerKey !== prevP.key) {
+          window.lastTriggeredPrayerKey = prevP.key;
+          if (typeof triggerAdhanFullScreen === 'function') {
+            triggerAdhanFullScreen(prevP.name, formatTo12Hour(prevP.rawTime));
+          }
+        }
+      }
+      
       if (isDuringIqamah) {
         const remIqamahSec = (prevIqamahMins * 60) - diffFromPrevSec;
         const iM = Math.floor(remIqamahSec / 60);
@@ -4374,7 +4384,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.86', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.87', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
