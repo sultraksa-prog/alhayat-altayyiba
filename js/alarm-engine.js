@@ -4,7 +4,7 @@ const ALARM_DB_NAME = 'HayatAlarmDB';
 const ALARM_DB_VERSION = 1;
 let alarmDBInstance = null;
 
-// 1. فتح وتهيئة مستودع IndexedDB
+// 1. فتح وتهيئة مستودع IndexedDB للأوفلاين الدائم
 function initAlarmDatabase() {
   return new Promise((resolve, reject) => {
     if (alarmDBInstance) return resolve(alarmDBInstance);
@@ -12,6 +12,7 @@ function initAlarmDatabase() {
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('custom_audio')) db.createObjectStore('custom_audio', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('user_alarms')) db.createObjectStore('user_alarms', { keyPath: 'id' });
     };
     req.onsuccess = (e) => {
       alarmDBInstance = e.target.result;
@@ -41,13 +42,13 @@ async function getCustomAudioBlob(id) {
   });
 }
 
-// 2. قائمة أصوات الأذان العالمية (معالجة حظر 403 مع سيرفرات عامة بديلة)
+// 2. قائمة أصوات المؤذنين (روابط مستقرة عامة مع محرك نغمات احتياطي)
 const MUEZZIN_LIST = [
   { id: 'makkah', name: 'أذان الحرم المكي (الشيخ علي ملا)', country: 'مكة المكرمة 🇸🇦', url: 'https://ia800201.us.archive.org/12/items/AdhanMakkah/Adhan%20Makkah.mp3' },
   { id: 'madinah', name: 'أذان المسجد النبوي الشريف', country: 'المدينة المنورة 🇸🇦', url: 'https://ia800302.us.archive.org/24/items/AdhanMadinah/Adhan%20Madinah.mp3' },
   { id: 'aqsa', name: 'أذان المسجد الأقصى المبارك', country: 'فلسطين 🇵🇸', url: 'https://ia801802.us.archive.org/16/items/AdhanAlAqsa/Adhan%20Al-Aqsa.mp3' },
-  { id: 'egypt', name: 'أذان إذاعة القرآن بمصر (النقشبندي)', country: 'مصر 🇪🇬', url: 'https://ia800203.us.archive.org/14/items/AdhanEgypt/Adhan%20Egypt.mp3' },
-  { id: 'yemen', name: 'أذان الجامع الكبير بصنعاء', country: 'اليمن 🇾🇪', url: 'https://ia600201.us.archive.org/12/items/AdhanMakkah/Adhan%20Makkah.mp3' }
+  { id: 'egypt', name: 'أذان مصر (الإذاعة المصرية)', country: 'مصر 🇪🇬', url: 'https://ia800203.us.archive.org/14/items/AdhanEgypt/Adhan%20Egypt.mp3' },
+  { id: 'yemen', name: 'أذان صنعاء التراثي', country: 'اليمن 🇾🇪', url: 'https://ia600201.us.archive.org/12/items/AdhanMakkah/Adhan%20Makkah.mp3' }
 ];
 
 const ADHAN_BG_PRESETS = [
@@ -60,7 +61,6 @@ const ADHAN_BG_PRESETS = [
 let currentActivePrayerAlarmContext = 'Maghrib';
 let previewAudioPlayer = new Audio();
 
-// محرك النغمة المدمجة الاحتياطية حال غياب الاتصال أو تعثر الملف
 function playSynthesizedAdhanChime() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -110,12 +110,141 @@ function savePrayerAlarmConfig(prayerKey, config) {
   syncAllAlarmsToHub();
 }
 
+// 4. دوال مزامنة كروت المنبه المركزي (معرفة في النطاق العام لتفادي أي ReferenceError)
+function syncAllAlarmsToHub() {
+  const container = document.getElementById('alarmsCardsStack');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const activeTab = localStorage.getItem('hayat_alarm_hub_tab') || 'prayers';
+  document.querySelectorAll('.alarm-tab-chip').forEach(t => {
+    t.classList.toggle('active', t.getAttribute('data-tab') === activeTab);
+  });
+
+  if (activeTab === 'prayers') {
+    renderPrayerAlarmsList(container);
+  } else if (activeTab === 'general') {
+    renderGeneralAlarmsList(container);
+  } else if (activeTab === 'calendar') {
+    renderCalendarAlarmsList(container);
+  }
+}
+window.syncAllAlarmsToHub = syncAllAlarmsToHub;
+
+function renderPrayerAlarmsList(container) {
+  const prayers = [
+    { key: 'Fajr', name: 'صلاة الفجر' },
+    { key: 'Dhuhr', name: 'صلاة الظهر' },
+    { key: 'Asr', name: 'صلاة العصر' },
+    { key: 'Maghrib', name: 'صلاة المغرب' },
+    { key: 'Isha', name: 'صلاة العشاء' },
+    { key: 'Friday', name: 'صلاة الجمعة' }
+  ];
+
+  prayers.forEach(p => {
+    const cfg = getPrayerAlarmConfig(p.key);
+    const card = document.createElement('div');
+    card.className = 'alarm-card-unit';
+    card.innerHTML = `
+      <div class="alarm-unit-info" onclick="openPrayerAlarmSettings('${p.key}')" style="cursor: pointer;">
+        <h4 class="alarm-unit-title">${p.name}</h4>
+        <div class="alarm-unit-meta">
+          <span class="badge-alarm-type type-prayer">صلاة</span>
+          <span>${cfg.enabled ? 'الأذان مفعّل 🔊' : 'معطّل 🔕'}</span>
+        </div>
+      </div>
+      <label class="ios-switch">
+        <input type="checkbox" class="hub-prayer-switch" data-key="${p.key}" ${cfg.enabled ? 'checked' : ''}>
+        <span class="switch-slider"></span>
+      </label>
+    `;
+
+    card.querySelector('.hub-prayer-switch').onchange = (e) => {
+      cfg.enabled = e.target.checked;
+      savePrayerAlarmConfig(p.key, cfg);
+    };
+
+    container.appendChild(card);
+  });
+}
+
+function renderGeneralAlarmsList(container) {
+  const generalAlarms = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [
+    { id: 'g1', title: 'صلاة الضحى والورد', time: '09:30', enabled: true },
+    { id: 'g2', title: 'أذكار المساء وقراءة القرآن', time: '17:00', enabled: true }
+  ];
+
+  if (generalAlarms.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13.5px;">لا توجد منبهات عامة.<br><small style="margin-top:6px; display:block;">اضغط زر (+) بالأسفل لإنشاء منبه جديد.</small></div>`;
+    return;
+  }
+
+  generalAlarms.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'alarm-card-unit';
+    card.innerHTML = `
+      <div class="alarm-unit-info" onclick="openEditGeneralAlarmModal(${idx})" style="cursor: pointer;">
+        <h4 class="alarm-unit-title">${item.title}</h4>
+        <div class="alarm-unit-meta">
+          <span class="badge-alarm-type type-general">منبه عام</span>
+          <span style="font-weight:800; direction:ltr;">${item.time}</span>
+        </div>
+      </div>
+      <label class="ios-switch">
+        <input type="checkbox" class="hub-gen-switch" data-idx="${idx}" ${item.enabled ? 'checked' : ''}>
+        <span class="switch-slider"></span>
+      </label>
+    `;
+
+    card.querySelector('.hub-gen-switch').onchange = (e) => {
+      generalAlarms[idx].enabled = e.target.checked;
+      localStorage.setItem('hayat_general_alarms_list', JSON.stringify(generalAlarms));
+    };
+
+    container.appendChild(card);
+  });
+}
+
+function renderCalendarAlarmsList(container) {
+  const calAlarms = JSON.parse(localStorage.getItem('hayat_calendar_alarms_list')) || [];
+  if (calAlarms.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">لا توجد تذكيرات للتقويم حالياً.<br><small style="margin-top:6px; display:block;">💡 اضغط مطولاً على أي يوم في شاشة التقويم لإضافة تذكير خاص به.</small></div>`;
+    return;
+  }
+
+  calAlarms.forEach((ca, idx) => {
+    const card = document.createElement('div');
+    card.className = 'alarm-card-unit';
+    card.innerHTML = `
+      <div class="alarm-unit-info">
+        <h4 class="alarm-unit-title">${ca.note || 'مناسبة في التقويم'}</h4>
+        <div class="alarm-unit-meta">
+          <span class="badge-alarm-type type-calendar">تاريخ: ${ca.dateStr}</span>
+          <span style="font-weight:700;">${ca.timeStr || ''}</span>
+        </div>
+      </div>
+      <button type="button" class="modal-btn-link text-muted delete-cal-alarm-btn" data-idx="${idx}" style="color:#EF4444; font-size:16px;">🗑️</button>
+    `;
+
+    card.querySelector('.delete-cal-alarm-btn').onclick = () => {
+      calAlarms.splice(idx, 1);
+      localStorage.setItem('hayat_calendar_alarms_list', JSON.stringify(calAlarms));
+      renderCalendarAlarmsList(container);
+    };
+
+    container.appendChild(card);
+  });
+}
+
+// 5. فتح وضبط واجهة إعدادات أذان الصلاة
 function openPrayerAlarmSettings(prayerKey) {
   currentActivePrayerAlarmContext = prayerKey;
   updatePrayerAlarmSettingsUI();
   const screen = document.getElementById('screen-prayer-alarm-detail');
-  if (screen && typeof showScreen === 'function') showScreen(screen);
-  else if (window.showScreen) window.showScreen(screen);
+  if (screen) {
+    if (typeof window.showScreen === 'function') window.showScreen(screen);
+    else if (typeof showScreen === 'function') showScreen(screen);
+  }
 }
 window.openPrayerAlarmSettings = openPrayerAlarmSettings;
 
@@ -133,7 +262,7 @@ function updatePrayerAlarmSettingsUI() {
       Asr: 'إشعار صلاة العصر',
       Maghrib: 'إشعار صلاة المغرب',
       Isha: 'إشعار صلاة العشاء',
-      Friday: 'صلاة الجمعة',
+      Friday: 'صلاة الجمعة (خاصة)',
       Eid: 'صلاة العيدين'
     };
     titleSelector.textContent = names[pk] || 'إشعار الصلاة';
@@ -181,7 +310,7 @@ function renderPreAlarmsListUI() {
   const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
 
   if (!cfg.preAlarms || cfg.preAlarms.length === 0) {
-    container.innerHTML = `<span style="font-size:12px; color:var(--text-muted); text-align:center;">لا توجد تنبيهات مخصصة لهذه الصلاة بعد.</span>`;
+    container.innerHTML = `<span style="font-size:12px; color:var(--text-muted); text-align:center; padding:6px 0;">لا توجد تنبيهات مخصصة لهذه الصلاة بعد.</span>`;
     return;
   }
 
@@ -191,7 +320,7 @@ function renderPreAlarmsListUI() {
     const posText = a.position === 'before' ? 'قبل' : 'بعد';
     card.innerHTML = `
       <span>🔔 تنبيه ${posText} الصلاة بـ ${a.minutes} دقيقة</span>
-      <button type="button" class="modal-btn-link text-muted delete-pre-alarm-btn" data-idx="${idx}" style="color:#EF4444;">✕</button>
+      <button type="button" class="modal-btn-link text-muted delete-pre-alarm-btn" data-idx="${idx}" style="color:#EF4444; font-size:14px; font-weight:800;">✕</button>
     `;
     card.querySelector('.delete-pre-alarm-btn').onclick = () => {
       cfg.preAlarms.splice(idx, 1);
@@ -202,7 +331,7 @@ function renderPreAlarmsListUI() {
   });
 }
 
-// 4. تشغيل الأذان الحقيقي التلقائي وشاشة العرض الكاملة
+// 6. تشغيل شاشة الأذان الكاملة ملء الشاشة والمعاينة
 function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (!fsView) return;
@@ -220,17 +349,14 @@ function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
 
   fsView.style.display = 'flex';
 
-  // الاهتزاز
   if (cfg.vibrationEnabled && navigator.vibrate) {
     navigator.vibrate([400, 200, 400, 200, 600]);
   }
 
-  // فحص سياسة احترام الوضع الصامت للجهاز
   if (cfg.respectSilentMode && window.AndroidBridge && typeof window.AndroidBridge.isDeviceSilent === 'function') {
-    if (window.AndroidBridge.isDeviceSilent()) return; // كتم الصوت
+    if (window.AndroidBridge.isDeviceSilent()) return;
   }
 
-  // تشغيل الصوت
   if (cfg.audioMode === 'custom' && cfg.customAudioId) {
     getCustomAudioBlob(cfg.customAudioId).then(blob => {
       if (blob) {
@@ -244,7 +370,7 @@ function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
     const m = MUEZZIN_LIST.find(x => x.id === cfg.selectedMuezzinId) || MUEZZIN_LIST[0];
     previewAudioPlayer.src = m.url;
     previewAudioPlayer.play().catch(() => {
-      console.warn('Audio playback restricted, playing fallback chime');
+      console.warn('Audio link restricted, playing fallback chime');
       playSynthesizedAdhanChime();
     });
   }
@@ -261,9 +387,130 @@ function closeAdhanFullScreen() {
 }
 window.closeAdhanFullScreen = closeAdhanFullScreen;
 
-// 5. ربط أحداث النوافذ ومودالات المنبه العام والتقويم
+// 7. ربط وتفعيل الأحداث بالكامل داخل DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   initAlarmDatabase();
+
+  const backFromAlarmDetail = document.getElementById('backFromAlarmDetailBtn');
+  if (backFromAlarmDetail) {
+    backFromAlarmDetail.onclick = () => {
+      const homeScreen = document.getElementById('screen-home');
+      if (typeof window.showScreen === 'function') window.showScreen(homeScreen);
+      else if (typeof showScreen === 'function') showScreen(homeScreen);
+    };
+  }
+
+  const masterToggle = document.getElementById('toggleMasterPrayerAlarm');
+  if (masterToggle) {
+    masterToggle.onchange = (e) => {
+      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+      cfg.enabled = e.target.checked;
+      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+    };
+  }
+
+  document.querySelectorAll('.adhan-bg-card').forEach(card => {
+    card.onclick = () => {
+      document.querySelectorAll('.adhan-bg-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const bgId = card.getAttribute('data-bg-id');
+      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+      cfg.bgId = bgId;
+      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+    };
+  });
+
+  // فتح نافذة اختيار الصوت والمؤذنين
+  const openAudioModalBtn = document.getElementById('openAudioSelectionModalBtn');
+  const audioModal = document.getElementById('adhanAudioSelectModal');
+  const closeAudioModalBtn = document.getElementById('closeAdhanAudioModalBtn');
+  const muezzinContainer = document.getElementById('muezzinListScroll');
+
+  if (openAudioModalBtn && audioModal) {
+    openAudioModalBtn.onclick = () => {
+      renderMuezzinListUI();
+      audioModal.classList.add('show');
+    };
+  }
+  if (closeAudioModalBtn && audioModal) {
+    closeAudioModalBtn.onclick = () => {
+      previewAudioPlayer.pause();
+      audioModal.classList.remove('show');
+    };
+  }
+
+  function renderMuezzinListUI() {
+    if (!muezzinContainer) return;
+    muezzinContainer.innerHTML = '';
+    const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+
+    MUEZZIN_LIST.forEach(m => {
+      const isSelected = (cfg.audioMode === 'muezzin' && cfg.selectedMuezzinId === m.id);
+      const row = document.createElement('div');
+      row.className = `muezzin-card-item ${isSelected ? 'active' : ''}`;
+      row.innerHTML = `
+        <div class="muezzin-info-group">
+          <button type="button" class="btn-preview-audio-play" data-url="${m.url}">▶</button>
+          <div>
+            <h4 style="font-size:14px; font-weight:800; margin:0;">${m.name}</h4>
+            <span style="font-size:11.5px; color:var(--text-secondary);">${m.country}</span>
+          </div>
+        </div>
+        <span class="custom-radio-circle">${isSelected ? '✓' : ''}</span>
+      `;
+
+      row.onclick = (e) => {
+        if (e.target.closest('.btn-preview-audio-play')) return;
+        previewAudioPlayer.pause();
+        cfg.audioMode = 'muezzin';
+        cfg.selectedMuezzinId = m.id;
+        savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+        updatePrayerAlarmSettingsUI();
+        audioModal.classList.remove('show');
+      };
+
+      const pBtn = row.querySelector('.btn-preview-audio-play');
+      pBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (previewAudioPlayer.src === m.url && !previewAudioPlayer.paused) {
+          previewAudioPlayer.pause();
+          pBtn.classList.remove('playing');
+          pBtn.textContent = '▶';
+        } else {
+          document.querySelectorAll('.btn-preview-audio-play').forEach(b => {
+            b.classList.remove('playing');
+            b.textContent = '▶';
+          });
+          previewAudioPlayer.src = m.url;
+          previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
+          pBtn.classList.add('playing');
+          pBtn.textContent = '⏸';
+        }
+      };
+
+      muezzinContainer.appendChild(row);
+    });
+  }
+
+  // رفع أذان مخصص
+  const customFileInput = document.getElementById('inputUploadCustomAdhan');
+  if (customFileInput) {
+    customFileInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileId = 'custom_audio_' + Date.now();
+      await saveCustomAudioBlob(fileId, file, file.name);
+
+      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+      cfg.audioMode = 'custom';
+      cfg.customAudioId = fileId;
+      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+      updatePrayerAlarmSettingsUI();
+
+      if (audioModal) audioModal.classList.remove('show');
+      alert(`✨ تم رفع الأذان بنجاح وتخزينه في جهازك أوفلاين!`);
+    };
+  }
 
   // المعاينة الحية للأذان
   const btnPreviewLive = document.getElementById('btnPreviewAdhanLiveScreen');
@@ -275,8 +522,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // التحكم بـ خانتي الهزاز التلقائي
-  const btnIncBuffer = document.getElementById('btnIncBuffer');
-  const btnDecBuffer = document.getElementById('btnDecBuffer');
+  const btnIncBuffer = document.getElementById('btnIncSilentBuffer');
+  const btnDecBuffer = document.getElementById('btnDecSilentBuffer');
   const bufferDisp = document.getElementById('displaySilentBufferMins');
   const selectStartOffset = document.getElementById('selectAutoSilentStartOffset');
   const toggleRespectSilent = document.getElementById('toggleRespectDeviceSilent');
@@ -340,7 +587,60 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // المنبهات العامة (+) والتعديل
+  // تشخيص الصلاحيات
+  const openDiagBtn = document.getElementById('openPermissionsDiagBtn');
+  const diagModal = document.getElementById('permissionsDiagModal');
+  const closeDiagBtn = document.getElementById('closePermissionsDiagBtn');
+
+  if (openDiagBtn && diagModal) {
+    openDiagBtn.onclick = () => {
+      runSystemPermissionsDiagnostic();
+      diagModal.classList.add('show');
+    };
+  }
+  if (closeDiagBtn && diagModal) {
+    closeDiagBtn.onclick = () => diagModal.classList.remove('show');
+  }
+
+  function runSystemPermissionsDiagnostic() {
+    const notifCard = document.getElementById('diagCardNotification');
+    const notifBtn = document.getElementById('btnFixNotification');
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        if (notifCard) notifCard.className = 'diag-item-card granted';
+        if (notifBtn) notifBtn.style.display = 'none';
+      } else {
+        if (notifCard) notifCard.className = 'diag-item-card missing';
+        if (notifBtn) {
+          notifBtn.style.display = 'inline-block';
+          notifBtn.onclick = () => Notification.requestPermission().then(() => runSystemPermissionsDiagnostic());
+        }
+      }
+    }
+  }
+
+  // القائمة المنسدلة لاختيار الصلاة
+  const openContextBtn = document.getElementById('alarmHeaderSelectorBtn');
+  const contextModal = document.getElementById('alarmContextModal');
+  const closeContextBtn = document.getElementById('closeAlarmContextBtn');
+
+  if (openContextBtn && contextModal) {
+    openContextBtn.onclick = () => contextModal.classList.add('show');
+  }
+  if (closeContextBtn && contextModal) {
+    closeContextBtn.onclick = () => contextModal.classList.remove('show');
+  }
+
+  document.querySelectorAll('.context-prayer-select-item').forEach(item => {
+    item.onclick = () => {
+      const key = item.getAttribute('data-context-key');
+      currentActivePrayerAlarmContext = key;
+      updatePrayerAlarmSettingsUI();
+      if (contextModal) contextModal.classList.remove('show');
+    };
+  });
+
+  // إدارة المنبهات العامة (+) والتعديل
   const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
   const genModal = document.getElementById('generalAlarmModal');
   const closeGenModalBtn = document.getElementById('closeGeneralAlarmModalBtn');
@@ -401,7 +701,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // نافذة تذكير التقويم
+  // تبويبات مدير التنبيهات
+  document.querySelectorAll('.alarm-tab-chip').forEach(tab => {
+    tab.onclick = () => {
+      const t = tab.getAttribute('data-tab');
+      localStorage.setItem('hayat_alarm_hub_tab', t);
+      syncAllAlarmsToHub();
+    };
+  });
+
+  // تذكير التقويم
   const calModal = document.getElementById('calendarAlarmModal');
   const closeCalModalBtn = document.getElementById('closeCalAlarmModalBtn');
   const btnCancelCalAlarm = document.getElementById('btnCancelCalAlarm');
@@ -433,24 +742,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // تشغيل المعاينة للمؤذنين
-  const customFileInput = document.getElementById('inputUploadCustomAdhan');
-  if (customFileInput) {
-    customFileInput.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const fileId = 'custom_audio_' + Date.now();
-      await saveCustomAudioBlob(fileId, file, file.name);
-
-      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
-      cfg.audioMode = 'custom';
-      cfg.customAudioId = fileId;
-      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
-      updatePrayerAlarmSettingsUI();
-
-      const audioModal = document.getElementById('adhanAudioSelectModal');
-      if (audioModal) audioModal.classList.remove('show');
-      alert(`✨ تم رفع الأذان بنجاح وتخزينه أوفلاين في جهازك!`);
-    };
-  }
+  // المزامنة الأولية عند الإقلاع
+  syncAllAlarmsToHub();
 });
