@@ -370,7 +370,32 @@
         </div>
       `;
 
-      cell.onclick = () => {
+      // رصد النقر العادي لتحديد اليوم، والنقر المطوّل (500ms) لإضافة تذكير للتقويم
+      let cellLpTimer = null;
+      let isCellLp = false;
+
+      const startCellPress = () => {
+        isCellLp = false;
+        cellLpTimer = setTimeout(() => {
+          isCellLp = true;
+          if (navigator.vibrate) navigator.vibrate(40);
+          const h = getHijriDetails(cellDate);
+          const dateLabel = `${h.day} ${h.monthName}، ${h.year} هـ (${cellDate.getDate()}/${cellDate.getMonth() + 1}/${cellDate.getFullYear()} م)`;
+          if (typeof window.openCalendarDayAlarmModal === 'function') {
+            window.openCalendarDayAlarmModal(dateLabel);
+          }
+        }, 500);
+      };
+
+      const cancelCellPress = () => clearTimeout(cellLpTimer);
+
+      cell.addEventListener('touchstart', startCellPress, { passive: true });
+      cell.addEventListener('touchend', cancelCellPress);
+      cell.addEventListener('mousedown', startCellPress);
+      cell.addEventListener('mouseup', cancelCellPress);
+
+      cell.onclick = (e) => {
+        if (isCellLp) { e.preventDefault(); return; }
         activeSelectedDate = new Date(cellDate);
         renderCalendar();
         renderSelectedDayPrayers(activeSelectedDate);
