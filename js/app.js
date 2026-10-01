@@ -3329,9 +3329,8 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     };
   }
 
-  // جلب مواقيت الصلاة مع حماية قاطعة للإحداثيات في الكمبيوتر والجوال
+  // جلب مواقيت الصلاة مع المعالجة الأوفلاين الكاملة للتنقل بين الأيام
   async function fetchPrayerTimes() {
-    // التأكد من وجود إحداثيات صالحة دائماً
     userLocation.lat = userLocation.lat || DEFAULT_LOCATION.lat || 21.4225;
     userLocation.lng = userLocation.lng || DEFAULT_LOCATION.lng || 39.8262;
     userLocation.city = userLocation.city || DEFAULT_LOCATION.city || 'مكة المكرمة';
@@ -3343,8 +3342,8 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     const targetDate = getTargetDateObject();
     const methodNum = userLocation.method;
     const timestamp = Math.floor(targetDate.getTime() / 1000);
-    
-    const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;    
+    const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=${methodNum}`;
+
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Network response not ok');
@@ -3357,6 +3356,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           userLocation.timezone = data.data.meta.timezone;
         }
 
+        // حفظ كاش اليوم الحالي فقط
         if (currentDayOffset === 0) {
           localStorage.setItem('hayat_cached_timings', JSON.stringify({
             timings: currentTimings,
@@ -3368,22 +3368,38 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         updatePrayerUI(data.data);
       }
     } catch (err) {
-      console.warn('جاري استخدام المحرك الفلكي الداخلي الأوفلاين...');
+      console.warn('جاري استخدام المحرك الفلكي الشمسي الأوفلاين لليوم المحدد...');
       const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
       
-      if (cached && cached.timings) {
+      // 1. استخدام كاش اليوم فقط إذا كان المستخدم واقفاً على اليوم الحالي (currentDayOffset === 0)
+      if (currentDayOffset === 0 && cached && cached.timings && cached.hijri) {
         currentTimings = cached.timings;
         if (cached.timezone) userLocation.timezone = cached.timezone;
         updatePrayerUI({ timings: cached.timings, date: { hijri: cached.hijri } });
       } else {
-        // حساب فلكي محلي فوري وشامل في حال تعثر الشبكة أو الكاش
-        const tz = (userLocation.lng > 40) ? 3 : 2;
-        currentTimings = calculateLocalSolarTimings(targetDate, userLocation.lat, userLocation.lng, tz);
+        // 2. عند التنقل لليوم التالي أو السابق بدون إنترنت: تشغيل الحساب الفلكي الشمسي لليوم المستهدف
+        const tz = userLocation.timezoneOffset || (userLocation.lng > 40 ? 3 : 2);
+        const method = userLocation.method || 4;
+        const asrMadhab = userLocation.asrMadhab || 0;
+        const offsets = userLocation.prayerOffsets || {};
+
+        currentTimings = calculateLocalSolarTimings(targetDate, userLocation.lat, userLocation.lng, tz, method, asrMadhab, offsets);
         
+        // 3. احتساب التاريخ الهجري محلياً لليوم المستهدف مع مراعاة فارق التعديل (+/- يومين)
+        const hijriOffsetDays = parseInt(localStorage.getItem('hayat_hijri_offset') || '0', 10);
+        const adjustedTargetDate = new Date(targetDate.getTime());
+        if (hijriOffsetDays !== 0) {
+          adjustedTargetDate.setDate(adjustedTargetDate.getDate() + hijriOffsetDays);
+        }
+
         let localHijriData = null;
         try {
-          const hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
-          const parts = hf.formatToParts(targetDate);
+          const hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { 
+            day: 'numeric', 
+            month: 'numeric', 
+            year: 'numeric' 
+          });
+          const parts = hf.formatToParts(adjustedTargetDate);
           let hd = 1, hm = 1, hy = 1448;
           parts.forEach(p => {
             if (p.type === 'day') hd = parseInt(p.value, 10);
@@ -3391,8 +3407,14 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
             if (p.type === 'year') hy = parseInt(p.value, 10);
           });
           const arMonths = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
-          localHijriData = { day: hd, month: { ar: arMonths[hm - 1] || 'رمضان' }, year: hy };
-        } catch(e) {}
+          localHijriData = { 
+            day: hd, 
+            month: { ar: arMonths[hm - 1] || 'ربيع الثاني' }, 
+            year: hy 
+          };
+        } catch(e) {
+          localHijriData = { day: 19, month: { ar: 'ربيع الثاني' }, year: 1448 };
+        }
 
         updatePrayerUI({ timings: currentTimings, date: { hijri: localHijriData } });
       }
@@ -4323,7 +4345,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.84', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.85', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
