@@ -3595,27 +3595,40 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const targetNextTime = nextP.targetDate || nextP.date;
 
       // 5. احتساب وقت انتهاء الصلاة الحالية شرعياً
-      // الفجر: ينتهي بالشروق | العشاء: ينتهي بمنتصف الليل الشرعي | بقية الصلوات: بدخول الصلاة التالية
       let currentPrayerEndTime = targetNextTime;
-      let expirationLabel = `نهاية وقت ${prevP.name}`;
+      let expirationLabel = `متبقي على نهاية وقت ${prevP.name}`;
+      let hasPrayerEnded = false;
+      let endedNoticeLabel = '';
 
       if (prevP.key === 'Isha') {
-        // حساب منتصف الليل الشرعي الدقيق = منتصف الوقت بين المغرب والفجر
+        // حساب منتصف الليل الشرعي = منتصف الوقت بين المغرب والفجر
         const maghribDate = prayerDates.find(p => p.key === 'Maghrib').date;
         const fajrTomorrow = targetNextTime;
         const halfNightMs = (fajrTomorrow.getTime() - maghribDate.getTime()) / 2;
         const islamicMidnight = new Date(maghribDate.getTime() + halfNightMs);
         currentPrayerEndTime = islamicMidnight;
-        expirationLabel = 'نهاية وقت العشاء (منتصف الليل)';
+        
+        if (now >= islamicMidnight) {
+          hasPrayerEnded = true;
+          endedNoticeLabel = 'انتهى وقت صلاة العشاء (منتصف الليل)';
+        } else {
+          expirationLabel = 'متبقي على نهاية وقت العشاء (منتصف الليل)';
+        }
       } else if (prevP.key === 'Fajr') {
         const sunriseDate = prayerDates.find(p => p.key === 'Sunrise').date;
         currentPrayerEndTime = sunriseDate;
-        expirationLabel = 'نهاية وقت الفجر (الشروق)';
+        
+        if (now >= sunriseDate) {
+          hasPrayerEnded = true;
+          endedNoticeLabel = 'انتهى وقت صلاة الفجر (الشروق)';
+        } else {
+          expirationLabel = 'متبقي على نهاية وقت الفجر (الشروق)';
+        }
       }
 
       // 6. إدارة التناوب التلقائي: 10 ثوانٍ للصلاة القادمة و 5 ثوانٍ لانتهاء الفرض
       const cycleMod = countdownCycleSeconds % 15;
-      let showExpirationMode = (cycleMod >= 10); // آخر 5 ثوانٍ من كل 15 ثانية
+      let showExpirationMode = (cycleMod >= 10);
 
       if (manualCountdownModeOverride === 'expire') showExpirationMode = true;
       else if (manualCountdownModeOverride === 'next') showExpirationMode = false;
@@ -3631,35 +3644,51 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const countdownTimerEl = document.getElementById('countdownTimer');
       const flipBox = document.getElementById('countdownFlipContainer');
 
+      // حساب وقت الصلاة القادمة الثابت
+      const diffSec = Math.max(0, Math.floor((targetNextTime - now) / 1000));
+      const hours = Math.floor(diffSec / 3600);
+      const minutes = Math.floor((diffSec % 3600) / 60);
+      const seconds = diffSec % 60;
+      const nextPrayerCountdownText = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
+
       if (isDuringIqamah) {
         const remIqamahSec = (prevIqamahMins * 60) - diffFromPrevSec;
         const iM = Math.floor(remIqamahSec / 60);
         const iS = remIqamahSec % 60;
         if (statusTag) statusTag.textContent = `حان الآن أذان ${prevP.name}`;
-        if (countdownTimerEl) countdownTimerEl.textContent = `الإقامة: ${String(iM).padStart(2, '0')}:${String(iS).padStart(2, '0')}`;
-        if (flipBox) flipBox.classList.remove('mode-expiration');
-      } else if (showExpirationMode && currentPrayerEndTime > now) {
-        // وضع انتهاء وقت الصلاة الحالية (اللون العنبري)
-        const diffExpSec = Math.max(0, Math.floor((currentPrayerEndTime - now) / 1000));
-        const expH = Math.floor(diffExpSec / 3600);
-        const expM = Math.floor((diffExpSec % 3600) / 60);
-        const expS = diffExpSec % 60;
-
-        if (statusTag) statusTag.textContent = expirationLabel;
         if (countdownTimerEl) {
-          countdownTimerEl.textContent = `${String(expH).padStart(2, '0')} : ${String(expM).padStart(2, '0')} : ${String(expS).padStart(2, '0')}`;
+          countdownTimerEl.textContent = `الإقامة: ${String(iM).padStart(2, '0')}:${String(iS).padStart(2, '0')}`;
+          countdownTimerEl.style.color = '#86EFAC';
         }
-        if (flipBox) flipBox.classList.add('mode-expiration');
+        if (flipBox) flipBox.classList.remove('mode-expiration');
+      } else if (showExpirationMode) {
+        // إذا كنا في وضع التناوب:
+        if (hasPrayerEnded) {
+          // أ) وقت الصلاة قد انتهى بالفعل (بعد منتصف الليل أو بعد الشروق)
+          if (statusTag) statusTag.textContent = endedNoticeLabel;
+          // إبقاء العداد يعد تنازلياً نحو الصلاة القادمة بلون عنبري ليعرف كم تبقّى
+          if (countdownTimerEl) {
+            countdownTimerEl.textContent = nextPrayerCountdownText;
+          }
+          if (flipBox) flipBox.classList.add('mode-expiration');
+        } else if (currentPrayerEndTime > now) {
+          // ب) الصلاة ما زالت في وقتها ويُحسب الوقت المتبقي لانتهائها
+          const diffExpSec = Math.max(0, Math.floor((currentPrayerEndTime - now) / 1000));
+          const expH = Math.floor(diffExpSec / 3600);
+          const expM = Math.floor((diffExpSec % 3600) / 60);
+          const expS = diffExpSec % 60;
+
+          if (statusTag) statusTag.textContent = expirationLabel;
+          if (countdownTimerEl) {
+            countdownTimerEl.textContent = `${String(expH).padStart(2, '0')} : ${String(expM).padStart(2, '0')} : ${String(expS).padStart(2, '0')}`;
+          }
+          if (flipBox) flipBox.classList.add('mode-expiration');
+        }
       } else {
         // وضع الصلاة القادمة المعتاد (اللون الذهبي)
-        const diffSec = Math.max(0, Math.floor((targetNextTime - now) / 1000));
-        const hours = Math.floor(diffSec / 3600);
-        const minutes = Math.floor((diffSec % 3600) / 60);
-        const seconds = diffSec % 60;
-
         if (statusTag) statusTag.textContent = `باقي على ${nextP.name}`;
         if (countdownTimerEl) {
-          countdownTimerEl.textContent = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
+          countdownTimerEl.textContent = nextPrayerCountdownText;
         }
         if (flipBox) flipBox.classList.remove('mode-expiration');
 
@@ -4294,7 +4323,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.83', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.84', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
