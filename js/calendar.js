@@ -463,10 +463,17 @@
     prayers.forEach(p => {
       const row = document.createElement('div');
       row.className = 'cal-prayer-row';
+      row.style.cursor = 'pointer';
+      row.title = 'اضغط لضبط أذان وتنبيهات هذه الصلاة';
       row.innerHTML = `
         <span class="cal-prayer-name">${p.name}</span>
         <span class="cal-prayer-time">${dayTimings[p.key]}</span>
       `;
+      row.onclick = () => {
+        if (typeof window.openPrayerAlarmSettings === 'function') {
+          window.openPrayerAlarmSettings(p.key);
+        }
+      };
       list.appendChild(row);
     });
   }
