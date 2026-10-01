@@ -1038,29 +1038,77 @@
           </div>
         </div>
 
-        <!-- 4. الوضع الهزاز التلقائي أثناء الصلاة -->
+        <!-- 4. الوضع الهزاز التلقائي أثناء الصلاة مع خانتي البداية والنهاية -->
         <span class="other-settings-sec-label">السكينة والخشوع في المسجد</span>
         <div class="other-settings-card">
           <div class="setting-toggle-row" style="padding:0;">
             <div class="setting-text-col">
               <h4 class="setting-title" style="font-size:14px; color:#15803D;">وضع الهزاز التلقائي أثناء الصلاة</h4>
-              <p class="setting-desc" style="font-size:11.5px;">تحويل الهاتف لهزاز وكتم الأصوات تلقائياً (من بعد الأذان وحتى انقضاء الإقامة بـ 15 دقيقة)</p>
+              <p class="setting-desc" style="font-size:11.5px;">تحويل الهاتف لهزاز وكتم الأصوات تلقائياً أثناء أداء الفريضة</p>
             </div>
             <label class="ios-switch">
               <input type="checkbox" id="toggleAutoSilentDuringPrayer" checked>
               <span class="switch-slider"></span>
             </label>
           </div>
+
+          <!-- تفاصيل موعد بدء وانتهاء الهزاز التلقائي -->
+          <div class="auto-silent-sub-controls" id="autoSilentSubControls" style="margin-top:12px; padding-top:10px; border-top:1px solid #F1F5F9;">
+            <!-- وقت البداية -->
+            <div class="time-adjust-param-row">
+              <span class="param-title">بداية وضع الهزاز:</span>
+              <select id="selectAutoSilentStartOffset" class="custom-batch-select" style="max-width:170px;">
+                <option value="0" selected>مع الأذان مباشرة</option>
+                <option value="2">بعد الأذان بـ دقيقتين</option>
+                <option value="5">بعد الأذان بـ 5 دقائق</option>
+                <option value="iqamah">مع إقامة الصلاة</option>
+              </select>
+            </div>
+
+            <!-- وقت النهاية -->
+            <div class="time-adjust-param-row" style="margin-top:8px;">
+              <span class="param-title">نهاية وضع الهزاز:</span>
+              <div class="stepper-mini-control">
+                <button type="button" class="btn-step-mini" id="btnDecSilentBuffer">−</button>
+                <span class="val-step-mini" id="displaySilentBufferMins">بعد الإقامة بـ 15 د</span>
+                <button type="button" class="btn-step-mini" id="btnIncSilentBuffer">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. خيار مراعاة وضع الهاتف الصامت / الهزاز -->
+        <span class="other-settings-sec-label">سياسة الأصوات والتنبيهات</span>
+        <div class="other-settings-card">
+          <div class="setting-toggle-row" style="padding:0;">
+            <div class="setting-text-col">
+              <h4 class="setting-title" style="font-size:14px;">مراعاة وضع الهاتف الصامت أو الهزاز</h4>
+              <p class="setting-desc" style="font-size:11.5px;">إذا كان هاتفك مضبوطاً على الصامت أو الهزاز، فلن يصدر التطبيق أي رنين صوتي ويكتفي بالاهتزاز فقط</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleRespectDeviceSilent" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 6. قسم التنبيهات المخصصة المسبقة واللاحقة لهذه الصلاة -->
+        <span class="other-settings-sec-label">التنبيهات المخصصة للصلاة (قبلها أو بعدها)</span>
+        <div class="other-settings-card">
+          <div id="prayerPreAlarmsListContainer" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- كروت التنبيهات المسبقة المضافة تظهر هنا -->
+          </div>
+          <button type="button" class="btn-upload-custom-adhan" id="openAddPreAlarmModalBtn" style="margin-top:10px; background:#F8FAFC;">
+            <span>➕ إضافة تنبيه مسبق أو لاحق لهذه الصلاة</span>
+          </button>
         </div>
 
         <!-- زر المعاينة الحية لشاشة الأذان -->
-        <div style="margin-top:16px;">
-          <button type="button" class="sheet-action-btn-secondary" onclick="triggerAdhanFullScreen('المغرب', '5:38 م')" style="background:#FFFFFF;">
+        <div style="margin-top:16px; margin-bottom:20px;">
+          <button type="button" class="sheet-action-btn-secondary" id="btnPreviewAdhanLiveScreen" style="background:#FFFFFF;">
             <span>معاينة شاشة الأذان الكاملة 👁️</span>
           </button>
         </div>
-      </div>
-    </div>
 
     <!-- ==================== الشاشة: مدير التنبيهات والمنبه المركزي ==================== -->
     <div id="screen-alarm-hub" class="screen-view">
@@ -1082,6 +1130,11 @@
 
         <div class="alarms-cards-stack" id="alarmsCardsStack"></div>
       </div>
+
+      <!-- زر الإضافة العائم للمنبهات والتذكيرات العامة -->
+      <button class="fab-btn" id="openAddGeneralAlarmFabBtn" title="إضافة منبه جديد">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
     </div>
 
     <!-- نافذة منبثقة لاختيار الصلاة في الهيدر (مع خيار كل الصلوات) -->
@@ -1165,6 +1218,125 @@
       <div class="adhan-fs-bottom-links">
         <button type="button" class="btn-adhan-fs-sublink" onclick="closeAdhanFullScreen(); if(typeof showScreen==='function') showScreen(document.getElementById('screen-qibla'));">🧭 القبلة</button>
         <button type="button" class="btn-adhan-fs-sublink" onclick="closeAdhanFullScreen();">✕ إغلاق وتخطي</button>
+      </div>
+    </div>
+
+        <!-- 1. نافذة إضافة/تعديل تنبيه مسبق أو لاحق للصلاة -->
+    <div class="bottom-sheet-backdrop" id="prayerPrePostAlarmModal" style="z-index: 370;">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">تنبيه مخصص للصلاة</h3>
+          <button type="button" class="modal-btn-link" id="closePrePostModalBtn">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="time-adjust-param-row">
+            <span class="param-title">نوع وموعد التنبيه:</span>
+            <div style="display:flex; gap:6px; flex:1;">
+              <select id="selectPreAlarmPosition" class="custom-batch-select" style="flex:1;">
+                <option value="before" selected>قبل الصلاة بـ</option>
+                <option value="after">بعد الصلاة بـ</option>
+              </select>
+              <input type="number" id="inputPreAlarmMinutes" min="1" max="120" value="15" class="friday-minute-input" style="width:70px;">
+              <span style="align-self:center; font-size:12px; font-weight:700;">دقيقة</span>
+            </div>
+          </div>
+
+          <div class="time-adjust-param-row">
+            <span class="param-title">نغمة التنبيه:</span>
+            <select id="selectPreAlarmTone" class="custom-batch-select">
+              <option value="chime" selected>تنبيه هادئ (نغمة إسلامية)</option>
+              <option value="bell">رنين خفيف</option>
+              <option value="takbeer">تكبيرات</option>
+              <option value="silent">صامت (اهتزاز فقط)</option>
+            </select>
+          </div>
+
+          <div class="setting-toggle-row" style="padding:0;">
+            <div class="setting-text-col">
+              <h4 class="setting-title" style="font-size:13.5px;">تشغيل الاهتزاز مع التنبيه</h4>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="togglePreAlarmVibrate" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div style="margin-top:14px; display:flex; gap:10px;">
+            <button type="button" class="modal-btn-link text-muted" id="btnCancelPreAlarm" style="flex:1; border:1px solid #CBD5E1; border-radius:12px; padding:10px;">إلغاء</button>
+            <button type="button" class="btn-confirm-prayer-offset" id="btnSavePreAlarm" style="flex:2; padding:10px;">حفظ التنبيه</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. نافذة إنشاء وتعديل المنبه العام -->
+    <div class="bottom-sheet-backdrop" id="generalAlarmModal" style="z-index: 370;">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title" id="generalAlarmModalTitle">إضافة منبه عام</h3>
+          <button type="button" class="modal-btn-link" id="closeGeneralAlarmModalBtn">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="modal-input-field" style="margin-bottom:0;">
+            <label>عنوان أو ملاحظة المنبه</label>
+            <input type="text" id="inputGeneralAlarmTitle" placeholder="مثال: قيام الليل، قراءة الورد...">
+          </div>
+
+          <div class="time-adjust-param-row">
+            <span class="param-title">وقت التنبيه:</span>
+            <input type="time" id="inputGeneralAlarmTime" class="friday-minute-input" style="width:130px; font-size:16px;" value="05:00">
+          </div>
+
+          <div style="margin-top:14px; display:flex; gap:10px;">
+            <button type="button" class="modal-btn-link text-muted" id="btnDeleteGeneralAlarm" style="display:none; color:#EF4444; font-weight:800;">حذف</button>
+            <button type="button" class="btn-confirm-prayer-offset" id="btnSaveGeneralAlarm" style="flex:1; padding:12px;">حفظ واعتماد</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. نافذة تذكير التقويم عند النقر المطول على اليوم -->
+    <div class="bottom-sheet-backdrop" id="calendarAlarmModal" style="z-index: 380;">
+      <div class="bottom-sheet" style="padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <div>
+            <h3 class="sheet-title" style="margin:0;">تذكير في التقويم</h3>
+            <span style="font-size:11.5px; color:var(--primary-blue); font-weight:700;" id="calAlarmDateLabel">--</span>
+          </div>
+          <button type="button" class="modal-btn-link" id="closeCalAlarmModalBtn">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="modal-input-field" style="margin-bottom:0;">
+            <label>المناسبة أو الملاحظة</label>
+            <input type="text" id="inputCalAlarmNote" placeholder="اكتب ملاحظة المناسبة...">
+          </div>
+
+          <div class="time-adjust-param-row">
+            <span class="param-title">وقت التذكير في ذلك اليوم:</span>
+            <input type="time" id="inputCalAlarmTime" class="friday-minute-input" style="width:130px; font-size:16px;" value="09:00">
+          </div>
+
+          <div class="time-adjust-param-row">
+            <span class="param-title">تذكيري مسبقاً بـ:</span>
+            <select id="selectCalAlarmAdvanceDays" class="custom-batch-select">
+              <option value="0" selected>في نفس اليوم</option>
+              <option value="1">قبلها بيوم واحد</option>
+              <option value="2">قبلها بيومين</option>
+              <option value="7">قبلها بأسبوع</option>
+            </select>
+          </div>
+
+          <div style="margin-top:14px; display:flex; gap:10px;">
+            <button type="button" class="modal-btn-link text-muted" id="btnCancelCalAlarm" style="flex:1; border:1px solid #CBD5E1; border-radius:12px; padding:10px;">إلغاء</button>
+            <button type="button" class="btn-confirm-prayer-offset" id="btnSaveCalAlarm" style="flex:2; padding:10px;">حفظ في التقويم والمنبه</button>
+          </div>
+        </div>
       </div>
     </div>
 
