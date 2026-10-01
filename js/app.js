@@ -224,6 +224,35 @@ if (isRunningStandalone) {
     backToSettingsFromOtherBtn.addEventListener('click', () => showScreen(screenGeneralSettings));
   }
 
+  // فتح شاشة مدير التنبيهات من شبكة الأدوات
+  const openAlarmHubTileBtn = document.getElementById('openAlarmHubTileBtn');
+  const screenAlarmHub = document.getElementById('screen-alarm-hub');
+  const backFromAlarmHubBtn = document.getElementById('backFromAlarmHubBtn');
+
+  if (openAlarmHubTileBtn && screenAlarmHub) {
+    openAlarmHubTileBtn.onclick = () => {
+      if (typeof syncAllAlarmsToHub === 'function') syncAllAlarmsToHub();
+      showScreen(screenAlarmHub);
+    };
+  }
+  if (backFromAlarmHubBtn) {
+    backFromAlarmHubBtn.onclick = () => showScreen(screenHome);
+  }
+
+  // ربط صفوف الصلوات بالشاشة الرئيسية لفتح إعدادات أذان تلك الصلاة عند النقر
+  document.querySelectorAll('.prayer-row').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.custom-checkbox')) return; // تجاهل مربع الصح ليبقى مخصصاً للتحقق
+      const prayerKeyRaw = row.getAttribute('data-prayer');
+      const keyMap = { fajr: 'Fajr', sunrise: 'Sunrise', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+      const selectedKey = keyMap[prayerKeyRaw] || 'Maghrib';
+      if (typeof window.openPrayerAlarmSettings === 'function') {
+        window.openPrayerAlarmSettings(selectedKey);
+      }
+    });
+  });
+
   // شاشات إعدادات مواقيت الصلاة وتعديل الدقائق
   const screenPrayerSettings = document.getElementById('screen-prayer-settings');
   const screenPrayerOffsets = document.getElementById('screen-prayer-offsets');
