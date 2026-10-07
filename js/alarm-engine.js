@@ -4,7 +4,7 @@ const ALARM_DB_NAME = 'HayatAlarmDB';
 const ALARM_DB_VERSION = 1;
 let alarmDBInstance = null;
 
-// 1. فتح وتهيئة مستودع IndexedDB للأوفلاين الدائم
+// 1. تهيئة مستودع IndexedDB
 function initAlarmDatabase() {
   return new Promise((resolve, reject) => {
     if (alarmDBInstance) return resolve(alarmDBInstance);
@@ -42,7 +42,6 @@ async function getCustomAudioBlob(id) {
   });
 }
 
-// دوال استرجاع وحذف الأصوات المرفوعة من IndexedDB
 async function getAllCustomAudios() {
   const db = await initAlarmDatabase();
   return new Promise((resolve) => {
@@ -64,7 +63,7 @@ async function deleteCustomAudio(id) {
   });
 }
 
-// 2. قائمة أصوات المؤذنين الموسعة (15 مؤذناً مع روابط سريعة وموثوقة)
+// 2. قائمة أصوات المؤذنين الموسعة (15 مؤذناً بروابط مباشرة)
 const MUEZZIN_LIST = [
   { id: 'makkah', name: 'أذان الحرم المكي (الشيخ علي ملا)', country: 'مكة المكرمة 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan1.mp3' },
   { id: 'madinah', name: 'أذان المسجد النبوي الشريف', country: 'المدينة المنورة 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan2.mp3' },
@@ -95,11 +94,11 @@ let previewAudioPlayer = new Audio();
 let currentPlayingPreviewUrl = null;
 let currentPlayingCustomId = null;
 
-// نغمة إسلامية هادئة ثلاثية النغمات بدلاً من صوت صفارة الإنذار
+// نغمة إسلامية هادئة ثلاثية النغمات كبديل طوارئ
 function playSynthesizedAdhanChime() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523.25, 659.25, 783.99]; // نغمات C5, E5, G5 الهادئة
+    const notes = [523.25, 659.25, 783.99];
     notes.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -129,7 +128,7 @@ function stopPreviewAudio() {
   });
 }
 
-// دالة إظهار الإشعار العائم الاحترافي
+// دالة إظهار الإشعار العائم
 function showAudioFeedbackToast(message, icon = '✨') {
   const toast = document.getElementById('audioActionToast');
   const msgEl = document.getElementById('audioToastMessage');
@@ -146,7 +145,7 @@ function showAudioFeedbackToast(message, icon = '✨') {
   }, 3200);
 }
 
-// دالة تأكيد الحذف عبر المودال المخصص بدلاً من confirm النظام
+// دالة تأكيد الحذف عبر المودال المخصص
 function requestDeleteAudioConfirmation(fileName) {
   return new Promise((resolve) => {
     const modal = document.getElementById('deleteAudioConfirmModal');
@@ -164,21 +163,25 @@ function requestDeleteAudioConfirmation(fileName) {
 
     const cleanup = () => {
       modal.classList.remove('show');
-      btnConfirm.onclick = null;
-      btnCancel.onclick = null;
+      if (btnConfirm) btnConfirm.onclick = null;
+      if (btnCancel) btnCancel.onclick = null;
     };
 
-    btnConfirm.onclick = () => {
-      cleanup();
-      resolve(true);
-    };
+    if (btnConfirm) {
+      btnConfirm.onclick = () => {
+        cleanup();
+        resolve(true);
+      };
+    }
 
-    btnCancel.onclick = () => {
-      cleanup();
-      resolve(false);
-    };
+    if (btnCancel) {
+      btnCancel.onclick = () => {
+        cleanup();
+        resolve(false);
+      };
+    }
   });
-}  
+}
 
 // 3. قراءة وحفظ إعدادات الصلاة
 function getPrayerAlarmConfig(prayerKey) {
@@ -212,7 +215,7 @@ function savePrayerAlarmConfig(prayerKey, config) {
   syncAllAlarmsToHub();
 }
 
-// 4. دوال مزامنة كروت المنبه المركزي (معرفة في النطاق العام لتفادي أي ReferenceError)
+// 4. مزامنة كروت المنبه المركزي
 function syncAllAlarmsToHub() {
   const container = document.getElementById('alarmsCardsStack');
   if (!container) return;
@@ -446,7 +449,7 @@ function renderPreAlarmsListUI() {
   });
 }
 
-// 6. تشغيل شاشة الأذان الكاملة ملء الشاشة والمعاينة
+// 6. تشغيل شاشة الأذان الكاملة ملء الشاشة
 function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (!fsView) return;
@@ -535,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   });
 
-  // فتح نافذة اختيار الصوت والمؤذنين
+  // فتح وإغلاق نافذة اختيار الصوت والمؤذنين
   const openAudioModalBtn = document.getElementById('openAudioSelectionModalBtn');
   const audioModal = document.getElementById('adhanAudioSelectModal');
   const closeAudioModalBtn = document.getElementById('closeAdhanAudioModalBtn');
@@ -554,13 +557,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // دالة بناء القائمة الشاملة (الأصوات المرفوعة محلياً أولاً + المؤذنون الـ 15)
+  // بناء القائمة (الأصوات المرفوعة أولاً + المؤذنون الـ 15)
   async function renderMuezzinListUI() {
     if (!muezzinContainer) return;
     muezzinContainer.innerHTML = '';
     const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
 
-    // 1. استخراج وعرض الأصوات المرفوعة من جهاز المستخدم داخل IndexedDB
+    // 1. الأصوات المرفوعة من جهاز المستخدم
     const userCustomAudios = await getAllCustomAudios();
     if (userCustomAudios && userCustomAudios.length > 0) {
       const customHeader = document.createElement('div');
@@ -587,7 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
 
-        // اختيار هذا الصوت للأذان
         row.onclick = (e) => {
           if (e.target.closest('.btn-preview-audio-play') || e.target.closest('.btn-delete-custom-audio')) return;
           stopPreviewAudio();
@@ -598,7 +600,6 @@ document.addEventListener('DOMContentLoaded', () => {
           audioModal.classList.remove('show');
         };
 
-        // معاينة الصوت المرفوع محلياً
         const pBtn = row.querySelector('.btn-preview-audio-play');
         pBtn.onclick = async (e) => {
           e.stopPropagation();
@@ -617,7 +618,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         };
 
-        // حذف الملف من قاعدة البيانات بالمودال الاحترافي
         const dBtn = row.querySelector('.btn-delete-custom-audio');
         dBtn.onclick = async (e) => {
           e.stopPropagation();
@@ -639,7 +639,63 @@ document.addEventListener('DOMContentLoaded', () => {
         muezzinContainer.appendChild(row);
       });
 
-      // معالجة رفع أذان مخصص من هاتف المستخدم وتحديث القائمة فورياً مع الإشعار الاحترافي
+      const divider = document.createElement('div');
+      divider.style.cssText = 'font-size: 12px; font-weight: 800; color: var(--text-secondary); padding: 8px 6px 2px 6px; display: flex; align-items: center; gap: 6px;';
+      divider.innerHTML = '<span>🕌</span><span>أصوات مشاهير المؤذنين:</span>';
+      muezzinContainer.appendChild(divider);
+    }
+
+    // 2. المؤذنون الـ 15 المعتمدون
+    MUEZZIN_LIST.forEach(m => {
+      const isSelected = (cfg.audioMode === 'muezzin' && cfg.selectedMuezzinId === m.id);
+      const row = document.createElement('div');
+      row.className = `muezzin-card-item ${isSelected ? 'active' : ''}`;
+      row.innerHTML = `
+        <div class="muezzin-info-group">
+          <button type="button" class="btn-preview-audio-play" data-url="${m.url}">▶</button>
+          <div>
+            <h4 style="font-size:14px; font-weight:800; margin:0;">${m.name}</h4>
+            <span style="font-size:11.5px; color:var(--text-secondary);">${m.country}</span>
+          </div>
+        </div>
+        <span class="custom-radio-circle">${isSelected ? '✓' : ''}</span>
+      `;
+
+      row.onclick = (e) => {
+        if (e.target.closest('.btn-preview-audio-play')) return;
+        stopPreviewAudio();
+        cfg.audioMode = 'muezzin';
+        cfg.selectedMuezzinId = m.id;
+        cfg.customAudioId = null;
+        savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+        updatePrayerAlarmSettingsUI();
+        audioModal.classList.remove('show');
+      };
+
+      const pBtn = row.querySelector('.btn-preview-audio-play');
+      pBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (currentPlayingPreviewUrl === m.url && !previewAudioPlayer.paused) {
+          stopPreviewAudio();
+        } else {
+          stopPreviewAudio();
+          currentPlayingPreviewUrl = m.url;
+          previewAudioPlayer.src = m.url;
+          previewAudioPlayer.play().catch((err) => {
+            console.warn('Playback restricted or offline:', err);
+            stopPreviewAudio();
+            playSynthesizedAdhanChime();
+          });
+          pBtn.classList.add('playing');
+          pBtn.textContent = '⏸';
+        }
+      };
+
+      muezzinContainer.appendChild(row);
+    });
+  }
+
+  // رفع أذان مخصص
   const customFileInput = document.getElementById('inputUploadCustomAdhan');
   if (customFileInput) {
     customFileInput.onchange = async (e) => {
@@ -654,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
       savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
       updatePrayerAlarmSettingsUI();
 
-      // إعادة رسم القائمة فوراً لتظهر الأيقونة والملف المرفوع أمام المستخدم
       await renderMuezzinListUI();
       customFileInput.value = '';
       showAudioFeedbackToast(`تم حفظ "${file.name}" بنجاح ويعمل بدون إنترنت ✨`, '✨');
@@ -670,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // التحكم بـ خانتي الهزاز التلقائي
+  // التحكم بالهزاز التلقائي
   const btnIncBuffer = document.getElementById('btnIncSilentBuffer');
   const btnDecBuffer = document.getElementById('btnDecSilentBuffer');
   const bufferDisp = document.getElementById('displaySilentBufferMins');
@@ -708,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // نافذة التنبيهات المسبقة للصلاة
+  // التنبيهات المسبقة
   const openPreModalBtn = document.getElementById('openAddPreAlarmModalBtn');
   const preModal = document.getElementById('prayerPrePostAlarmModal');
   const closePreModalBtn = document.getElementById('closePrePostModalBtn');
@@ -789,7 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   });
 
-  // إدارة المنبهات العامة (+) والتعديل
+  // المنبهات العامة
   const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
   const genModal = document.getElementById('generalAlarmModal');
   const closeGenModalBtn = document.getElementById('closeGeneralAlarmModalBtn');
@@ -850,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // تبويبات مدير التنبيهات
+  // تبويبات المنبه
   document.querySelectorAll('.alarm-tab-chip').forEach(tab => {
     tab.onclick = () => {
       const t = tab.getAttribute('data-tab');
@@ -859,7 +914,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   });
 
-  // تذكير التقويم
+  // تذكيرات التقويم
   const calModal = document.getElementById('calendarAlarmModal');
   const closeCalModalBtn = document.getElementById('closeCalAlarmModalBtn');
   const btnCancelCalAlarm = document.getElementById('btnCancelCalAlarm');
@@ -887,7 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       calModal.classList.remove('show');
       syncAllAlarmsToHub();
-      alert('✨ تم حفظ التذكير وسيظهر في تبويب تذكيرات التقويم بالمنبه!');
+      showAudioFeedbackToast('تم حفظ التذكير في التقويم والمنبه ✨', '📅');
     };
   }
 
