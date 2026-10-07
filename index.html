@@ -1181,6 +1181,27 @@
       </div>
     </div>
 
+    <!-- نافذة تأكيد حذف الأذان المخصص الاحترافية -->
+    <div class="custom-modal-backdrop" id="deleteAudioConfirmModal" style="z-index: 400;">
+      <div class="custom-modal-card text-center" style="max-width: 320px;">
+        <div style="font-size: 36px; margin-bottom: 8px;">🗑️</div>
+        <h3 class="modal-card-title" style="margin-bottom: 6px; color: var(--text-main);">حذف الأذان المخصص</h3>
+        <p class="celebration-text" id="deleteAudioModalDesc" style="font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+          هل أنت متأكد من حذف هذا الملف الصوتي من ذاكرة جهازك؟
+        </p>
+        <div class="modal-actions-row" style="justify-content: center; gap: 12px; margin-top: 0;">
+          <button type="button" class="modal-btn-primary" id="btnCancelDeleteAudio" style="background: #E2E8F0; color: var(--text-main); padding: 9px 24px;">تراجع</button>
+          <button type="button" class="modal-btn-link" id="btnConfirmDeleteAudio" style="color: #EF4444; font-weight: 800; font-size: 14.5px;">حذف الملف</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- شريط إشعار الإنجاز العائم الاحترافي للأذان -->
+    <div class="audio-action-toast" id="audioActionToast">
+      <span id="audioToastIcon" style="font-size: 17px;">✨</span>
+      <span id="audioToastMessage">تمت العملية بنجاح</span>
+    </div>
+
     <!-- نافذة فحص وتشخيص الصلاحيات مع أزرار الإصلاح -->
     <div class="bottom-sheet-backdrop" id="permissionsDiagModal" style="z-index: 360;">
       <div class="bottom-sheet" style="max-height:85vh; overflow-y:auto;">
