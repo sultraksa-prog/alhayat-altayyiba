@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.89';
+const CACHE_NAME = 'alhayat-cache-v2.1.90';
 const ASSETS = [
   './',
   './index.html',
@@ -41,8 +41,18 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // لا نتدخل في طلبات الـ API الخارجية ليتم التعامل معها من داخل التطبيق
-  if (e.request.url.includes('api.aladhan.com') || e.request.url.includes('api.bigdatacloud.net') || e.request.url.includes('nominatim.openstreetmap.org')) {
+  // لا نتدخل في طلبات الصوت، أو طلبات المدى (Range)، أو الـ APIs الخارجية، أو صور Unsplash
+  if (
+    e.request.destination === 'audio' ||
+    e.request.headers.has('range') ||
+    e.request.url.includes('.mp3') ||
+    e.request.url.includes('api.aladhan.com') ||
+    e.request.url.includes('api.bigdatacloud.net') ||
+    e.request.url.includes('nominatim.openstreetmap.org') ||
+    e.request.url.includes('islamcan.com') ||
+    e.request.url.includes('archive.org') ||
+    e.request.url.includes('images.unsplash.com')
+  ) {
     return;
   }
 
@@ -51,7 +61,6 @@ self.addEventListener('fetch', (e) => {
       // استراتيجية (Stale-While-Revalidate): نُرجع الكاش فوراً للسرعة، ونحدثه في الخلفية
       const fetchPromise = fetch(e.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
-          // استنساخ الاستجابة فورياً هنا يمنع خطأ Response body is already used تماماً
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(e.request, responseToCache);
@@ -59,7 +68,8 @@ self.addEventListener('fetch', (e) => {
         }
         return networkResponse;
       }).catch(() => {
-        // خطأ الشبكة (أوفلاين) يتم تجاهله بصمت والاعتماد على الكاش
+        // منع إرجاع undefined نهائياً لتفادي خطأ Failed to convert value to 'Response'
+        return cachedResponse || new Response('', { status: 503, statusText: 'Offline' });
       });
 
       return cachedResponse || fetchPromise;
