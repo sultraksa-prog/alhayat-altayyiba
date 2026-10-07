@@ -42,13 +42,45 @@ async function getCustomAudioBlob(id) {
   });
 }
 
-// 2. قائمة أصوات المؤذنين (روابط مستقرة عامة مع محرك نغمات احتياطي)
+// دوال استرجاع وحذف الأصوات المرفوعة من IndexedDB
+async function getAllCustomAudios() {
+  const db = await initAlarmDatabase();
+  return new Promise((resolve) => {
+    const tx = db.transaction('custom_audio', 'readonly');
+    const store = tx.objectStore('custom_audio');
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => resolve([]);
+  });
+}
+
+async function deleteCustomAudio(id) {
+  const db = await initAlarmDatabase();
+  return new Promise((resolve) => {
+    const tx = db.transaction('custom_audio', 'readwrite');
+    tx.objectStore('custom_audio').delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => resolve(false);
+  });
+}
+
+// 2. قائمة أصوات المؤذنين الموسعة (15 مؤذناً مع روابط سريعة وموثوقة)
 const MUEZZIN_LIST = [
-  { id: 'makkah', name: 'أذان الحرم المكي (الشيخ علي ملا)', country: 'مكة المكرمة 🇸🇦', url: 'https://ia800201.us.archive.org/12/items/AdhanMakkah/Adhan%20Makkah.mp3' },
-  { id: 'madinah', name: 'أذان المسجد النبوي الشريف', country: 'المدينة المنورة 🇸🇦', url: 'https://ia800302.us.archive.org/24/items/AdhanMadinah/Adhan%20Madinah.mp3' },
-  { id: 'aqsa', name: 'أذان المسجد الأقصى المبارك', country: 'فلسطين 🇵🇸', url: 'https://ia801802.us.archive.org/16/items/AdhanAlAqsa/Adhan%20Al-Aqsa.mp3' },
-  { id: 'egypt', name: 'أذان مصر (الإذاعة المصرية)', country: 'مصر 🇪🇬', url: 'https://ia800203.us.archive.org/14/items/AdhanEgypt/Adhan%20Egypt.mp3' },
-  { id: 'yemen', name: 'أذان صنعاء التراثي', country: 'اليمن 🇾🇪', url: 'https://ia600201.us.archive.org/12/items/AdhanMakkah/Adhan%20Makkah.mp3' }
+  { id: 'makkah', name: 'أذان الحرم المكي (الشيخ علي ملا)', country: 'مكة المكرمة 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan1.mp3' },
+  { id: 'madinah', name: 'أذان المسجد النبوي الشريف', country: 'المدينة المنورة 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan2.mp3' },
+  { id: 'aqsa', name: 'أذان المسجد الأقصى المبارك', country: 'القدس الشريف 🇵🇸', url: 'https://www.islamcan.com/audio/adhan/azan3.mp3' },
+  { id: 'alafasy', name: 'أذان الشيخ مشاري راشد العفاسي', country: 'الكويت 🇰🇼', url: 'https://www.islamcan.com/audio/adhan/azan7.mp3' },
+  { id: 'abdulbasit', name: 'أذان الشيخ عبد الباسط عبد الصمد', country: 'مصر 🇪🇬', url: 'https://www.islamcan.com/audio/adhan/azan6.mp3' },
+  { id: 'egypt', name: 'أذان مصر (إذاعة القرآن الكريم)', country: 'القاهرة 🇪🇬', url: 'https://www.islamcan.com/audio/adhan/azan4.mp3' },
+  { id: 'turkey', name: 'أذان إسطنبول (النمط العثماني)', country: 'تركيا 🇹🇷', url: 'https://www.islamcan.com/audio/adhan/azan5.mp3' },
+  { id: 'mansoor', name: 'أذان الشيخ منصور الزهراني', country: 'السعودية 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan8.mp3' },
+  { id: 'qatami', name: 'أذان الشيخ ناصر القطامي', country: 'الرياض 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan9.mp3' },
+  { id: 'nafees', name: 'أذان الشيخ أحمد النفيس', country: 'الكويت 🇰🇼', url: 'https://www.islamcan.com/audio/adhan/azan10.mp3' },
+  { id: 'hussary', name: 'أذان الشيخ محمود خليل الحصري', country: 'مصر 🇪🇬', url: 'https://www.islamcan.com/audio/adhan/azan11.mp3' },
+  { id: 'rifat', name: 'أذان الشيخ محمد رفعت التراثي', country: 'مصر 🇪🇬', url: 'https://www.islamcan.com/audio/adhan/azan12.mp3' },
+  { id: 'fajr_makkah', name: 'أذان الفجر (الصلاة خير من النوم)', country: 'الحرم المكي 🇸🇦', url: 'https://www.islamcan.com/audio/adhan/azan13.mp3' },
+  { id: 'yemen', name: 'أذان الجامع الكبير بصنعاء', country: 'اليمن 🇾🇪', url: 'https://www.islamcan.com/audio/adhan/azan15.mp3' },
+  { id: 'dubai', name: 'أذان دبي الموحد', country: 'الإمارات 🇦🇪', url: 'https://www.islamcan.com/audio/adhan/azan16.mp3' }
 ];
 
 const ADHAN_BG_PRESETS = [
@@ -60,22 +92,41 @@ const ADHAN_BG_PRESETS = [
 
 let currentActivePrayerAlarmContext = 'Maghrib';
 let previewAudioPlayer = new Audio();
+let currentPlayingPreviewUrl = null;
+let currentPlayingCustomId = null;
 
+// نغمة إسلامية هادئة ثلاثية النغمات بدلاً من صوت صفارة الإنذار
 function playSynthesizedAdhanChime() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 1.2);
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 1.2);
+    const notes = [523.25, 659.25, 783.99]; // نغمات C5, E5, G5 الهادئة
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * 0.25));
+      gain.gain.setValueAtTime(0, ctx.currentTime + (idx * 0.25));
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + (idx * 0.25) + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (idx * 0.25) + 0.9);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + (idx * 0.25));
+      osc.stop(ctx.currentTime + (idx * 0.25) + 0.9);
+    });
   } catch(e) {}
+}
+
+function stopPreviewAudio() {
+  if (previewAudioPlayer) {
+    previewAudioPlayer.pause();
+    previewAudioPlayer.currentTime = 0;
+  }
+  currentPlayingPreviewUrl = null;
+  currentPlayingCustomId = null;
+  document.querySelectorAll('.btn-preview-audio-play').forEach(b => {
+    b.classList.remove('playing');
+    b.textContent = '▶';
+  });
 }
 
 // 3. قراءة وحفظ إعدادات الصلاة
@@ -277,11 +328,24 @@ function updatePrayerAlarmSettingsUI() {
 
   const audioTitle = document.getElementById('currentSelectedAudioName');
   if (audioTitle) {
-    if (cfg.audioMode === 'custom') audioTitle.textContent = 'أذان مخصص (من جهازي 📁)';
-    else if (cfg.audioMode === 'silent') audioTitle.textContent = 'صامت (بدون صوت)';
-    else {
+    if (cfg.audioMode === 'custom') {
+      audioTitle.textContent = 'أذان مخصص (من جهازي 📁)';
+      if (cfg.customAudioId) {
+        initAlarmDatabase().then(db => {
+          const tx = db.transaction('custom_audio', 'readonly');
+          const req = tx.objectStore('custom_audio').get(cfg.customAudioId);
+          req.onsuccess = () => {
+            if (req.result && req.result.name) {
+              audioTitle.textContent = `📁 ${req.result.name}`;
+            }
+          };
+        });
+      }
+    } else if (cfg.audioMode === 'silent') {
+      audioTitle.textContent = 'صامت (بدون صوت)';
+    } else {
       const m = MUEZZIN_LIST.find(x => x.id === cfg.selectedMuezzinId);
-      audioTitle.textContent = m ? m.name : 'أذان مكة المكرمة';
+      audioTitle.textContent = m ? m.name : 'أذان الحرم المكي (الشيخ علي ملا)';
     }
   }
 
@@ -434,16 +498,101 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (closeAudioModalBtn && audioModal) {
     closeAudioModalBtn.onclick = () => {
-      previewAudioPlayer.pause();
+      stopPreviewAudio();
       audioModal.classList.remove('show');
     };
   }
 
-  function renderMuezzinListUI() {
+  // دالة بناء القائمة الشاملة (الأصوات المرفوعة محلياً أولاً + المؤذنون الـ 15)
+  async function renderMuezzinListUI() {
     if (!muezzinContainer) return;
     muezzinContainer.innerHTML = '';
     const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
 
+    // 1. استخراج وعرض الأصوات المرفوعة من جهاز المستخدم داخل IndexedDB
+    const userCustomAudios = await getAllCustomAudios();
+    if (userCustomAudios && userCustomAudios.length > 0) {
+      const customHeader = document.createElement('div');
+      customHeader.style.cssText = 'font-size: 12px; font-weight: 800; color: #15803D; padding: 4px 6px; display: flex; align-items: center; gap: 6px;';
+      customHeader.innerHTML = '<span>📁</span><span>الأصوات المرفوعة من جهازك:</span>';
+      muezzinContainer.appendChild(customHeader);
+
+      userCustomAudios.forEach(item => {
+        const isSelected = (cfg.audioMode === 'custom' && cfg.customAudioId === item.id);
+        const row = document.createElement('div');
+        row.className = `muezzin-card-item ${isSelected ? 'active' : ''}`;
+        row.style.cssText = isSelected ? 'border-color: #16A34A; background: #F0FDF4;' : 'border-color: #BBF7D0; background: #F8FAFC;';
+        row.innerHTML = `
+          <div class="muezzin-info-group">
+            <button type="button" class="btn-preview-audio-play" data-custom-id="${item.id}">▶</button>
+            <div style="flex: 1; min-width: 0;">
+              <h4 style="font-size:14px; font-weight:800; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.name || 'أذان مخصص'}</h4>
+              <span style="font-size:11px; color:#15803D; font-weight:700;">ملف محلي في جهازك (أوفلاين 100%)</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-delete-custom-audio" title="حذف هذا الأذان" style="background:none; border:none; color:#EF4444; font-size:15px; cursor:pointer; padding:4px;">🗑️</button>
+            <span class="custom-radio-circle">${isSelected ? '✓' : ''}</span>
+          </div>
+        `;
+
+        // اختيار هذا الصوت للأذان
+        row.onclick = (e) => {
+          if (e.target.closest('.btn-preview-audio-play') || e.target.closest('.btn-delete-custom-audio')) return;
+          stopPreviewAudio();
+          cfg.audioMode = 'custom';
+          cfg.customAudioId = item.id;
+          savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+          updatePrayerAlarmSettingsUI();
+          audioModal.classList.remove('show');
+        };
+
+        // معاينة الصوت المرفوع محلياً
+        const pBtn = row.querySelector('.btn-preview-audio-play');
+        pBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (currentPlayingCustomId === item.id && !previewAudioPlayer.paused) {
+            stopPreviewAudio();
+          } else {
+            stopPreviewAudio();
+            const blob = await getCustomAudioBlob(item.id);
+            if (blob) {
+              currentPlayingCustomId = item.id;
+              previewAudioPlayer.src = URL.createObjectURL(blob);
+              previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
+              pBtn.classList.add('playing');
+              pBtn.textContent = '⏸';
+            }
+          }
+        };
+
+        // حذف الملف من قاعدة البيانات
+        const dBtn = row.querySelector('.btn-delete-custom-audio');
+        dBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm(`هل تريد حذف ملف "${item.name}"؟`)) {
+            stopPreviewAudio();
+            await deleteCustomAudio(item.id);
+            if (cfg.customAudioId === item.id) {
+              cfg.audioMode = 'muezzin';
+              cfg.customAudioId = null;
+              savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+              updatePrayerAlarmSettingsUI();
+            }
+            renderMuezzinListUI();
+          }
+        };
+
+        muezzinContainer.appendChild(row);
+      });
+
+      const divider = document.createElement('div');
+      divider.style.cssText = 'font-size: 12px; font-weight: 800; color: var(--text-secondary); padding: 8px 6px 2px 6px; display: flex; align-items: center; gap: 6px;';
+      divider.innerHTML = '<span>🕌</span><span>أصوات مشاهير المؤذنين:</span>';
+      muezzinContainer.appendChild(divider);
+    }
+
+    // 2. عرض المؤذنين الـ 15 المعتمدين
     MUEZZIN_LIST.forEach(m => {
       const isSelected = (cfg.audioMode === 'muezzin' && cfg.selectedMuezzinId === m.id);
       const row = document.createElement('div');
@@ -461,9 +610,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       row.onclick = (e) => {
         if (e.target.closest('.btn-preview-audio-play')) return;
-        previewAudioPlayer.pause();
+        stopPreviewAudio();
         cfg.audioMode = 'muezzin';
         cfg.selectedMuezzinId = m.id;
+        cfg.customAudioId = null;
         savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
         updatePrayerAlarmSettingsUI();
         audioModal.classList.remove('show');
@@ -472,17 +622,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const pBtn = row.querySelector('.btn-preview-audio-play');
       pBtn.onclick = (e) => {
         e.stopPropagation();
-        if (previewAudioPlayer.src === m.url && !previewAudioPlayer.paused) {
-          previewAudioPlayer.pause();
-          pBtn.classList.remove('playing');
-          pBtn.textContent = '▶';
+        if (currentPlayingPreviewUrl === m.url && !previewAudioPlayer.paused) {
+          stopPreviewAudio();
         } else {
-          document.querySelectorAll('.btn-preview-audio-play').forEach(b => {
-            b.classList.remove('playing');
-            b.textContent = '▶';
-          });
+          stopPreviewAudio();
+          currentPlayingPreviewUrl = m.url;
           previewAudioPlayer.src = m.url;
-          previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
+          previewAudioPlayer.play().catch((err) => {
+            console.warn('Playback restricted or offline:', err);
+            stopPreviewAudio();
+            playSynthesizedAdhanChime();
+          });
           pBtn.classList.add('playing');
           pBtn.textContent = '⏸';
         }
@@ -492,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // رفع أذان مخصص
+  // معالجة رفع أذان مخصص من هاتف المستخدم وتحديث القائمة فورياً
   const customFileInput = document.getElementById('inputUploadCustomAdhan');
   if (customFileInput) {
     customFileInput.onchange = async (e) => {
@@ -507,8 +657,9 @@ document.addEventListener('DOMContentLoaded', () => {
       savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
       updatePrayerAlarmSettingsUI();
 
-      if (audioModal) audioModal.classList.remove('show');
-      alert(`✨ تم رفع الأذان بنجاح وتخزينه في جهازك أوفلاين!`);
+      // إعادة رسم القائمة فوراً لتظهر الأيقونة والملف المرفوع أمام المستخدم
+      await renderMuezzinListUI();
+      customFileInput.value = '';
     };
   }
 
