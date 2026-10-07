@@ -129,6 +129,57 @@ function stopPreviewAudio() {
   });
 }
 
+// دالة إظهار الإشعار العائم الاحترافي
+function showAudioFeedbackToast(message, icon = '✨') {
+  const toast = document.getElementById('audioActionToast');
+  const msgEl = document.getElementById('audioToastMessage');
+  const iconEl = document.getElementById('audioToastIcon');
+  if (!toast || !msgEl) return;
+
+  msgEl.textContent = message;
+  if (iconEl) iconEl.textContent = icon;
+  toast.classList.add('show');
+
+  clearTimeout(toast.dismissTimer);
+  toast.dismissTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3200);
+}
+
+// دالة تأكيد الحذف عبر المودال المخصص بدلاً من confirm النظام
+function requestDeleteAudioConfirmation(fileName) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('deleteAudioConfirmModal');
+    const desc = document.getElementById('deleteAudioModalDesc');
+    const btnConfirm = document.getElementById('btnConfirmDeleteAudio');
+    const btnCancel = document.getElementById('btnCancelDeleteAudio');
+
+    if (!modal) return resolve(false);
+
+    if (desc) {
+      desc.innerHTML = `هل أنت متأكد من حذف ملف "<strong>${fileName}</strong>" من ذاكرة جهازك؟ لن يؤثر ذلك على أصوات المؤذنين المدمجة.`;
+    }
+
+    modal.classList.add('show');
+
+    const cleanup = () => {
+      modal.classList.remove('show');
+      btnConfirm.onclick = null;
+      btnCancel.onclick = null;
+    };
+
+    btnConfirm.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    btnCancel.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+  });
+}  
+
 // 3. قراءة وحفظ إعدادات الصلاة
 function getPrayerAlarmConfig(prayerKey) {
   const allConfigs = JSON.parse(localStorage.getItem('hayat_prayer_alarms_data')) || {};
@@ -566,11 +617,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         };
 
-        // حذف الملف من قاعدة البيانات
+        // حذف الملف من قاعدة البيانات بالمودال الاحترافي
         const dBtn = row.querySelector('.btn-delete-custom-audio');
         dBtn.onclick = async (e) => {
           e.stopPropagation();
-          if (confirm(`هل تريد حذف ملف "${item.name}"؟`)) {
+          const isConfirmed = await requestDeleteAudioConfirmation(item.name || 'هذا الأذان');
+          if (isConfirmed) {
             stopPreviewAudio();
             await deleteCustomAudio(item.id);
             if (cfg.customAudioId === item.id) {
@@ -580,69 +632,14 @@ document.addEventListener('DOMContentLoaded', () => {
               updatePrayerAlarmSettingsUI();
             }
             renderMuezzinListUI();
+            showAudioFeedbackToast(`تم حذف ملف "${item.name}" بنجاح`, '🗑️');
           }
         };
 
         muezzinContainer.appendChild(row);
       });
 
-      const divider = document.createElement('div');
-      divider.style.cssText = 'font-size: 12px; font-weight: 800; color: var(--text-secondary); padding: 8px 6px 2px 6px; display: flex; align-items: center; gap: 6px;';
-      divider.innerHTML = '<span>🕌</span><span>أصوات مشاهير المؤذنين:</span>';
-      muezzinContainer.appendChild(divider);
-    }
-
-    // 2. عرض المؤذنين الـ 15 المعتمدين
-    MUEZZIN_LIST.forEach(m => {
-      const isSelected = (cfg.audioMode === 'muezzin' && cfg.selectedMuezzinId === m.id);
-      const row = document.createElement('div');
-      row.className = `muezzin-card-item ${isSelected ? 'active' : ''}`;
-      row.innerHTML = `
-        <div class="muezzin-info-group">
-          <button type="button" class="btn-preview-audio-play" data-url="${m.url}">▶</button>
-          <div>
-            <h4 style="font-size:14px; font-weight:800; margin:0;">${m.name}</h4>
-            <span style="font-size:11.5px; color:var(--text-secondary);">${m.country}</span>
-          </div>
-        </div>
-        <span class="custom-radio-circle">${isSelected ? '✓' : ''}</span>
-      `;
-
-      row.onclick = (e) => {
-        if (e.target.closest('.btn-preview-audio-play')) return;
-        stopPreviewAudio();
-        cfg.audioMode = 'muezzin';
-        cfg.selectedMuezzinId = m.id;
-        cfg.customAudioId = null;
-        savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
-        updatePrayerAlarmSettingsUI();
-        audioModal.classList.remove('show');
-      };
-
-      const pBtn = row.querySelector('.btn-preview-audio-play');
-      pBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (currentPlayingPreviewUrl === m.url && !previewAudioPlayer.paused) {
-          stopPreviewAudio();
-        } else {
-          stopPreviewAudio();
-          currentPlayingPreviewUrl = m.url;
-          previewAudioPlayer.src = m.url;
-          previewAudioPlayer.play().catch((err) => {
-            console.warn('Playback restricted or offline:', err);
-            stopPreviewAudio();
-            playSynthesizedAdhanChime();
-          });
-          pBtn.classList.add('playing');
-          pBtn.textContent = '⏸';
-        }
-      };
-
-      muezzinContainer.appendChild(row);
-    });
-  }
-
-  // معالجة رفع أذان مخصص من هاتف المستخدم وتحديث القائمة فورياً
+      // معالجة رفع أذان مخصص من هاتف المستخدم وتحديث القائمة فورياً مع الإشعار الاحترافي
   const customFileInput = document.getElementById('inputUploadCustomAdhan');
   if (customFileInput) {
     customFileInput.onchange = async (e) => {
@@ -660,6 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // إعادة رسم القائمة فوراً لتظهر الأيقونة والملف المرفوع أمام المستخدم
       await renderMuezzinListUI();
       customFileInput.value = '';
+      showAudioFeedbackToast(`تم حفظ "${file.name}" بنجاح ويعمل بدون إنترنت ✨`, '✨');
     };
   }
 
