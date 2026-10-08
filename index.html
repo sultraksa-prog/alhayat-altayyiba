@@ -1252,6 +1252,18 @@
           <button type="button" class="modal-btn-link" id="closePermissionsDiagBtn">✕</button>
         </div>
         <div class="diagnostic-items-col">
+          <!-- بطاقة التحكم الشامل بالتنبيهات والتشغيل الدائم في الخلفية -->
+          <div class="diag-item-card" id="cardMasterBgAlarms" style="background:#EEF6FC; border:1.5px solid #BCD8F0; margin-bottom:4px;">
+            <div>
+              <h4 style="font-size:14px; font-weight:800; margin:0; color:var(--primary-blue);">التشغيل المستمر والتنبيه في الخلفية</h4>
+              <p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">إبقاء محرك الأذان يعمل عند إغلاق التطبيق أو قفل الشاشة</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleMasterBackgroundAlarms" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
           <div class="diag-item-card granted" id="diagCardNotification">
             <div><h4 style="font-size:14px; font-weight:800; margin:0;">أذونات الإشعارات</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لإطلاق صوت وتنبيه الصلاة في موعدها</p></div>
             <button type="button" class="btn-diag-fix" id="btnFixNotification" style="display:none;">إصلاح الآن</button>
