@@ -508,17 +508,26 @@ function renderPreAlarmsListUI() {
   });
 }
 
-// 6. تشغيل شاشة الأذان الكاملة ملء الشاشة
-window.isAdhanFullScreenActive = false;
+window.dismissedPrayers = window.dismissedPrayers || {};
+window.activeTriggeredPrayerKey = null;
 
 function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null, isPreview = false, prayerKey = null) {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (!fsView) return;
 
   const targetKey = prayerKey || currentActivePrayerAlarmContext || 'Maghrib';
+  const todayKey = new Date().toDateString();
+  const dismissalId = `${targetKey}_${todayKey}`;
+
+  // منع فتح الأذان نهائياً إذا كان المستخدم قد أغلقه بقرار منه مسبقاً لهذا اليوم
+  if (!isPreview && window.dismissedPrayers[dismissalId]) {
+    return;
+  }
+
   const cfg = getPrayerAlarmConfig(targetKey);
-  // السماح بفتح الشاشة دائماً في وضع المعاينة حتى لو كان التنبيه معطلاً
   if (!isPreview && cfg.enabled === false) return;
+
+  window.activeTriggeredPrayerKey = targetKey;
 
   const bg = customBgUrl || (ADHAN_BG_PRESETS.find(x => x.id === cfg.bgId) || ADHAN_BG_PRESETS[0]).url;
   fsView.style.backgroundImage = `url('${bg}')`;
@@ -563,12 +572,45 @@ function closeAdhanFullScreen() {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (fsView) fsView.style.display = 'none';
   window.isAdhanFullScreenActive = false;
+
+  // تسجيل الإلغاء الصريح لمنع الشاشة من إعادة فتح نفسها لنفس الصلاة
+  if (window.activeTriggeredPrayerKey) {
+    const todayKey = new Date().toDateString();
+    window.dismissedPrayers[`${window.activeTriggeredPrayerKey}_${todayKey}`] = true;
+  }
+
+  // كتم وإيقاف الصوت وتفريغه كلياً لضمان عدم استمراره في الخلفية
   if (previewAudioPlayer) {
     previewAudioPlayer.pause();
     previewAudioPlayer.currentTime = 0;
+    previewAudioPlayer.src = '';
   }
 }
 window.closeAdhanFullScreen = closeAdhanFullScreen;
+
+// المحرك المركزي الموحد لإطلاق الأذان لمرة واحدة فقط
+function handlePrayerTimeEnter(prayerKey, prayerName, rawTime) {
+  const todayKey = new Date().toDateString();
+  const eventId = `${prayerKey}_${todayKey}`;
+
+  // منع التشغيل إذا كانت الصلاة قد انطلقت أو أغلقت بالفعل اليوم
+  if (window.dismissedPrayers[eventId] || window.lastFiredPrayerId === eventId) {
+    return;
+  }
+
+  window.lastFiredPrayerId = eventId;
+  const pTime12 = (typeof formatTo12Hour === 'function') ? formatTo12Hour(rawTime) : rawTime;
+
+  if (document.visibilityState === 'visible') {
+    triggerAdhanFullScreen(prayerName, pTime12, null, false, prayerKey);
+  } else {
+    const isBgMasterActive = localStorage.getItem('hayat_master_bg_alarms') !== 'false';
+    if (isBgMasterActive) {
+      triggerBackgroundAdhanNotification(prayerKey, prayerName, pTime12);
+    }
+  }
+}
+window.handlePrayerTimeEnter = handlePrayerTimeEnter;
 
 // 1. الاستماع لأزرار الصوت (Volume Up / Down) والأسهم لكتم الأذان
 window.addEventListener('keydown', (e) => {
@@ -1227,23 +1269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     prayerKeysList.forEach(pk => {
       const pRawTime = timings[pk] ? timings[pk].split(' ')[0] : '';
       if (pRawTime === curTimeFormatted) {
-        const eventUniqueId = `${pk}_${todayStr}_${curTimeFormatted}`;
-        if (window.lastFiredPrayerId !== eventUniqueId) {
-          window.lastFiredPrayerId = eventUniqueId;
-          
-          const prayerTime12 = (typeof formatTo12Hour === 'function') ? formatTo12Hour(pRawTime) : pRawTime;
-
-          // 1. إذا كان التطبيق مفتوحاً أمام المستخدم
-          if (document.visibilityState === 'visible') {
-            triggerAdhanFullScreen(pNamesDict[pk], prayerTime12, null, false, pk);
-          } else {
-            // 2. إذا كان المستخدم خارج التطبيق أو شاشة الهاتف مقفلة
-            const isBgMasterActive = localStorage.getItem('hayat_master_bg_alarms') !== 'false';
-            if (isBgMasterActive) {
-              triggerBackgroundAdhanNotification(pk, pNamesDict[pk], prayerTime12);
-            }
-          }
-        }
+        handlePrayerTimeEnter(pk, pNamesDict[pk], pRawTime);
       }
     });
   }, 10000); // فحص مستمر كل 10 ثوانٍ يضمن اصطياد دقيقة الصلاة فوراً
