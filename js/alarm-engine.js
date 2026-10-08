@@ -199,6 +199,7 @@ function getPrayerAlarmConfig(prayerKey) {
     respectSilentMode: true,
     dismissWithVolume: true,
     dismissWithPower: true,
+    dismissWithFlip: true,
     preAlarms: []
   };
   return Object.assign({}, def, allConfigs[prayerKey]);
@@ -420,6 +421,9 @@ function updatePrayerAlarmSettingsUI() {
   const dismissPwrToggle = document.getElementById('toggleDismissWithPowerButton');
   if (dismissPwrToggle) dismissPwrToggle.checked = (cfg.dismissWithPower !== false);
 
+  const dismissFlipToggle = document.getElementById('toggleDismissWithFlip');
+  if (dismissFlipToggle) dismissFlipToggle.checked = (cfg.dismissWithFlip !== false);
+
   const silentBufferDisp = document.getElementById('displaySilentBufferMins');
   if (silentBufferDisp) silentBufferDisp.textContent = `بعد الإقامة بـ ${cfg.autoSilentBufferMins || 15} د`;
 
@@ -548,6 +552,40 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
+// 3. الاستماع لقلب الهاتف على وجهه (Flip to Mute) لكتم وإيقاف الأذان
+let isFlipMotionArmed = false;
+window.addEventListener('deviceorientation', (e) => {
+  if (!window.isAdhanFullScreenActive) {
+    isFlipMotionArmed = false;
+    return;
+  }
+  const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext || 'Maghrib');
+  if (cfg.dismissWithFlip === false) return;
+
+  // تسليح الحساس عندما يكون الهاتف مرفوعاً وشاشته للأعلى أولاً
+  if (e.beta !== null && Math.abs(e.beta) < 95) {
+    isFlipMotionArmed = true;
+  }
+
+  // عند قلب الهاتف لتكون شاشته متجهة لأسفل السطح
+  if (isFlipMotionArmed && e.beta !== null && Math.abs(e.beta) > 135) {
+    isFlipMotionArmed = false;
+    closeAdhanFullScreen();
+    if (navigator.vibrate) navigator.vibrate([70, 40, 70]);
+    showAudioFeedbackToast('تم إيقاف الأذان بقلب الهاتف ✓', '📳');
+  }
+});
+
+// 4. دعم أزرار سماعات الرأس وسماعات البلوتوث (MediaSession)
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('pause', () => {
+    if (window.isAdhanFullScreenActive) closeAdhanFullScreen();
+  });
+  navigator.mediaSession.setActionHandler('stop', () => {
+    if (window.isAdhanFullScreenActive) closeAdhanFullScreen();
+  });
+}
 
 // 7. ربط وتفعيل الأحداث بالكامل داخل DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -845,6 +883,15 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDismissPwr.onchange = (e) => {
       const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
       cfg.dismissWithPower = e.target.checked;
+      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+    };
+  }
+
+  const toggleDismissFlip = document.getElementById('toggleDismissWithFlip');
+  if (toggleDismissFlip) {
+    toggleDismissFlip.onchange = (e) => {
+      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+      cfg.dismissWithFlip = e.target.checked;
       savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
     };
   }
