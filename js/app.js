@@ -553,10 +553,38 @@ if (isRunningStandalone) {
       }
 
       // 2. إذا كان الجهاز آيفون أو آيباد (iOS Safari)
-      if (isIOS) {
-        showPwaModal('ios', 'تثبيت التطبيق على الآيفون', 'لتثبيت التطبيق على هاتف الآيفون وإضافته للشاشة الرئيسية بجوار تطبيقاتك، اتبع الخطوات البسيطة التالية:');
-        return;
+      // تفعيل زر تحميل APK للأندرويد
+  const downloadAndroidApkBtn = document.getElementById('downloadAndroidApkBtn');
+  if (downloadAndroidApkBtn) {
+    downloadAndroidApkBtn.addEventListener('click', () => {
+      if (APP_CONFIG.apkDownloadUrl && !APP_CONFIG.apkDownloadUrl.includes('your-username')) {
+        window.open(APP_CONFIG.apkDownloadUrl, '_blank');
+      } else {
+        // رسالة إرشادية في حال لم يضع الرابط بعد
+        showPwaModal('manual', 'تحميل تطبيق الأندرويد (APK)', 'سيتاح رابط التحميل المباشر لملف APK قريباً عبر تحديثات الـ Releases.');
       }
+    });
+  }
+
+  // تفعيل زر الآيفون الذكي (يفتح خطوات التثبيت المجاني حالياً أو المتجر مستقبلاً)
+  const installIosAppBtn = document.getElementById('installIosAppBtn');
+  if (installIosAppBtn) {
+    // إذا توفر رابط متجر آبل مستقبلاً يتغير شكل الزر تلقائياً
+    if (APP_CONFIG.appStoreUrl) {
+      const iosTitle = document.getElementById('iosCardTitle');
+      const iosBadge = document.getElementById('iosCardBadge');
+      if (iosTitle) iosTitle.textContent = 'تحميل من متجر App Store';
+      if (iosBadge) iosBadge.textContent = 'App Store 🍏';
+    }
+
+    installIosAppBtn.addEventListener('click', () => {
+      if (APP_CONFIG.appStoreUrl) {
+        window.open(APP_CONFIG.appStoreUrl, '_blank');
+      } else {
+        showPwaModal('ios', 'تثبيت التطبيق على الآيفون', 'لتثبيت التطبيق على هاتف الآيفون مجاناً وإضافته للشاشة الرئيسية بجوار تطبيقاتك، اتبع الخطوات البسيطة التالية:');
+      }
+    });
+  }
 
       // 3. أجهزة أندرويد ومتصفحات الكمبيوتر (Chrome / Edge)
       if (deferredPwaPrompt) {
@@ -4382,9 +4410,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.98', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.99',
     url: window.location.href.split('#')[0],
-    shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
+    shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
+    // رابط تحميل الـ APK (يمكنك وضع رابط GitHub Release أو Google Drive هنا)
+    apkDownloadUrl: 'https://github.com/your-username/your-repo/releases/latest/download/alhayat.apk',
+    // رابط متجر آبل مستقبلاً (اتركه null حالياً وسيعمل التثبيت المجاني للآيفون)
+    appStoreUrl: null 
   };
 
   // تحديث رقم الإصدار ديناميكياً في شاشة "حول الحياة الطيبة"
