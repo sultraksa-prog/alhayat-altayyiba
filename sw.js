@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.95';
+const CACHE_NAME = 'alhayat-cache-v2.1.96';
 const ASSETS = [
   './',
   './index.html',
@@ -82,4 +82,30 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// التعامل مع التفاعل مع إشعار الأذان على شاشة القفل
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  // إذا ضغط المستخدم على "كتم" لا نفتح التطبيق
+  if (event.action === 'dismiss') {
+    return;
+  }
+
+  // إذا ضغط على "صلّ الآن" أو على الإشعار نفسه: نفتح التطبيق ونظهر شاشة الأذان
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          client.postMessage({ type: 'OPEN_ADHAN_SCREEN', prayerKey: event.notification.data?.prayerKey });
+          return;
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./index.html');
+      }
+    })
+  );
 });
