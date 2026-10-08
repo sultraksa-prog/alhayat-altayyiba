@@ -1,8 +1,7 @@
 {
   "appId": "com.alhayat.app",
   "appName": "الحياة الطيبة",
-  "webDir": ".",
-  "bundledWebRuntime": false,
+  "webDir": "www",
   "backgroundColor": "#09203F",
   "plugins": {
     "LocalNotifications": {
