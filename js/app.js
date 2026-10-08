@@ -3467,8 +3467,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     const rawTimings = apiData.timings;
     const offsets = userLocation.prayerOffsets || {};
 
-    // تصدير المواقيت المعدلة بعد إضافة الدقائق اليدوية
+    // تصدير المواقيت المعدلة بعد إضافة الدقائق اليدوية للنطاق العام
     currentTimings = {};
+    window.currentTimings = currentTimings;
     PRAYER_KEYS.forEach(p => {
       const baseTime = rawTimings[p.key];
       const offsetVal = offsets[p.key] || 0;
@@ -3702,12 +3703,15 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const seconds = diffSec % 60;
       const nextPrayerCountdownText = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
 
-      // فحص ثانية دخول الوقت لإطلاق الأذان التلقائي فوراً
-      if (diffFromPrevSec === 0 || diffFromPrevSec === 1) {
-        if (!window.lastTriggeredPrayerKey || window.lastTriggeredPrayerKey !== prevP.key) {
-          window.lastTriggeredPrayerKey = prevP.key;
+      // فحص دخول وقت الصلاة بنافذة الدقيقة الكاملة لتفادي أي تفويت
+      const todayDateKey = now.toDateString();
+      const prayerEventId = `${prevP.key}_${todayDateKey}`;
+
+      if (diffFromPrevSec >= 0 && diffFromPrevSec < 60) {
+        if (window.lastInAppTriggeredPrayerId !== prayerEventId) {
+          window.lastInAppTriggeredPrayerId = prayerEventId;
           if (typeof triggerAdhanFullScreen === 'function') {
-            triggerAdhanFullScreen(prevP.name, formatTo12Hour(prevP.rawTime));
+            triggerAdhanFullScreen(prevP.name, formatTo12Hour(prevP.rawTime), null, false, prevP.key);
           }
         }
       }
@@ -4384,7 +4388,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.96', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
+    version: '2.1.97', // <--- غير رقم الإصدار من هنا فقط مستقبلاً وسيتحدث في كامل التطبيق
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات'
   };
