@@ -115,6 +115,53 @@ function playSynthesizedAdhanChime() {
   } catch(e) {}
 }
 
+// دالة إطلاق إشعار الأذان الرسمي في الخلفية وعلى شاشة القفل
+async function triggerBackgroundAdhanNotification(prayerKey, prayerName, prayerTime) {
+  const cfg = getPrayerAlarmConfig(prayerKey);
+  if (cfg.enabled === false) return;
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && reg.showNotification) {
+        const vibrationPattern = cfg.vibrationEnabled ? [500, 200, 500, 200, 800, 300, 1000] : [];
+        await reg.showNotification(`حان الآن أذان ${prayerName} 🕌`, {
+          body: `الله أكبر، الله أكبر.. موعد صلاة ${prayerName} (${prayerTime})`,
+          icon: './icon.svg',
+          badge: './icon.svg',
+          tag: `adhan-notification-${prayerKey}`,
+          renotify: true,
+          requireInteraction: true,
+          silent: !cfg.vibrationEnabled && cfg.audioMode === 'silent',
+          vibrate: vibrationPattern,
+          data: { prayerKey: prayerKey },
+          actions: [
+            { action: 'pray_now', title: 'صَلِّ الآن 🕌' },
+            { action: 'dismiss', title: 'كتم ✕' }
+          ]
+        });
+      }
+    } catch (err) {
+      console.warn('تعذر إظهار إشعار الخلفية:', err);
+    }
+  }
+
+  // تشغيل الصوت في الخلفية مع دعم استمرار الصوت
+  if (cfg.audioMode === 'custom' && cfg.customAudioId) {
+    getCustomAudioBlob(cfg.customAudioId).then(blob => {
+      if (blob) {
+        previewAudioPlayer.src = URL.createObjectURL(blob);
+        previewAudioPlayer.play().catch(() => {});
+      }
+    });
+  } else if (cfg.audioMode !== 'silent') {
+    const m = MUEZZIN_LIST.find(x => x.id === cfg.selectedMuezzinId) || MUEZZIN_LIST[0];
+    previewAudioPlayer.src = m.url;
+    previewAudioPlayer.play().catch(() => {});
+  }
+}
+window.triggerBackgroundAdhanNotification = triggerBackgroundAdhanNotification;
+
 function stopPreviewAudio() {
   if (previewAudioPlayer) {
     previewAudioPlayer.pause();
@@ -944,13 +991,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const notifBtn = document.getElementById('btnFixNotification');
     if ('Notification' in window) {
       if (Notification.permission === 'granted') {
-        if (notifCard) notifCard.className = 'diag-item-card granted';
+        if (notifCard) {
+          notifCard.className = 'diag-item-card granted';
+          const badge = notifCard.querySelector('.diag-status-badge');
+          if (badge) badge.textContent = 'مفعل ✓';
+        }
         if (notifBtn) notifBtn.style.display = 'none';
       } else {
-        if (notifCard) notifCard.className = 'diag-item-card missing';
+        if (notifCard) {
+          notifCard.className = 'diag-item-card missing';
+          const badge = notifCard.querySelector('.diag-status-badge');
+          if (badge) badge.textContent = 'غير مفعل ⚠️';
+        }
         if (notifBtn) {
           notifBtn.style.display = 'inline-block';
-          notifBtn.onclick = () => Notification.requestPermission().then(() => runSystemPermissionsDiagnostic());
+          notifBtn.onclick = async () => {
+            const res = await Notification.requestPermission();
+            runSystemPermissionsDiagnostic();
+            if (res === 'granted') {
+              showAudioFeedbackToast('تم تفعيل إشعارات وأذان شاشة القفل بنجاح ✨', '🔔');
+            }
+          };
         }
       }
     }
@@ -1079,6 +1140,51 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+ // الاستماع لرسالة النقر على الإشعار من شاشة القفل لفتح الأذان
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'OPEN_ADHAN_SCREEN') {
+        const pk = event.data.prayerKey || currentActivePrayerAlarmContext || 'Maghrib';
+        const pNames = { Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
+        const curT = (typeof currentTimings !== 'undefined' && currentTimings && currentTimings[pk]) ? formatTo12Hour(currentTimings[pk]) : '';
+        triggerAdhanFullScreen(pNames[pk] || 'الصلاة', curT);
+      }
+    });
+  }
+
+  // محرك الجدولة والمراقبة الدقيقة في الخلفية لدخول وقت الصلوات
+  setInterval(() => {
+    if (typeof currentTimings === 'undefined' || !currentTimings) return;
+    
+    let now = new Date();
+    const curHour = String(now.getHours()).padStart(2, '0');
+    const curMin = String(now.getMinutes()).padStart(2, '0');
+    const curTimeFormatted = `${curHour}:${curMin}`;
+
+    const prayerKeysList = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    const pNamesDict = { Fajr: 'الفجر', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
+
+    prayerKeysList.forEach(pk => {
+      const pRawTime = currentTimings[pk] ? currentTimings[pk].split(' ')[0] : '';
+      if (pRawTime === curTimeFormatted) {
+        if (!window.lastBackgroundTriggered || window.lastBackgroundTriggered !== `${pk}_${curTimeFormatted}`) {
+          window.lastBackgroundTriggered = `${pk}_${curTimeFormatted}`;
+          
+          const prayerTime12 = (typeof formatTo12Hour === 'function') ? formatTo12Hour(pRawTime) : pRawTime;
+
+          // إذا كان التطبيق مفتوحاً وشاشته ظاهرة: تشغيل شاشة الأذان التفاعلية
+          if (document.visibilityState === 'visible') {
+            triggerAdhanFullScreen(pNamesDict[pk], prayerTime12);
+          } else {
+            // إذا كان المستخدم خارج التطبيق أو شاشة الهاتف مقفلة: إطلاق إشعار شاشة القفل مع الصوت والاهتزاز
+            triggerBackgroundAdhanNotification(pk, pNamesDict[pk], prayerTime12);
+          }
+        }
+      }
+    });
+  }, 15000); // الفحص كل 15 ثانية لمطابقة دقيقة الأذان بدقة
+
   // المزامنة الأولية عند الإقلاع
   syncAllAlarmsToHub();
+  runSystemPermissionsDiagnostic();
 });
