@@ -4410,11 +4410,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.99',
+    version: '2.1.100',
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK (يمكنك وضع رابط GitHub Release أو Google Drive هنا)
-    apkDownloadUrl: 'https://github.com/your-username/your-repo/releases/latest/download/alhayat.apk',
+    apkDownloadUrl: 'https://github.com/sultraksa-prog/alhayat-altayyiba/releases/download/v2.1.99/alhayat.apk',
     // رابط متجر آبل مستقبلاً (اتركه null حالياً وسيعمل التثبيت المجاني للآيفون)
     appStoreUrl: null 
   };
