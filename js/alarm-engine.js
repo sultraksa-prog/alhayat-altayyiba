@@ -460,12 +460,13 @@ function renderPreAlarmsListUI() {
 // 6. تشغيل شاشة الأذان الكاملة ملء الشاشة
 window.isAdhanFullScreenActive = false;
 
-function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
+function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null, isPreview = false) {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (!fsView) return;
 
   const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext || 'Maghrib');
-  if (cfg.enabled === false) return;
+  // السماح بفتح الشاشة دائماً في وضع المعاينة حتى لو كان التنبيه معطلاً
+  if (!isPreview && cfg.enabled === false) return;
 
   const bg = customBgUrl || (ADHAN_BG_PRESETS.find(x => x.id === cfg.bgId) || ADHAN_BG_PRESETS[0]).url;
   fsView.style.backgroundImage = `url('${bg}')`;
@@ -482,7 +483,7 @@ function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
     navigator.vibrate([400, 200, 400, 200, 600]);
   }
 
-  if (cfg.respectSilentMode && window.AndroidBridge && typeof window.AndroidBridge.isDeviceSilent === 'function') {
+  if (!isPreview && cfg.respectSilentMode && window.AndroidBridge && typeof window.AndroidBridge.isDeviceSilent === 'function') {
     if (window.AndroidBridge.isDeviceSilent()) return;
   }
 
@@ -517,20 +518,27 @@ function closeAdhanFullScreen() {
 }
 window.closeAdhanFullScreen = closeAdhanFullScreen;
 
-// 1. الاستماع لأزرار الصوت (Volume Up / Down) وكتم الأذان فوراً
+// 1. الاستماع لأزرار الصوت (Volume Up / Down) والأسهم لكتم الأذان
 window.addEventListener('keydown', (e) => {
   if (!window.isAdhanFullScreenActive) return;
   const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext || 'Maghrib');
   if (cfg.dismissWithVolume === false) return;
 
-  const volumeKeys = ['VolumeUp', 'VolumeDown', 'AudioVolumeUp', 'AudioVolumeDown', 'AudioVolumeMute', 'Escape', ' '];
+  // شمل أزرار الصوت بالجوال وأسهم الكيبورد للفحص بالكمبيوتر
+  const volumeKeys = [
+    'VolumeUp', 'VolumeDown',
+    'AudioVolumeUp', 'AudioVolumeDown', 'AudioVolumeMute',
+    'Escape', ' ', 'ArrowUp', 'ArrowDown'
+  ];
+
   if (volumeKeys.includes(e.key)) {
     e.preventDefault();
     closeAdhanFullScreen();
+    showAudioFeedbackToast('تم إيقاف الأذان بنجاح ✓', '🔇');
   }
 });
 
-// 2. الاستماع لزر الطاقة (إطفاء الشاشة أو مغادرتها) لكتم الأذان فوراً
+// 2. الاستماع لزر الطاقة (إطفاء الشاشة) لكتم الأذان
 document.addEventListener('visibilitychange', () => {
   if (!window.isAdhanFullScreenActive) return;
   if (document.visibilityState === 'hidden') {
@@ -752,12 +760,36 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // المعاينة الحية للأذان
+  // المعاينة الحية للأذان التفاعلية الحية بالكامل
   const btnPreviewLive = document.getElementById('btnPreviewAdhanLiveScreen');
   if (btnPreviewLive) {
     btnPreviewLive.onclick = () => {
-      const curTime = (typeof currentTimings !== 'undefined' && currentTimings.Maghrib) ? formatTo12Hour(currentTimings.Maghrib) : '5:38 م';
-      triggerAdhanFullScreen('المغرب', curTime);
+      const ctxKey = currentActivePrayerAlarmContext || 'Maghrib';
+      const prayerNamesDict = {
+        All: 'المغرب',
+        Fajr: 'الفجر',
+        Sunrise: 'الشروق',
+        Dhuhr: 'الظهر',
+        Asr: 'العصر',
+        Maghrib: 'المغرب',
+        Isha: 'العشاء',
+        Friday: 'صلاة الجمعة',
+        Eid: 'صلاة العيد'
+      };
+
+      const pName = prayerNamesDict[ctxKey] || 'المغرب';
+      const timingLookup = (ctxKey === 'All' || ctxKey === 'Friday' || ctxKey === 'Eid') ? 'Maghrib' : ctxKey;
+      
+      let pTime = '05:38 م';
+      if (typeof currentTimings !== 'undefined' && currentTimings && currentTimings[timingLookup]) {
+        pTime = (typeof formatTo12Hour === 'function') ? formatTo12Hour(currentTimings[timingLookup]) : currentTimings[timingLookup];
+      }
+
+      // تشغيل المعاينة الحية لكافة عناصر الصلاة الحالية
+      triggerAdhanFullScreen(pName, pTime, null, true);
+
+      // إشعار لطيف يوضح للمستخدم كيفية اختبار الأزرار
+      showAudioFeedbackToast('💡 جرّب الآن إيقاف الأذان بزر خفض الصوت أو قفل الشاشة', '🔔');
     };
   }
 
