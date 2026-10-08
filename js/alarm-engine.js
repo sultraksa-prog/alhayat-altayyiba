@@ -511,11 +511,12 @@ function renderPreAlarmsListUI() {
 // 6. تشغيل شاشة الأذان الكاملة ملء الشاشة
 window.isAdhanFullScreenActive = false;
 
-function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null, isPreview = false) {
+function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null, isPreview = false, prayerKey = null) {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (!fsView) return;
 
-  const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext || 'Maghrib');
+  const targetKey = prayerKey || currentActivePrayerAlarmContext || 'Maghrib';
+  const cfg = getPrayerAlarmConfig(targetKey);
   // السماح بفتح الشاشة دائماً في وضع المعاينة حتى لو كان التنبيه معطلاً
   if (!isPreview && cfg.enabled === false) return;
 
@@ -1152,37 +1153,100 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // محرك الجدولة والمراقبة الدقيقة في الخلفية لدخول وقت الصلوات
+  // تقنية إبقاء خيط المعالجة نشطاً في الخلفية لتفادي إغلاق الهاتف للمتصفح
+  let bgKeepAliveAudio = null;
+  function startBackgroundKeepAlive() {
+    if (bgKeepAliveAudio) return;
+    try {
+      // تدفق وسائط صامت يحافظ على أولوية التشغيل الصوتي لدى النظام في الخلفية
+      bgKeepAliveAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+      bgKeepAliveAudio.loop = true;
+      bgKeepAliveAudio.volume = 0.01;
+      bgKeepAliveAudio.play().catch(() => {});
+    } catch(e) {}
+  }
+
+  function stopBackgroundKeepAlive() {
+    if (bgKeepAliveAudio) {
+      bgKeepAliveAudio.pause();
+      bgKeepAliveAudio = null;
+    }
+  }
+
+  // ربط المفتاح العام لتشغيل التنبيهات في الخلفية من شاشة الصلاحيات
+  const toggleMasterBg = document.getElementById('toggleMasterBackgroundAlarms');
+  if (toggleMasterBg) {
+    const isBgEnabled = localStorage.getItem('hayat_master_bg_alarms') !== 'false';
+    toggleMasterBg.checked = isBgEnabled;
+    if (isBgEnabled) startBackgroundKeepAlive();
+
+    toggleMasterBg.onchange = async (e) => {
+      localStorage.setItem('hayat_master_bg_alarms', e.target.checked);
+      if (e.target.checked) {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+          await Notification.requestPermission();
+          runSystemPermissionsDiagnostic();
+        }
+        startBackgroundKeepAlive();
+        showAudioFeedbackToast('تم تفعيل التنبيهات والتشغيل في الخلفية ✨', '🔔');
+      } else {
+        stopBackgroundKeepAlive();
+        showAudioFeedbackToast('تم إيقاف تشغيل التنبيهات في الخلفية', '🔕');
+      }
+    };
+  }
+
+  // محرك المراقبة الشامل الموثوق لدخول وقت الصلوات (يعمل داخل وخارج التطبيق)
   setInterval(() => {
-    if (typeof currentTimings === 'undefined' || !currentTimings) return;
-    
+    // جلب المواقيت سواء من الذاكرة الحية أو من الكاش المحفوظ
+    let timings = window.currentTimings;
+    if (!timings) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('hayat_cached_timings'));
+        if (cached && cached.timings) timings = cached.timings;
+      } catch(e) {}
+    }
+    if (!timings) return;
+
     let now = new Date();
+    try {
+      const savedLoc = JSON.parse(localStorage.getItem('hayat_saved_location'));
+      if (savedLoc && savedLoc.timezone) {
+        now = new Date(new Date().toLocaleString('en-US', { timeZone: savedLoc.timezone }));
+      }
+    } catch(e) {}
+
     const curHour = String(now.getHours()).padStart(2, '0');
     const curMin = String(now.getMinutes()).padStart(2, '0');
     const curTimeFormatted = `${curHour}:${curMin}`;
+    const todayStr = now.toDateString();
 
     const prayerKeysList = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
     const pNamesDict = { Fajr: 'الفجر', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
 
     prayerKeysList.forEach(pk => {
-      const pRawTime = currentTimings[pk] ? currentTimings[pk].split(' ')[0] : '';
+      const pRawTime = timings[pk] ? timings[pk].split(' ')[0] : '';
       if (pRawTime === curTimeFormatted) {
-        if (!window.lastBackgroundTriggered || window.lastBackgroundTriggered !== `${pk}_${curTimeFormatted}`) {
-          window.lastBackgroundTriggered = `${pk}_${curTimeFormatted}`;
+        const eventUniqueId = `${pk}_${todayStr}_${curTimeFormatted}`;
+        if (window.lastFiredPrayerId !== eventUniqueId) {
+          window.lastFiredPrayerId = eventUniqueId;
           
           const prayerTime12 = (typeof formatTo12Hour === 'function') ? formatTo12Hour(pRawTime) : pRawTime;
 
-          // إذا كان التطبيق مفتوحاً وشاشته ظاهرة: تشغيل شاشة الأذان التفاعلية
+          // 1. إذا كان التطبيق مفتوحاً أمام المستخدم
           if (document.visibilityState === 'visible') {
-            triggerAdhanFullScreen(pNamesDict[pk], prayerTime12);
+            triggerAdhanFullScreen(pNamesDict[pk], prayerTime12, null, false, pk);
           } else {
-            // إذا كان المستخدم خارج التطبيق أو شاشة الهاتف مقفلة: إطلاق إشعار شاشة القفل مع الصوت والاهتزاز
-            triggerBackgroundAdhanNotification(pk, pNamesDict[pk], prayerTime12);
+            // 2. إذا كان المستخدم خارج التطبيق أو شاشة الهاتف مقفلة
+            const isBgMasterActive = localStorage.getItem('hayat_master_bg_alarms') !== 'false';
+            if (isBgMasterActive) {
+              triggerBackgroundAdhanNotification(pk, pNamesDict[pk], prayerTime12);
+            }
           }
         }
       }
     });
-  }, 15000); // الفحص كل 15 ثانية لمطابقة دقيقة الأذان بدقة
+  }, 10000); // فحص مستمر كل 10 ثوانٍ يضمن اصطياد دقيقة الصلاة فوراً
 
   // المزامنة الأولية عند الإقلاع
   syncAllAlarmsToHub();
