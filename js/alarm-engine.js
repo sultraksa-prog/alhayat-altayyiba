@@ -197,6 +197,8 @@ function getPrayerAlarmConfig(prayerKey) {
     autoSilentStartOffset: '0',
     autoSilentBufferMins: 15,
     respectSilentMode: true,
+    dismissWithVolume: true,
+    dismissWithPower: true,
     preAlarms: []
   };
   return Object.assign({}, def, allConfigs[prayerKey]);
@@ -412,6 +414,12 @@ function updatePrayerAlarmSettingsUI() {
   const respectSilentToggle = document.getElementById('toggleRespectDeviceSilent');
   if (respectSilentToggle) respectSilentToggle.checked = (cfg.respectSilentMode !== false);
 
+  const dismissVolToggle = document.getElementById('toggleDismissWithVolumeButtons');
+  if (dismissVolToggle) dismissVolToggle.checked = (cfg.dismissWithVolume !== false);
+
+  const dismissPwrToggle = document.getElementById('toggleDismissWithPowerButton');
+  if (dismissPwrToggle) dismissPwrToggle.checked = (cfg.dismissWithPower !== false);
+
   const silentBufferDisp = document.getElementById('displaySilentBufferMins');
   if (silentBufferDisp) silentBufferDisp.textContent = `بعد الإقامة بـ ${cfg.autoSilentBufferMins || 15} د`;
 
@@ -450,6 +458,8 @@ function renderPreAlarmsListUI() {
 }
 
 // 6. تشغيل شاشة الأذان الكاملة ملء الشاشة
+window.isAdhanFullScreenActive = false;
+
 function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (!fsView) return;
@@ -466,6 +476,7 @@ function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null) {
   if (pTime) pTime.textContent = prayerTime || '';
 
   fsView.style.display = 'flex';
+  window.isAdhanFullScreenActive = true;
 
   if (cfg.vibrationEnabled && navigator.vibrate) {
     navigator.vibrate([400, 200, 400, 200, 600]);
@@ -498,12 +509,37 @@ window.triggerAdhanFullScreen = triggerAdhanFullScreen;
 function closeAdhanFullScreen() {
   const fsView = document.getElementById('screen-adhan-fullscreen');
   if (fsView) fsView.style.display = 'none';
+  window.isAdhanFullScreenActive = false;
   if (previewAudioPlayer) {
     previewAudioPlayer.pause();
     previewAudioPlayer.currentTime = 0;
   }
 }
 window.closeAdhanFullScreen = closeAdhanFullScreen;
+
+// 1. الاستماع لأزرار الصوت (Volume Up / Down) وكتم الأذان فوراً
+window.addEventListener('keydown', (e) => {
+  if (!window.isAdhanFullScreenActive) return;
+  const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext || 'Maghrib');
+  if (cfg.dismissWithVolume === false) return;
+
+  const volumeKeys = ['VolumeUp', 'VolumeDown', 'AudioVolumeUp', 'AudioVolumeDown', 'AudioVolumeMute', 'Escape', ' '];
+  if (volumeKeys.includes(e.key)) {
+    e.preventDefault();
+    closeAdhanFullScreen();
+  }
+});
+
+// 2. الاستماع لزر الطاقة (إطفاء الشاشة أو مغادرتها) لكتم الأذان فوراً
+document.addEventListener('visibilitychange', () => {
+  if (!window.isAdhanFullScreenActive) return;
+  if (document.visibilityState === 'hidden') {
+    const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext || 'Maghrib');
+    if (cfg.dismissWithPower !== false) {
+      closeAdhanFullScreen();
+    }
+  }
+});
 
 // 7. ربط وتفعيل الأحداث بالكامل داخل DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -759,6 +795,24 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleRespectSilent.onchange = (e) => {
       const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
       cfg.respectSilentMode = e.target.checked;
+      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+    };
+  }
+
+  const toggleDismissVol = document.getElementById('toggleDismissWithVolumeButtons');
+  if (toggleDismissVol) {
+    toggleDismissVol.onchange = (e) => {
+      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+      cfg.dismissWithVolume = e.target.checked;
+      savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
+    };
+  }
+
+  const toggleDismissPwr = document.getElementById('toggleDismissWithPowerButton');
+  if (toggleDismissPwr) {
+    toggleDismissPwr.onchange = (e) => {
+      const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
+      cfg.dismissWithPower = e.target.checked;
       savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
     };
   }
