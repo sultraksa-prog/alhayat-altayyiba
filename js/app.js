@@ -7,37 +7,70 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ==================== نظام التثبيت الذكي للتطبيق (PWA Installer Engine) ====================
-  const isRunningStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // ==================== نظام التثبيت الذكي والواجهة المدركة للسياق ====================
+      const isRunningStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const userAgent = navigator.userAgent.toLowerCase();
+      // دعم متطور يشمل الآيباد المكتبي والآيفون
+      const isIOS = /ipad|iphone|ipod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroidOS = /android/.test(userAgent);
+      
+      // التعرف الصارم على بيئة تطبيق الأندرويد أو الآيفون الأصلي (APK / IPA)
+      const isNativeAppEnv = !!(
+        window.location.protocol === 'capacitor:' || 
+        window.location.hostname === 'localhost' || 
+        (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+      );
 
-  // الاستماع لاكتمال التثبيت بنجاح
-  window.addEventListener('appinstalled', () => {
-    deferredPwaPrompt = null;
-    localStorage.setItem('hayat_pwa_installed', 'true');
-    showPwaModal('success', 'تم تثبيت التطبيق بنجاح! 🎉', 'أصبح تطبيق "الحياة الطيبة" الآن مثبتاً على جهازك. يمكنك فتحه مباشرة من شاشة هاتفك الرئيسية كأي تطبيق أصيل والاستمتاع بتجربة كاملة وسريعة بدون إنترنت.');
-    updateInstallButtonUI(true);
-  });
+      // الاستماع لاكتمال التثبيت بنجاح (PWA)
+      window.addEventListener('appinstalled', () => {
+        deferredPwaPrompt = null;
+        localStorage.setItem('hayat_pwa_installed', 'true');
+        showPwaModal('success', 'تم تثبيت التطبيق بنجاح! 🎉', 'أصبح تطبيق "الحياة الطيبة" الآن مثبتاً على جهازك. يمكنك فتحه مباشرة من شاشة هاتفك الرئيسية كأي تطبيق أصيل والاستمتاع بتجربة كاملة وسريعة بدون إنترنت.');
+        updateInstallButtonUI(true);
+      });
 
-  function updateInstallButtonUI(installed) {
-  const installBtnCard = document.getElementById('installPwaBtn');
-  // إذا كان التطبيق مثبتاً أو يعمل كنسخة مستقلة، نقوم بإخفاء الزر بالكامل
-  if (installed && installBtnCard) {
-    installBtnCard.style.display = 'none';
-  }
-}
+      // دالة التحكم الذكي بإظهار وإخفاء الأزرار
+      function updateInstallButtonUI(installed) {
+        const pwaBtn = document.getElementById('installPwaBtn');
+        const apkBtn = document.getElementById('downloadAndroidApkBtn');
+        const iosBtn = document.getElementById('installIosAppBtn');
 
-// إخفاء زر التثبيت فوراً وبشكل تلقائي إذا فُتح التطبيق كنسخة مثبتة (Standalone) سواء على الجوال أو الكمبيوتر
-if (isRunningStandalone) {
-  updateInstallButtonUI(true);
-} else if ('getInstalledRelatedApps' in navigator) {
-  // فحص إضافي للأجهزة المدعومة للتحقق مما إذا كان مثبتاً على الجهاز حتى لو فتح من المتصفح
-  navigator.getInstalledRelatedApps().then((relatedApps) => {
-    if (relatedApps.length > 0) {
-      updateInstallButtonUI(true);
-    }
-  }).catch(() => {});
-}
+        // 1. إذا كان التطبيق مثبتاً (PWA أو APK أصلي) -> إخفاء كل أزرار التثبيت لتنظيف الشاشة
+        if (installed || isRunningStandalone || isNativeAppEnv) {
+          if (pwaBtn) pwaBtn.style.display = 'none';
+          if (apkBtn) apkBtn.style.display = 'none';
+          if (iosBtn) iosBtn.style.display = 'none';
+          return;
+        }
+
+        // 2. إذا كان يعمل في المتصفح -> إظهار ذكي حسب نظام التشغيل
+        if (isIOS) {
+          if (pwaBtn) pwaBtn.style.display = 'none';
+          if (apkBtn) apkBtn.style.display = 'none';
+          if (iosBtn) iosBtn.style.display = 'flex'; // إظهار زر الآيفون فقط
+        } else if (isAndroidOS) {
+          if (pwaBtn) pwaBtn.style.display = 'flex'; // PWA للأندرويد
+          if (apkBtn) apkBtn.style.display = 'flex'; // APK للأندرويد
+          if (iosBtn) iosBtn.style.display = 'none'; // إخفاء زر الآيفون
+        } else {
+          // متصفح الكمبيوتر المكتبي (Desktop)
+          if (pwaBtn) pwaBtn.style.display = 'flex';
+          if (apkBtn) apkBtn.style.display = 'none';
+          if (iosBtn) iosBtn.style.display = 'none';
+        }
+      }
+
+      // تشغيل الفحص الذكي فوراً عند فتح التطبيق
+      updateInstallButtonUI(localStorage.getItem('hayat_pwa_installed') === 'true');
+
+      // فحص إضافي للأجهزة المدعومة للتحقق مما إذا كان التطبيق مثبتاً
+      if (!isRunningStandalone && !isNativeAppEnv && 'getInstalledRelatedApps' in navigator) {
+        navigator.getInstalledRelatedApps().then((relatedApps) => {
+          if (relatedApps.length > 0) {
+            updateInstallButtonUI(true);
+          }
+        }).catch(() => {});
+      }
 
   function showPwaModal(type, title, desc) {
     const modal = document.getElementById('pwaInstallModal');
@@ -4509,7 +4542,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.104',
+    version: '2.1.105',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
