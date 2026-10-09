@@ -1,10 +1,23 @@
-// ==================== محرك التنبيهات، الأذان، و IndexedDB المتقدم ====================
+// ==================== محرك التخزين الذكي الموحد للأذان (نسخة واحدة بدون تكرار) ====================
 
+const ALHAYAT_AUDIO_DIR = 'AlHayat/Adhan';
 const ALARM_DB_NAME = 'HayatAlarmDB';
 const ALARM_DB_VERSION = 1;
 let alarmDBInstance = null;
 
-// 1. تهيئة مستودع IndexedDB
+// التحقق من إنشاء مجلد AlHayat/Adhan في ذاكرة الهاتف
+async function ensureNativeAlHayatFolder() {
+  if (!window.Capacitor?.Plugins?.Filesystem) return;
+  try {
+    await window.Capacitor.Plugins.Filesystem.mkdir({
+      path: ALHAYAT_AUDIO_DIR,
+      directory: 'DOCUMENTS',
+      recursive: true
+    });
+  } catch (e) {}
+}
+
+// 1. تهيئة IndexedDB (للـ PWA والمتصفح فقط)
 function initAlarmDatabase() {
   return new Promise((resolve, reject) => {
     if (alarmDBInstance) return resolve(alarmDBInstance);
@@ -22,27 +35,53 @@ function initAlarmDatabase() {
   });
 }
 
-async function saveCustomAudioBlob(id, fileBlob, fileName) {
-  const db = await initAlarmDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('custom_audio', 'readwrite');
-    tx.objectStore('custom_audio').put({ id, blob: fileBlob, name: fileName, createdAt: Date.now() });
-    tx.oncomplete = () => resolve(true);
-    tx.onerror = () => reject(false);
-  });
+// 2. دالة الحفظ الموحدة (نسخة فيزيائية واحدة في مجلد AlHayat للأندرويد، أو IndexedDB للمتصفح)
+async function saveCustomAudioUnified(file) {
+  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  const fileId = 'custom_audio_' + Date.now();
+
+  if (isAndroidApp && window.Capacitor?.Plugins?.Filesystem) {
+    await ensureNativeAlHayatFolder();
+
+    // قراءة الملف وتحويله لكتابته كملف حقيقي في مجلد AlHayat/Adhan
+    const base64Content = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9_\u0600-\u06FF\.\-]/g, '_');
+    const writeResult = await window.Capacitor.Plugins.Filesystem.writeFile({
+      path: `${ALHAYAT_AUDIO_DIR}/${safeFileName}`,
+      data: base64Content,
+      directory: 'DOCUMENTS',
+      recursive: true
+    });
+
+    // حفظ سجل بسيط بالمسار في localStorage دون حفظ أي ملف مكرر
+    const nativeList = JSON.parse(localStorage.getItem('hayat_native_custom_audios')) || [];
+    nativeList.push({ id: fileId, name: file.name, uri: writeResult.uri, fileName: safeFileName });
+    localStorage.setItem('hayat_native_custom_audios', JSON.stringify(nativeList));
+    return fileId;
+  } else {
+    // في المتصفح والـ PWA: حفظ نسخة وحيدة في IndexedDB
+    const db = await initAlarmDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('custom_audio', 'readwrite');
+      tx.objectStore('custom_audio').put({ id: fileId, blob: file, name: file.name, createdAt: Date.now() });
+      tx.oncomplete = () => resolve(fileId);
+      tx.onerror = () => reject(null);
+    });
+  }
 }
 
-async function getCustomAudioBlob(id) {
-  const db = await initAlarmDatabase();
-  return new Promise((resolve) => {
-    const tx = db.transaction('custom_audio', 'readonly');
-    const req = tx.objectStore('custom_audio').get(id);
-    req.onsuccess = () => resolve(req.result ? req.result.blob : null);
-    req.onerror = () => resolve(null);
-  });
-}
-
+// 3. جلب قائمة الأصوات المخصصة
 async function getAllCustomAudios() {
+  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (isAndroidApp) {
+    return JSON.parse(localStorage.getItem('hayat_native_custom_audios')) || [];
+  }
   const db = await initAlarmDatabase();
   return new Promise((resolve) => {
     const tx = db.transaction('custom_audio', 'readonly');
@@ -53,14 +92,62 @@ async function getAllCustomAudios() {
   });
 }
 
+// 4. حذف الصوت المخصص (حذف فيزيائي حقيقي للملف من مجلد AlHayat في الأندرويد)
 async function deleteCustomAudio(id) {
-  const db = await initAlarmDatabase();
-  return new Promise((resolve) => {
-    const tx = db.transaction('custom_audio', 'readwrite');
-    tx.objectStore('custom_audio').delete(id);
-    tx.oncomplete = () => resolve(true);
-    tx.onerror = () => resolve(false);
-  });
+  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (isAndroidApp && window.Capacitor?.Plugins?.Filesystem) {
+    const nativeList = JSON.parse(localStorage.getItem('hayat_native_custom_audios')) || [];
+    const item = nativeList.find(x => x.id === id);
+    if (item && item.fileName) {
+      try {
+        await window.Capacitor.Plugins.Filesystem.deleteFile({
+          path: `${ALHAYAT_AUDIO_DIR}/${item.fileName}`,
+          directory: 'DOCUMENTS'
+        });
+      } catch (e) {}
+    }
+    const filtered = nativeList.filter(x => x.id !== id);
+    localStorage.setItem('hayat_native_custom_audios', JSON.stringify(filtered));
+    return true;
+  } else {
+    const db = await initAlarmDatabase();
+    return new Promise((resolve) => {
+      const tx = db.transaction('custom_audio', 'readwrite');
+      tx.objectStore('custom_audio').delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  }
+}
+
+// 5. جلب رابط تشغيل الصوت مباشرة (من مجلد الهاتف في الأندرويد أو من الـ Blob في المتصفح)
+async function getCustomAudioPlayableSrc(id) {
+  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (isAndroidApp) {
+    const nativeList = JSON.parse(localStorage.getItem('hayat_native_custom_audios')) || [];
+    const item = nativeList.find(x => x.id === id);
+    if (item && item.uri) {
+      if (window.Capacitor && window.Capacitor.convertFileSrc) {
+        return window.Capacitor.convertFileSrc(item.uri);
+      }
+      return item.uri;
+    }
+    return null;
+  } else {
+    const db = await initAlarmDatabase();
+    return new Promise((resolve) => {
+      const tx = db.transaction('custom_audio', 'readonly');
+      const req = tx.objectStore('custom_audio').get(id);
+      req.onsuccess = () => {
+        if (req.result && req.result.blob) {
+          resolve(URL.createObjectURL(req.result.blob));
+        } else {
+          resolve(null);
+        }
+      };
+      req.onerror = () => resolve(null);
+    });
+  }
 }
 
 // 2. قائمة أصوات المؤذنين الموسعة (15 مؤذناً بروابط مباشرة)
@@ -435,14 +522,11 @@ function updatePrayerAlarmSettingsUI() {
     if (cfg.audioMode === 'custom') {
       audioTitle.textContent = 'أذان مخصص (من جهازي 📁)';
       if (cfg.customAudioId) {
-        initAlarmDatabase().then(db => {
-          const tx = db.transaction('custom_audio', 'readonly');
-          const req = tx.objectStore('custom_audio').get(cfg.customAudioId);
-          req.onsuccess = () => {
-            if (req.result && req.result.name) {
-              audioTitle.textContent = `📁 ${req.result.name}`;
-            }
-          };
+        getAllCustomAudios().then(list => {
+          const item = list.find(x => x.id === cfg.customAudioId);
+          if (item && item.name) {
+            audioTitle.textContent = `📁 ${item.name}`;
+          }
         });
       }
     } else if (cfg.audioMode === 'silent') {
@@ -549,9 +633,9 @@ function triggerAdhanFullScreen(prayerName, prayerTime, customBgUrl = null, isPr
   }
 
   if (cfg.audioMode === 'custom' && cfg.customAudioId) {
-    getCustomAudioBlob(cfg.customAudioId).then(blob => {
-      if (blob) {
-        previewAudioPlayer.src = URL.createObjectURL(blob);
+    getCustomAudioPlayableSrc(cfg.customAudioId).then(src => {
+      if (src) {
+        previewAudioPlayer.src = src;
         previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
       } else {
         playSynthesizedAdhanChime();
@@ -779,10 +863,10 @@ document.addEventListener('DOMContentLoaded', () => {
             stopPreviewAudio();
           } else {
             stopPreviewAudio();
-            const blob = await getCustomAudioBlob(item.id);
-            if (blob) {
+            const src = await getCustomAudioPlayableSrc(item.id);
+            if (src) {
               currentPlayingCustomId = item.id;
-              previewAudioPlayer.src = URL.createObjectURL(blob);
+              previewAudioPlayer.src = src;
               previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
               pBtn.classList.add('playing');
               pBtn.textContent = '⏸';
@@ -867,14 +951,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // رفع أذان مخصص
+  // رفع أذان مخصص وحفظه كنسخة واحدة في مجلد AlHayat بالهاتف
   const customFileInput = document.getElementById('inputUploadCustomAdhan');
   if (customFileInput) {
     customFileInput.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const fileId = 'custom_audio_' + Date.now();
-      await saveCustomAudioBlob(fileId, file, file.name);
+
+      const fileId = await saveCustomAudioUnified(file);
 
       const cfg = getPrayerAlarmConfig(currentActivePrayerAlarmContext);
       cfg.audioMode = 'custom';
@@ -884,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await renderMuezzinListUI();
       customFileInput.value = '';
-      showAudioFeedbackToast(`تم حفظ "${file.name}" بنجاح ويعمل بدون إنترنت ✨`, '✨');
+      showAudioFeedbackToast(`تم حفظ "${file.name}" في مجلد AlHayat بالجهاز ✨`, '📁');
     };
   }
 
@@ -1275,7 +1359,7 @@ async function scheduleNativeAndroidAlarms() {
             id: uniqueId,
             title: `حان الآن أذان ${p.name} 🕌`,
             body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name} (${timeFormatted})`,
-            channelId: 'prayer_channel_high', // ربط الإشعار بالقناة عالية الأولوية
+            channelId: 'prayer_channel_high',
             schedule: { at: alarmDate, allowWhileIdle: true },
             actionTypeId: 'PRAYER_ACTIONS',
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
