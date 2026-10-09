@@ -4410,13 +4410,14 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.101',
-    url: window.location.href.split('#')[0],
+    version: '2.1.102',
+    url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
-    apkDownloadUrl: 'https://github.com/sultraksa-prog/alhayat-altayyiba/releases/download/v2.1.99/alhayat.apk',
+    // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
+    apkDownloadUrl: 'https://github.com/sultraksa-prog/alhayat-altayyiba/releases/latest/download/alhayat.apk',
     appStoreUrl: null,
-    // رابط فحص التحديثات السحابية للأندرويد عبر جيت هاب
-    remoteVersionUrl: 'https://raw.githubusercontent.com/your-username/your-repo/main/version.json'
+    // رابط فحص ملف version.json المباشر من موقعك المنشور
+    remoteVersionUrl: 'https://sultraksa-prog.github.io/alhayat-altayyiba/version.json'
   };
 
   // تحديث رقم الإصدار ديناميكياً في شاشة "حول الحياة الطيبة"
@@ -5281,6 +5282,7 @@ ${APP_CONFIG.url}`;
   const closeOfflineBtn = document.getElementById('closeOfflineModalBtn');
   const openWifiSettingsBtn = document.getElementById('openWifiSettingsBtn');
   const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
+  const forcePurgeBtn = document.getElementById('forceCachePurgeBtn');
 
   if (closeUpToDateBtn && upToDateModal) {
     closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
@@ -5303,8 +5305,8 @@ ${APP_CONFIG.url}`;
     };
   }
 
-  // دالة إظهار نافذة أحدث إصدار
-  function showUpToDateDisplay(customMsg = null) {
+  // دالة موحدة ومتطابقة لإظهار نافذة أحدث إصدار
+  function showUpToDateDisplay() {
     if (!upToDateModal) return;
     const icon = document.getElementById('modalStatusIcon');
     const title = document.getElementById('modalStatusTitle');
@@ -5314,10 +5316,52 @@ ${APP_CONFIG.url}`;
     if (icon) icon.textContent = '✓';
     if (title) title.textContent = 'أنت على أحدث إصدار';
     if (text) {
-      text.innerHTML = customMsg || `أنت تستخدم أحدث إصدار بالفعل (<strong>v${APP_CONFIG.version}</strong>)، ولا يوجد أي تحديث جديد حالياً.<br>تقبل الله طاعتكم وصالح أعمالكم 🌙`;
+      text.innerHTML = `أنت تستخدم أحدث إصدار بالفعل (<strong>v${APP_CONFIG.version}</strong>)، ولا يوجد أي تحديث جديد حالياً.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
     }
     if (purgeSec) purgeSec.style.display = 'block';
     upToDateModal.classList.add('show');
+  }
+
+  // تفعيل زر التحديث الإجباري وإصلاح كاش الملفات (يعمل في PWA وتطبيق الأندرويد)
+  if (forcePurgeBtn) {
+    forcePurgeBtn.onclick = async () => {
+      if (!navigator.onLine) {
+        if (upToDateModal) upToDateModal.classList.remove('show');
+        if (offlineModal) offlineModal.classList.add('show');
+        return;
+      }
+
+      const originalPurgeText = forcePurgeBtn.textContent;
+      forcePurgeBtn.textContent = 'جاري مسح الكاش وتحديث الملفات... ⏳';
+
+      try {
+        if ('caches' in window) {
+          const cacheKeys = await caches.keys();
+          await Promise.all(cacheKeys.map(key => caches.delete(key)));
+        }
+
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(reg => reg.unregister()));
+        }
+
+        localStorage.setItem('hayat_force_purge_success', 'true');
+
+        const isAndroid = window.location.protocol === 'capacitor:' || 
+                          window.location.hostname === 'localhost' || 
+                          (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+        if (isAndroid) {
+          window.location.reload();
+        } else {
+          const cleanUrl = window.location.origin + window.location.pathname + '?cache_cleared=' + Date.now();
+          window.location.replace(cleanUrl);
+        }
+      } catch (err) {
+        forcePurgeBtn.textContent = originalPurgeText;
+        alert('تعذر إتمام عملية إصلاح الملفات، يرجى المحاولة مرة أخرى.');
+      }
+    };
   }
 
   // مقارنة أرقام الإصدارات برمجياً
@@ -5333,45 +5377,44 @@ ${APP_CONFIG.url}`;
     return false;
   }
 
-  // محرك فحص التحديث الذكي المشترك (أندرويد + متصفح)
+  // محرك فحص التحديث الذكي المشترك
   let activeSwRegistration = null;
 
   async function executeUpdateCheck() {
+    const titleEl = checkUpdateBtn ? checkUpdateBtn.querySelector('.settings-item-title') : null;
+    const originalTitle = titleEl ? titleEl.textContent : 'تحديث التطبيق';
+
+    // 1. الفحص الصارم لوجود الإنترنت
     if (!navigator.onLine) {
       if (offlineModal) offlineModal.classList.add('show');
       return;
     }
 
-    const titleEl = checkUpdateBtn ? checkUpdateBtn.querySelector('.settings-item-title') : null;
-    const originalTitle = titleEl ? titleEl.textContent : 'تحديث التطبيق';
     if (titleEl) titleEl.textContent = 'جاري البحث عن تحديثات... ⏳';
 
     const isAndroidApp = window.location.protocol === 'capacitor:' || 
                          window.location.hostname === 'localhost' || 
                          (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
-    // 1. إذا كان التطبيق يعمل داخل APK (أندرويد)
+    // 2. إذا كان التطبيق يعمل داخل APK (أندرويد)
     if (isAndroidApp) {
-      let targetVersionUrl = APP_CONFIG.remoteVersionUrl;
-      // مسار احتياطي تلقائي إذا فُتح من موقع جيت هاب
-      if (targetVersionUrl && targetVersionUrl.includes('your-username')) {
-        targetVersionUrl = './version.json';
-      }
-
       try {
-        const response = await fetch(`${targetVersionUrl}?t=${Date.now()}`);
-        if (!response.ok) throw new Error('Network error');
+        // فحص ملف version.json الحقيقي مباشرة من موقعك على جيت هاب مع كسر الكاش
+        const response = await fetch(`${APP_CONFIG.remoteVersionUrl}?t=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        if (!response.ok) throw new Error('Network response not ok');
         const data = await response.json();
 
         if (titleEl) titleEl.textContent = originalTitle;
 
         if (data && data.version && isRemoteNewer(data.version, APP_CONFIG.version)) {
-          // يوجد إصدار أحدث للأندرويد: إظهار إشعار التحديث مع زر التحميل
+          // يوجد إصدار أحدث للأندرويد: إظهار إشعار التحديث مع زر تحميل الـ APK
           const toast = document.getElementById('appUpdateToast');
           const updateBtn = document.getElementById('applyUpdateBtn');
           if (toast && updateBtn) {
             const toastText = toast.querySelector('.update-toast-text p');
-            if (toastText) toastText.textContent = `يتوفر الآن الإصدار الجديد (v${data.version}) للأندرويد.`;
+            if (toastText) toastText.textContent = `يتوفر الآن الإصدار الجديد (v${data.version}) لتطبيق الأندرويد.`;
             toast.classList.add('show');
             updateBtn.textContent = 'تحميل الـ APK الجديد 📥';
             updateBtn.onclick = () => {
@@ -5381,17 +5424,17 @@ ${APP_CONFIG.url}`;
             };
           }
         } else {
-          showUpToDateDisplay(`أنت تستخدم أحدث إصدار لتطبيق الأندرويد (<strong>v${APP_CONFIG.version}</strong>) ✓`);
+          showUpToDateDisplay();
         }
       } catch (err) {
         if (titleEl) titleEl.textContent = originalTitle;
-        // إذا تعذر جلب ملف السيرفر بسبب عدم ضبط الرابط بعد، نؤكد له أنه على النسخة المثبتة
-        showUpToDateDisplay(`أنت تستخدم أحدث إصدار مثبت على جهازك (<strong>v${APP_CONFIG.version}</strong>) ✓`);
+        // إذا انقطع النت أو تعذر الوصول لجيت هاب: إظهار نافذة انقطاع الإنترنت بدقة
+        if (offlineModal) offlineModal.classList.add('show');
       }
       return;
     }
 
-    // 2. إذا كان يعمل كـ PWA / ويب عبر المتصفح
+    // 3. إذا كان التطبيق يعمل كـ PWA / ويب عبر المتصفح
     if (activeSwRegistration) {
       try {
         await activeSwRegistration.update();
