@@ -3426,6 +3426,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return base;
   }
 
+  
+  
+  window.formatTo12Hour = formatTo12Hour;
+  window.calculateLocalSolarTimings = calculateLocalSolarTimings;
+
   // 1. المحرك الفلكي الشمسي الاحتياطي (يعمل 100% أوفلاين في حال انقطاع السيرفر أو النت)
   function calculateLocalSolarTimings(targetDate, lat, lng, timezone = 3, methodNum = 4, asrMadhab = 0, offsets = {}) {
     const rad = Math.PI / 180, deg = 180 / Math.PI;
@@ -4540,7 +4545,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.109',
+    version: '2.1.110',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
