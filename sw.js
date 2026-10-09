@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.102';
+const CACHE_NAME = 'alhayat-cache-v2.1.103';
 const ASSETS = [
   './',
   './index.html',
