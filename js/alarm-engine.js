@@ -1377,6 +1377,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, 10000); // فحص مستمر كل 10 ثوانٍ يضمن اصطياد دقيقة الصلاة فوراً
 
+  // التقاط حدث الضغط على الإشعار من شاشة قفل الأندرويد
+  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (isAndroidApp && window.Capacitor.Plugins.LocalNotifications) {
+    window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+      const data = notificationAction.notification.extra;
+      if (notificationAction.actionId === 'pray_now' || notificationAction.actionId === 'tap') {
+        const pk = data.prayerKey || currentActivePrayerAlarmContext || 'Maghrib';
+        const pName = data.prayerName || 'الصلاة';
+        const curT = (typeof currentTimings !== 'undefined' && currentTimings && currentTimings[pk]) ? formatTo12Hour(currentTimings[pk]) : '';
+        triggerAdhanFullScreen(pName, curT, null, false, pk);
+      }
+    });
+  }
+
   // المزامنة الأولية عند الإقلاع
   syncAllAlarmsToHub();
   runSystemPermissionsDiagnostic();
