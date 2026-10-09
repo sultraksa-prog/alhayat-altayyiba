@@ -3659,6 +3659,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     if (returnTodayBtn) {
       returnTodayBtn.style.display = (currentDayOffset !== 0) ? 'inline-block' : 'none';
     }
+
+    // إعادة جدولة المنبهات في الخلفية لنظام الأندرويد كلما تم تحديث المواقيت
+    if (typeof window.scheduleNativeAndroidAlarms === 'function') {
+      window.scheduleNativeAndroidAlarms();
+    }
   }
 
   let dateAutoCycleSeconds = 0;
@@ -4535,7 +4540,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.105',
+    version: '2.1.106',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
