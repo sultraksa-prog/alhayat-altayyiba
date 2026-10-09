@@ -2304,19 +2304,66 @@ if (isRunningStandalone) {
     }
   }
 
-  // تنزيل الصورة باسم ملف فريد لمنع رسالة المتصفح وإظهار إشعار النجاح
+  // التعرف الصارم على بيئة تطبيق الأندرويد الأصلية فقط
+  const isNativeAppEnv = !!(
+    window.location.protocol === 'capacitor:' ||
+    window.location.hostname === 'localhost' ||
+    (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  );
+
+  // 1. تنزيل وحفظ الصورة (يدعم ذاكرة الأندرويد الأصلية + تنزيل الـ PWA)
   if (downloadStudioImageBtn) {
-    downloadStudioImageBtn.onclick = () => {
+    downloadStudioImageBtn.onclick = async () => {
       if (!studioLiveCanvas) return;
       const uniqueSuffix = Date.now().toString().slice(-4);
       const catCleanName = activeDhikrCategoryForShare ? activeDhikrCategoryForShare.name.replace(/\s+/g, '-') : 'أذكار';
-      
+      const fileName = `ذكر-${catCleanName}-${uniqueSuffix}.png`;
+
+      // خاص بالأندرويد فقط: الحفظ المباشر في الذاكرة
+      if (isNativeAppEnv && window.Capacitor?.Plugins?.Filesystem) {
+        try {
+          const rawBase64 = studioLiveCanvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+          
+          await window.Capacitor.Plugins.Filesystem.writeFile({
+            path: `Download/${fileName}`,
+            data: rawBase64,
+            directory: 'DOCUMENTS',
+            recursive: true
+          });
+
+          const toast = document.getElementById('studioToastBanner');
+          if (toast) {
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2600);
+          }
+          return;
+        } catch (err) {
+          // بديل للأندرويد في حال تقييد المجلدات
+          try {
+            const rawBase64 = studioLiveCanvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+            const tempFile = await window.Capacitor.Plugins.Filesystem.writeFile({
+              path: fileName,
+              data: rawBase64,
+              directory: 'CACHE'
+            });
+            if (window.Capacitor?.Plugins?.Share) {
+              await window.Capacitor.Plugins.Share.share({
+                title: 'حفظ بطاقة الذكر',
+                files: [tempFile.uri],
+                dialogTitle: 'حفظ بطاقة الذكر'
+              });
+            }
+            return;
+          } catch(e) {}
+        }
+      }
+
+      // خاص بالـ PWA والمتصفح: الكود الأصلي القديم كما هو دون أي تغيير
       const link = document.createElement('a');
-      link.download = `ذكر-${catCleanName}-${uniqueSuffix}.png`;
+      link.download = fileName;
       link.href = studioLiveCanvas.toDataURL('image/png');
       link.click();
 
-      // إظهار إشعار نجاح الحفظ الفوري
       const toast = document.getElementById('studioToastBanner');
       if (toast) {
         toast.classList.add('show');
@@ -2325,12 +2372,47 @@ if (isRunningStandalone) {
     };
   }
 
-  // مشاركة الصورة دون إغلاق الاستوديو قسراً
+  // 2. مشاركة صورة الاستوديو (تفتح نافذة أندرويد الرسمية فوراً)
   if (executeStudioShareBtn) {
-    executeStudioShareBtn.onclick = () => {
+    executeStudioShareBtn.onclick = async () => {
       if (!studioLiveCanvas) return;
       executeStudioShareBtn.textContent = 'جاري المشاركة...';
 
+      // خاص بالأندرويد فقط: فتح نافذة الهاتف الأصلية وإرفاق الصورة
+      if (isNativeAppEnv && window.Capacitor?.Plugins?.Share && window.Capacitor?.Plugins?.Filesystem) {
+        try {
+          const uniqueSuffix = Date.now().toString().slice(-4);
+          const fileName = `dhikr-card-${uniqueSuffix}.png`;
+          const rawBase64 = studioLiveCanvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+
+          const tempImage = await window.Capacitor.Plugins.Filesystem.writeFile({
+            path: fileName,
+            data: rawBase64,
+            directory: 'CACHE'
+          });
+
+          let textMessage = '';
+          if (studioAttachTextWhenSharing) {
+            const items = (isBatchShareMode && batchSelectedDhikrItems.length > 0) ? batchSelectedDhikrItems : [activeDhikrItemForShare];
+            textMessage = buildBatchDhikrTextMessage(items, false);
+          }
+
+          await window.Capacitor.Plugins.Share.share({
+            title: activeDhikrCategoryForShare ? activeDhikrCategoryForShare.name : 'الحياة الطيبة',
+            text: textMessage,
+            files: [tempImage.uri],
+            dialogTitle: 'مشاركة بطاقة الذكر'
+          });
+
+          executeStudioShareBtn.textContent = 'مشاركة 📤';
+          return;
+        } catch (err) {
+          console.warn('Native share canceled or failed:', err);
+          executeStudioShareBtn.textContent = 'مشاركة 📤';
+        }
+      }
+
+      // خاص بالـ PWA والمتصفح: الكود الأصلي القديم كما هو دون أي تغيير
       studioLiveCanvas.toBlob(async (blob) => {
         executeStudioShareBtn.textContent = 'مشاركة 📤';
         const uniqueSuffix = Date.now().toString().slice(-4);
@@ -2342,7 +2424,8 @@ if (isRunningStandalone) {
         };
 
         if (studioAttachTextWhenSharing) {
-          sharePayload.text = buildDhikrTextMessage(false);
+          const items = (isBatchShareMode && batchSelectedDhikrItems.length > 0) ? batchSelectedDhikrItems : [activeDhikrItemForShare];
+          sharePayload.text = buildBatchDhikrTextMessage(items, false);
         }
 
         if (navigator.canShare && navigator.canShare(sharePayload)) {
@@ -2350,7 +2433,6 @@ if (isRunningStandalone) {
             await navigator.share(sharePayload);
           } catch(e) {}
         } else {
-          // تنزيل مباشر في حال عدم دعم المشاركة المدمجة
           const link = document.createElement('a');
           link.download = `ذكر-الحياة-الطيبة-${uniqueSuffix}.png`;
           link.href = studioLiveCanvas.toDataURL('image/png');
@@ -2362,7 +2444,6 @@ if (isRunningStandalone) {
             setTimeout(() => toast.classList.remove('show'), 2400);
           }
         }
-        // يبقى الاستوديو مفتوحاً أمام المستخدم ليتابع كما يشاء
       }, 'image/png');
     };
   }
@@ -4410,7 +4491,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.102',
+    version: '2.1.103',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -4484,7 +4565,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // 1. مشاركة مواقيت اليوم كنص (متضمنة اسم اليوم والتاريخين بدقة)
+  // 1. مشاركة مواقيت اليوم كنص (يدعم الأندرويد والـ PWA)
   if (btnShareAsText) {
     btnShareAsText.addEventListener('click', async () => {
       let timingsText = '';
@@ -4504,6 +4585,22 @@ ${timingsText}
 ✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
 📲 الرابط: ${APP_CONFIG.url}`;
 
+      const isAndroidApp = !!(window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
+
+      // خاص بالأندرويد: فتح نافذة الهاتف الأصلية
+      if (isAndroidApp && window.Capacitor?.Plugins?.Share) {
+        try {
+          await window.Capacitor.Plugins.Share.share({
+            title: APP_CONFIG.name,
+            text: fullShareMessage,
+            dialogTitle: 'مشاركة مواقيت الصلاة'
+          });
+          shareModalBackdrop.classList.remove('show');
+          return;
+        } catch(e) {}
+      }
+
+      // خاص بالـ PWA والمتصفح: الكود الأصلي
       if (navigator.share) {
         try {
           await navigator.share({ title: APP_CONFIG.name, text: fullShareMessage });
@@ -5135,17 +5232,16 @@ ${timingsText}
         ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', canvas.width / 2, 1405);
       }
 
-      canvas.toBlob(async (blob) => {
-        btnShareAsImage.innerHTML = '<span>مشاركة كصورة 🖼️</span>';
-        const file = new File([blob], `مواقيت-${userLocation.city}.png`, { type: 'image/png' });
+      const isAndroidApp = !!(window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
 
-        let timingsText = '';
-        if (currentTimings) {
-          PRAYER_KEYS.forEach(p => {
-            timingsText += `• ${p.name}: ${formatTo12Hour(currentTimings[p.key])}\n`;
-          });
-        }
-        const fullShareMessage = `🕌 مواقيت الصلاة - ${userLocation.city}
+      // إعداد نص الرسالة المرافقة
+      let timingsText = '';
+      if (currentTimings) {
+        PRAYER_KEYS.forEach(p => {
+          timingsText += `• ${p.name}: ${formatTo12Hour(currentTimings[p.key])}\n`;
+        });
+      }
+      const fullShareMessage = `🕌 مواقيت الصلاة - ${userLocation.city}
 🗓️ يوم: ${currentDayName || 'السبت'}
 📅 التاريخ الهجري: ${currentHijriText}
 📆 التاريخ الميلادي: ${currentGregorianText}
@@ -5153,6 +5249,36 @@ ${timingsText}
 ${timingsText}
 ✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
 📲 الرابط: ${APP_CONFIG.url}`;
+
+      // خاص بالأندرويد: مشاركة الصورة الأصلية عبر كاباسيتور
+      if (isAndroidApp && window.Capacitor?.Plugins?.Share && window.Capacitor?.Plugins?.Filesystem) {
+        try {
+          const rawBase64 = canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+          const tempFile = await window.Capacitor.Plugins.Filesystem.writeFile({
+            path: `prayer-card-${Date.now()}.png`,
+            data: rawBase64,
+            directory: 'CACHE'
+          });
+
+          await window.Capacitor.Plugins.Share.share({
+            title: `مواقيت الصلاة - ${userLocation.city}`,
+            text: shareCardSettings.withText ? fullShareMessage : '',
+            files: [tempFile.uri],
+            dialogTitle: 'مشاركة بطاقة المواقيت'
+          });
+
+          btnShareAsImage.innerHTML = '<span>مشاركة كصورة 🖼️</span>';
+          shareModalBackdrop.classList.remove('show');
+          return;
+        } catch(err) {
+          console.warn('Native prayer image share error:', err);
+        }
+      }
+
+      // خاص بالـ PWA والمتصفح: الكود الأصلي دون تغيير
+      canvas.toBlob(async (blob) => {
+        btnShareAsImage.innerHTML = '<span>مشاركة كصورة 🖼️</span>';
+        const file = new File([blob], `مواقيت-${userLocation.city}.png`, { type: 'image/png' });
 
         const sharePayload = {
           files: [file],
@@ -5178,7 +5304,7 @@ ${timingsText}
     });
   }
   
-  // 3. مشاركة رسالة دعوة الأصدقاء (بدون تكرار الرابط)
+  // 3. مشاركة رسالة دعوة الأصدقاء (يدعم الأندرويد والـ PWA)
   if (btnShareInvite) {
     btnShareInvite.addEventListener('click', async () => {
       const inviteMessage = 
@@ -5189,6 +5315,22 @@ ${timingsText}
 📲 افتح التطبيق مباشرة عبر الرابط:
 ${APP_CONFIG.url}`;
 
+      const isAndroidApp = !!(window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
+
+      // خاص بالأندرويد: نافذة الهاتف الأصلية
+      if (isAndroidApp && window.Capacitor?.Plugins?.Share) {
+        try {
+          await window.Capacitor.Plugins.Share.share({
+            title: APP_CONFIG.name,
+            text: inviteMessage,
+            dialogTitle: 'دعوة الأصدقاء'
+          });
+          shareModalBackdrop.classList.remove('show');
+          return;
+        } catch(e) {}
+      }
+
+      // خاص بالـ PWA والمتصفح: الكود الأصلي
       if (navigator.share) {
         try {
           await navigator.share({
