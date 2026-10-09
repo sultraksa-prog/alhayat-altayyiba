@@ -2372,14 +2372,17 @@ if (isRunningStandalone) {
     };
   }
 
-  // 2. مشاركة صورة الاستوديو (تفتح نافذة أندرويد الرسمية فوراً)
+  // 2. مشاركة صورة الاستوديو (تفرق بذكاء بين الأندرويد والـ PWA)
   if (executeStudioShareBtn) {
     executeStudioShareBtn.onclick = async () => {
       if (!studioLiveCanvas) return;
       executeStudioShareBtn.textContent = 'جاري المشاركة...';
 
-      // خاص بالأندرويد فقط: فتح نافذة الهاتف الأصلية وإرفاق الصورة
-      if (isNativeAppEnv && window.Capacitor?.Plugins?.Share && window.Capacitor?.Plugins?.Filesystem) {
+      // شرط صارم جداً للتأكد من أننا داخل تطبيق الأندرويد (APK) فقط وليس المتصفح
+      const isStrictAndroid = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+      // ================= 1. كود تطبيق الأندرويد (APK) =================
+      if (isStrictAndroid && window.Capacitor?.Plugins?.Share && window.Capacitor?.Plugins?.Filesystem) {
         try {
           const uniqueSuffix = Date.now().toString().slice(-4);
           const fileName = `dhikr-card-${uniqueSuffix}.png`;
@@ -2407,16 +2410,17 @@ if (isRunningStandalone) {
           executeStudioShareBtn.textContent = 'مشاركة 📤';
           return;
         } catch (err) {
-          console.warn('Native share canceled or failed:', err);
           executeStudioShareBtn.textContent = 'مشاركة 📤';
+          return; // إذا ألغى المستخدم المشاركة، نتوقف هنا
         }
       }
 
-      // خاص بالـ PWA والمتصفح: الكود الأصلي القديم كما هو دون أي تغيير
+      // ================= 2. كود الـ PWA والمتصفح (الطريقة القديمة الناجحة) =================
       studioLiveCanvas.toBlob(async (blob) => {
         executeStudioShareBtn.textContent = 'مشاركة 📤';
         const uniqueSuffix = Date.now().toString().slice(-4);
-        const file = new File([blob], `ذكر-الحياة-الطيبة-${uniqueSuffix}.png`, { type: 'image/png' });
+        const fileName = `ذكر-الحياة-الطيبة-${uniqueSuffix}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
 
         const sharePayload = {
           files: [file],
@@ -2428,20 +2432,34 @@ if (isRunningStandalone) {
           sharePayload.text = buildBatchDhikrTextMessage(items, false);
         }
 
+        // إذا كان المتصفح يدعم مشاركة الصورة والنص معاً
         if (navigator.canShare && navigator.canShare(sharePayload)) {
           try {
             await navigator.share(sharePayload);
-          } catch(e) {}
+          } catch(e) {
+            // إذا أغلق المستخدم النافذة أو حدث خطأ نتجاهله
+          }
         } else {
+          // إذا كان المتصفح لا يدعم المشاركة المباشرة للصورة (Fallback)
           const link = document.createElement('a');
-          link.download = `ذكر-الحياة-الطيبة-${uniqueSuffix}.png`;
+          link.download = fileName;
           link.href = studioLiveCanvas.toDataURL('image/png');
           link.click();
           
+          // إظهار رسالة احترافية بنفس هوية الاستوديو
           const toast = document.getElementById('studioToastBanner');
           if (toast) {
+            toast.innerHTML = '<span>⚠️ متصفحك لا يدعم المشاركة المباشرة.. تم حفظ الصورة لتشاركها من المعرض</span>';
+            toast.style.background = 'rgba(245, 158, 11, 0.95)'; // لون تحذيري عنبري متناسق
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2400);
+            setTimeout(() => {
+              toast.classList.remove('show');
+              // إعادة اللون الأخضر للرسائل القادمة
+              setTimeout(() => {
+                toast.style.background = 'rgba(16, 185, 129, 0.95)';
+                toast.innerHTML = '<span>✨ تم حفظ بطاقة الذكر في جهازك بنجاح!</span>';
+              }, 300);
+            }, 3500);
           }
         }
       }, 'image/png');
@@ -4491,7 +4509,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.103',
+    version: '2.1.104',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
