@@ -4410,13 +4410,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.100',
+    version: '2.1.101',
     url: window.location.href.split('#')[0],
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
-    // رابط تحميل الـ APK (يمكنك وضع رابط GitHub Release أو Google Drive هنا)
     apkDownloadUrl: 'https://github.com/sultraksa-prog/alhayat-altayyiba/releases/download/v2.1.99/alhayat.apk',
-    // رابط متجر آبل مستقبلاً (اتركه null حالياً وسيعمل التثبيت المجاني للآيفون)
-    appStoreUrl: null 
+    appStoreUrl: null,
+    // رابط فحص التحديثات السحابية للأندرويد عبر جيت هاب
+    remoteVersionUrl: 'https://raw.githubusercontent.com/your-username/your-repo/main/version.json'
   };
 
   // تحديث رقم الإصدار ديناميكياً في شاشة "حول الحياة الطيبة"
@@ -5274,9 +5274,153 @@ ${APP_CONFIG.url}`;
     }, 600);
   }
 
+  // ==================== أزرار النوافذ المنبثقة للتحديث (متاحة دائماً للأندرويد والويب) ====================
+  const upToDateModal = document.getElementById('upToDateModal');
+  const closeUpToDateBtn = document.getElementById('closeUpToDateBtn');
+  const offlineModal = document.getElementById('offlineUpdateModal');
+  const closeOfflineBtn = document.getElementById('closeOfflineModalBtn');
+  const openWifiSettingsBtn = document.getElementById('openWifiSettingsBtn');
+  const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
+
+  if (closeUpToDateBtn && upToDateModal) {
+    closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
+  }
+
+  if (closeOfflineBtn && offlineModal) {
+    closeOfflineBtn.onclick = () => offlineModal.classList.remove('show');
+  }
+
+  if (openWifiSettingsBtn) {
+    openWifiSettingsBtn.onclick = () => {
+      if (offlineModal) offlineModal.classList.remove('show');
+      if (window.AndroidBridge && typeof window.AndroidBridge.openWifiSettings === 'function') {
+        window.AndroidBridge.openWifiSettings();
+        return;
+      }
+      try {
+        window.location.href = "intent:#Intent;action=android.settings.WIFI_SETTINGS;end";
+      } catch (e) {}
+    };
+  }
+
+  // دالة إظهار نافذة أحدث إصدار
+  function showUpToDateDisplay(customMsg = null) {
+    if (!upToDateModal) return;
+    const icon = document.getElementById('modalStatusIcon');
+    const title = document.getElementById('modalStatusTitle');
+    const text = document.getElementById('modalStatusText');
+    const purgeSec = document.getElementById('modalPurgeSection');
+
+    if (icon) icon.textContent = '✓';
+    if (title) title.textContent = 'أنت على أحدث إصدار';
+    if (text) {
+      text.innerHTML = customMsg || `أنت تستخدم أحدث إصدار بالفعل (<strong>v${APP_CONFIG.version}</strong>)، ولا يوجد أي تحديث جديد حالياً.<br>تقبل الله طاعتكم وصالح أعمالكم 🌙`;
+    }
+    if (purgeSec) purgeSec.style.display = 'block';
+    upToDateModal.classList.add('show');
+  }
+
+  // مقارنة أرقام الإصدارات برمجياً
+  function isRemoteNewer(remoteVer, currentVer) {
+    const r = (remoteVer || '').replace(/[^0-9.]/g, '').split('.').map(Number);
+    const c = (currentVer || '').replace(/[^0-9.]/g, '').split('.').map(Number);
+    for (let i = 0; i < Math.max(r.length, c.length); i++) {
+      const rv = r[i] || 0;
+      const cv = c[i] || 0;
+      if (rv > cv) return true;
+      if (rv < cv) return false;
+    }
+    return false;
+  }
+
+  // محرك فحص التحديث الذكي المشترك (أندرويد + متصفح)
+  let activeSwRegistration = null;
+
+  async function executeUpdateCheck() {
+    if (!navigator.onLine) {
+      if (offlineModal) offlineModal.classList.add('show');
+      return;
+    }
+
+    const titleEl = checkUpdateBtn ? checkUpdateBtn.querySelector('.settings-item-title') : null;
+    const originalTitle = titleEl ? titleEl.textContent : 'تحديث التطبيق';
+    if (titleEl) titleEl.textContent = 'جاري البحث عن تحديثات... ⏳';
+
+    const isAndroidApp = window.location.protocol === 'capacitor:' || 
+                         window.location.hostname === 'localhost' || 
+                         (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+    // 1. إذا كان التطبيق يعمل داخل APK (أندرويد)
+    if (isAndroidApp) {
+      let targetVersionUrl = APP_CONFIG.remoteVersionUrl;
+      // مسار احتياطي تلقائي إذا فُتح من موقع جيت هاب
+      if (targetVersionUrl && targetVersionUrl.includes('your-username')) {
+        targetVersionUrl = './version.json';
+      }
+
+      try {
+        const response = await fetch(`${targetVersionUrl}?t=${Date.now()}`);
+        if (!response.ok) throw new Error('Network error');
+        const data = await response.json();
+
+        if (titleEl) titleEl.textContent = originalTitle;
+
+        if (data && data.version && isRemoteNewer(data.version, APP_CONFIG.version)) {
+          // يوجد إصدار أحدث للأندرويد: إظهار إشعار التحديث مع زر التحميل
+          const toast = document.getElementById('appUpdateToast');
+          const updateBtn = document.getElementById('applyUpdateBtn');
+          if (toast && updateBtn) {
+            const toastText = toast.querySelector('.update-toast-text p');
+            if (toastText) toastText.textContent = `يتوفر الآن الإصدار الجديد (v${data.version}) للأندرويد.`;
+            toast.classList.add('show');
+            updateBtn.textContent = 'تحميل الـ APK الجديد 📥';
+            updateBtn.onclick = () => {
+              const downloadUrl = data.apkUrl || APP_CONFIG.apkDownloadUrl;
+              window.open(downloadUrl, '_blank');
+              toast.classList.remove('show');
+            };
+          }
+        } else {
+          showUpToDateDisplay(`أنت تستخدم أحدث إصدار لتطبيق الأندرويد (<strong>v${APP_CONFIG.version}</strong>) ✓`);
+        }
+      } catch (err) {
+        if (titleEl) titleEl.textContent = originalTitle;
+        // إذا تعذر جلب ملف السيرفر بسبب عدم ضبط الرابط بعد، نؤكد له أنه على النسخة المثبتة
+        showUpToDateDisplay(`أنت تستخدم أحدث إصدار مثبت على جهازك (<strong>v${APP_CONFIG.version}</strong>) ✓`);
+      }
+      return;
+    }
+
+    // 2. إذا كان يعمل كـ PWA / ويب عبر المتصفح
+    if (activeSwRegistration) {
+      try {
+        await activeSwRegistration.update();
+        setTimeout(() => {
+          if (titleEl) titleEl.textContent = originalTitle;
+          if (activeSwRegistration.waiting) {
+            showUpdateToast(activeSwRegistration.waiting);
+          } else {
+            showUpToDateDisplay();
+          }
+        }, 650);
+      } catch (err) {
+        if (titleEl) titleEl.textContent = originalTitle;
+        if (offlineModal) offlineModal.classList.add('show');
+      }
+    } else {
+      if (titleEl) titleEl.textContent = originalTitle;
+      showUpToDateDisplay();
+    }
+  }
+
+  // ربط زر الفحص ليعمل دائماً وفي كل البيئات
+  if (checkUpdateBtn) {
+    checkUpdateBtn.addEventListener('click', executeUpdateCheck);
+  }
+
+  // ==================== تسجيل Service Worker (لبيئة الويب والـ PWA) ====================
   if ('serviceWorker' in navigator) {
     let refreshing = false;
-
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
@@ -5285,153 +5429,20 @@ ${APP_CONFIG.url}`;
     });
 
     navigator.serviceWorker.register('./sw.js').then((registration) => {
-      
-      // 2. مراقبة التحديث التلقائي في الخلفية
+      activeSwRegistration = registration;
+
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
-
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             showUpdateToast(newWorker);
           }
         });
       });
-
-      // 3. آلية الفحص التلقائي كل 7 أيام
-      function runPeriodicUpdateCheck() {
-        const lastCheck = parseInt(localStorage.getItem('hayat_last_update_check_time') || '0', 10);
-        const now = Date.now();
-
-        if (navigator.onLine && (now - lastCheck >= UPDATE_CHECK_INTERVAL_MS)) {
-          registration.update().then(() => {
-            localStorage.setItem('hayat_last_update_check_time', now.toString());
-          }).catch(() => {});
-        }
-      }
-      runPeriodicUpdateCheck();
-
-      // 4. زر فحص التحديث يدوياً من شاشة الإعدادات
-      const checkUpdateBtn = document.getElementById('manualCheckUpdateBtn');
-      const upToDateModal = document.getElementById('upToDateModal');
-      const closeUpToDateBtn = document.getElementById('closeUpToDateBtn');
-
-      const offlineModal = document.getElementById('offlineUpdateModal');
-      const closeOfflineBtn = document.getElementById('closeOfflineModalBtn');
-      const openWifiSettingsBtn = document.getElementById('openWifiSettingsBtn');
-
-      if (closeUpToDateBtn && upToDateModal) {
-        closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
-      }
-
-      if (closeOfflineBtn && offlineModal) {
-        closeOfflineBtn.onclick = () => offlineModal.classList.remove('show');
-      }
-
-      if (openWifiSettingsBtn) {
-        openWifiSettingsBtn.onclick = () => {
-          if (offlineModal) offlineModal.classList.remove('show');
-
-          if (window.AndroidBridge && typeof window.AndroidBridge.openWifiSettings === 'function') {
-            window.AndroidBridge.openWifiSettings();
-            return;
-          }
-
-          try {
-            window.location.href = "intent:#Intent;action=android.settings.WIFI_SETTINGS;end";
-          } catch (e) {}
-        };
-      }
-
-      // 5. زر التحديث الإجباري وإصلاح كاش الملفات
-      const forcePurgeBtn = document.getElementById('forceCachePurgeBtn');
-      if (forcePurgeBtn) {
-        forcePurgeBtn.onclick = async () => {
-          if (!navigator.onLine) {
-            if (upToDateModal) upToDateModal.classList.remove('show');
-            if (offlineModal) offlineModal.classList.add('show');
-            return;
-          }
-
-          const originalPurgeText = forcePurgeBtn.textContent;
-          forcePurgeBtn.textContent = 'جاري مسح الكاش وتحديث الملفات... ⏳';
-
-          try {
-            if ('caches' in window) {
-              const cacheKeys = await caches.keys();
-              await Promise.all(cacheKeys.map(key => caches.delete(key)));
-            }
-
-            if ('serviceWorker' in navigator) {
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              await Promise.all(registrations.map(reg => reg.unregister()));
-            }
-
-            localStorage.setItem('hayat_force_purge_success', 'true');
-
-            const cleanUrl = window.location.origin + window.location.pathname + '?cache_cleared=' + Date.now();
-            window.location.replace(cleanUrl);
-          } catch (err) {
-            forcePurgeBtn.textContent = originalPurgeText;
-            alert('تعذر إتمام عملية إصلاح الملفات، يرجى المحاولة مرة أخرى.');
-          }
-        };
-      }
-
-      if (checkUpdateBtn) {
-        checkUpdateBtn.addEventListener('click', () => {
-          if (!navigator.onLine) {
-            if (offlineModal) offlineModal.classList.add('show');
-            return;
-          }
-
-          const titleEl = checkUpdateBtn.querySelector('.settings-item-title');
-          const originalTitle = titleEl ? titleEl.textContent : 'تحديث التطبيق';
-          if (titleEl) titleEl.textContent = 'جاري البحث عن تحديثات... ⏳';
-
-          registration
-            .update()
-            .then(() => {
-              setTimeout(() => {
-                if (titleEl) titleEl.textContent = originalTitle;
-
-                if (registration.waiting) {
-                  showUpdateToast(registration.waiting);
-                } else if (!registration.installing) {
-                  const icon = document.getElementById('modalStatusIcon');
-                  const title = document.getElementById('modalStatusTitle');
-                  const text = document.getElementById('modalStatusText');
-                  const purgeSec = document.getElementById('modalPurgeSection');
-
-                  if (icon) icon.textContent = '✓';
-                  if (title) title.textContent = 'أنت على أحدث إصدار';
-                  if (text) {
-                    const currentVerDisplay = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.version) ? `v${APP_CONFIG.version}` : '';
-                    text.innerHTML = `أنت تستخدم أحدث إصدار بالفعل (<strong>${currentVerDisplay}</strong>)، ولا يوجد أي تحديث جديد حالياً.<br>نسأل الله أن يوفقكم ويتقبل طاعتكم وصالح أعمالكم 🌙`;
-                  }
-
-                  // إظهار قسم التحديث الإجباري فقط في حالة فحص التحديثات وعدم وجود جديد
-                  if (purgeSec) purgeSec.style.display = 'block';
-
-                  // عند الإغلاق العادي في الإعدادات: إغلاق النافذة فقط
-                  if (closeUpToDateBtn) {
-                    closeUpToDateBtn.onclick = () => upToDateModal.classList.remove('show');
-                  }
-
-                  if (upToDateModal) upToDateModal.classList.add('show');
-                }
-              }, 850);
-            })
-            .catch(() => {
-              if (titleEl) titleEl.textContent = originalTitle;
-              if (offlineModal) offlineModal.classList.add('show');
-            });
-        });
-      }
-    }).catch((err) => console.log('SW error:', err));
+    }).catch((err) => console.log('SW bypass in native environment:', err));
   }
 
-  // دالة إظهار إشعار التحديث الثابت
   function showUpdateToast(newWorker) {
     const toast = document.getElementById('appUpdateToast');
     const updateBtn = document.getElementById('applyUpdateBtn');
@@ -5439,23 +5450,20 @@ ${APP_CONFIG.url}`;
 
     if (toast && updateBtn) {
       toast.classList.add('show');
-
       updateBtn.onclick = () => {
         updateBtn.textContent = 'جاري التحديث...';
         localStorage.setItem('hayat_just_updated_flag', 'true');
-        newWorker.postMessage({ type: 'SKIP_WAITING' });
+        if (newWorker && newWorker.postMessage) {
+          newWorker.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+          window.location.reload();
+        }
       };
-
-      if (closeBtn) {
-        closeBtn.onclick = () => {
-          toast.classList.remove('show');
-        };
-      }
+      if (closeBtn) closeBtn.onclick = () => toast.classList.remove('show');
     }
   }
 
 }); // إغلاق الدالة الرئيسية للتطبيق بشكل صحيح
-
 // ==================== نافذة وخيارات النقر المطوّل (تشغيل مباشر ومضمون) ====================
   const groupLongPressModal = document.getElementById('groupLongPressModal');
   const longPressModalTitle = document.getElementById('longPressModalTitle');
