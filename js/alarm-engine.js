@@ -115,109 +115,6 @@ function playSynthesizedAdhanChime() {
   } catch(e) {}
 }
 
-// ==================== محرك الجدولة الأصلية المسبقة للأندرويد (Native Background Alarms) ====================
-async function scheduleNativeAndroidAlarms() {
-  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-  if (!isAndroidApp || !window.Capacitor.Plugins.LocalNotifications) return;
-
-  try {
-    // 1. طلب صلاحية الإشعارات الدقيقة من نظام الأندرويد
-    const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
-    if (perm.display !== 'granted') return;
-
-    // 2. مسح أي جدولة قديمة لتفادي التكرار
-    const pending = await window.Capacitor.Plugins.LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
-      await window.Capacitor.Plugins.LocalNotifications.cancel(pending);
-    }
-
-    // 3. تجهيز بيانات الموقع للحساب الفلكي
-    const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0, tz: 3 };
-    const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
-    const method = loc.method || 4;
-    const asrMadhab = loc.asrMadhab || 0;
-    const offsets = loc.prayerOffsets || {};
-
-    const prayersList = [
-      { key: 'Fajr', name: 'الفجر', idOffset: 1 },
-      { key: 'Dhuhr', name: 'الظهر', idOffset: 2 },
-      { key: 'Asr', name: 'العصر', idOffset: 3 },
-      { key: 'Maghrib', name: 'المغرب', idOffset: 4 },
-      { key: 'Isha', name: 'العشاء', idOffset: 5 }
-    ];
-
-    const notificationsToSchedule = [];
-    const now = new Date();
-
-    // 4. جدولة الصلوات لـ 7 أيام قادمة في نظام الأندرويد نفسه!
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      const targetDate = new Date(now);
-      targetDate.setDate(targetDate.getDate() + dayOffset);
-      
-      // استخدام المحرك الفلكي الداخلي الخاص بنا لحساب أوقات هذا اليوم
-      const dayTimings = (typeof calculateLocalSolarTimings === 'function') 
-        ? calculateLocalSolarTimings(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets)
-        : null;
-
-      if (!dayTimings) continue;
-
-      prayersList.forEach(p => {
-        const cfg = getPrayerAlarmConfig(p.key);
-        if (cfg.enabled === false) return; // لا نجدول الصلاة المعطلة
-
-        const timeStr = dayTimings[p.key];
-        if (!timeStr) return;
-
-        const [hStr, mStr] = timeStr.split(':');
-        const h = parseInt(hStr, 10);
-        const m = parseInt(mStr, 10);
-
-        const alarmDate = new Date(targetDate);
-        alarmDate.setHours(h, m, 0, 0);
-
-        // لا نجدول أوقاتاً في الماضي
-        if (alarmDate > now) {
-          // توليد ID فريد لكل صلاة في كل يوم (مثال: اليوم 244 + صلاة 1 = 2441)
-          const dayOfYear = Math.floor((alarmDate - new Date(alarmDate.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-          const uniqueId = parseInt(`${dayOfYear}${p.idOffset}`);
-
-          notificationsToSchedule.push({
-            id: uniqueId,
-            title: `حان الآن أذان ${p.name} 🕌`,
-            body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name}`,
-            schedule: { at: alarmDate, allowWhileIdle: true }, // allowWhileIdle تضمن عمله في الـ Doze Mode
-            sound: 'beep.wav', // صوت النظام الافتراضي للتنبيه لحين فتح التطبيق
-            actionTypeId: 'PRAYER_ACTIONS',
-            extra: { prayerKey: p.key, prayerName: p.name }
-          });
-        }
-      });
-    }
-
-    // 5. تسجيل أزرار الإشعار التفاعلية (صل الآن / كتم)
-    await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
-      types: [
-        {
-          id: 'PRAYER_ACTIONS',
-          actions: [
-            { id: 'pray_now', title: 'صَلِّ الآن 🕌', foreground: true },
-            { id: 'dismiss', title: 'كتم ✕', destructive: true }
-          ]
-        }
-      ]
-    });
-
-    // 6. تسليم الجدولة لنظام الأندرويد
-    if (notificationsToSchedule.length > 0) {
-      await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: notificationsToSchedule });
-    }
-
-  } catch (err) {
-    console.warn('Native scheduling skipped:', err);
-  }
-}
-window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
-
 // دالة إطلاق إشعار الأذان الرسمي في الخلفية وعلى شاشة القفل
 async function triggerBackgroundAdhanNotification(prayerKey, prayerName, prayerTime) {
   const cfg = getPrayerAlarmConfig(prayerKey);
@@ -1308,13 +1205,26 @@ async function scheduleNativeAndroidAlarms() {
     const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
     if (perm.display !== 'granted') return;
 
-    // 2. مسح أي جدولة قديمة لتفادي التكرار عند تغيير المدينة أو الوقت
+    // 2. إنشاء قناة إشعارات عالية الأولوية تجبر الأندرويد على إضاءة الشاشة وتشغيل الصوت
+    await window.Capacitor.Plugins.LocalNotifications.createChannel({
+      id: 'prayer_channel_high',
+      name: 'تنبيهات مواقيت الصلاة والأذان',
+      description: 'إشعارات عالية الأولوية لأوقات الصلوات في موعدها',
+      importance: 5, // 5 = أقصى درجات الأهمية (Heads-up notification)
+      visibility: 1, // تظهر فوق شاشة القفل
+      sound: 'beep.wav',
+      vibration: true,
+      lights: true,
+      lightColor: '#10B981'
+    });
+
+    // 3. مسح أي جدولة قديمة لتفادي التكرار عند تغيير المدينة أو الوقت
     const pending = await window.Capacitor.Plugins.LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
+    if (pending && pending.notifications && pending.notifications.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.cancel(pending);
     }
 
-    // 3. جلب بيانات الموقع والإعدادات الحالية
+    // 4. جلب بيانات الموقع والإعدادات الحالية
     const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0, tz: 3 };
     const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
     const method = loc.method || 4;
@@ -1332,14 +1242,14 @@ async function scheduleNativeAndroidAlarms() {
     const notificationsToSchedule = [];
     const now = new Date();
 
-    // 4. جدولة الصلوات لـ 7 أيام قادمة في قلب نظام الأندرويد
+    // 5. جدولة الصلوات لـ 7 أيام قادمة في قلب نظام الأندرويد
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
       const targetDate = new Date(now);
       targetDate.setDate(targetDate.getDate() + dayOffset);
       
-      const dayTimings = (typeof calculateLocalSolarTimings === 'function') 
-        ? calculateLocalSolarTimings(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets)
-        : null;
+      // جلب دالة الحساب الفلكي المتاحة الآن في النطاق العام
+      const calcFn = window.calculateLocalSolarTimings || (typeof calculateLocalSolarTimings === 'function' ? calculateLocalSolarTimings : null);
+      const dayTimings = calcFn ? calcFn(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets) : null;
 
       if (!dayTimings) continue;
 
@@ -1358,14 +1268,15 @@ async function scheduleNativeAndroidAlarms() {
           const dayOfYear = Math.floor((alarmDate - new Date(alarmDate.getFullYear(), 0, 0)) / 86400000);
           const uniqueId = parseInt(`${dayOfYear}${p.idOffset}`);
 
-          // نمط اهتزاز نبضي قوي (يعمل إذا كان الاهتزاز مفعلاً في إعدادات الصلاة)
-          const vibPattern = cfg.vibrationEnabled ? [500, 300, 500, 300, 800, 400, 1000] : undefined;
+          const fmtTimeFn = window.formatTo12Hour || (typeof formatTo12Hour === 'function' ? formatTo12Hour : (t) => t);
+          const timeFormatted = fmtTimeFn(timeStr);
 
           notificationsToSchedule.push({
             id: uniqueId,
             title: `حان الآن أذان ${p.name} 🕌`,
-            body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name} (${formatTo12Hour(timeStr)})`,
-            schedule: { at: alarmDate, allowWhileIdle: true }, // يسمح بالعمل حتى والشاشة مقفلة
+            body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name} (${timeFormatted})`,
+            channelId: 'prayer_channel_high', // ربط الإشعار بالقناة عالية الأولوية
+            schedule: { at: alarmDate, allowWhileIdle: true },
             actionTypeId: 'PRAYER_ACTIONS',
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
           });
@@ -1373,30 +1284,30 @@ async function scheduleNativeAndroidAlarms() {
       });
     }
 
-    // 5. تسجيل أزرار الإشعار التفاعلية (صل الآن / كتم)
+    // 6. تسجيل أزرار الإشعار التفاعلية (صل الآن / كتم)
     await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
       types: [
         {
           id: 'PRAYER_ACTIONS',
           actions: [
-            { id: 'pray_now', title: 'صَلِّ الآن 🕌', foreground: true }, // يفتح التطبيق
-            { id: 'dismiss', title: 'كتم ✕', destructive: true } // يغلق الإشعار فقط
+            { id: 'pray_now', title: 'صَلِّ الآن 🕌', foreground: true },
+            { id: 'dismiss', title: 'كتم ✕', destructive: true }
           ]
         }
       ]
     });
 
-    // 6. تسليم الجدولة لنظام الأندرويد
+    // 7. تسليم الجدولة لنظام الأندرويد
     if (notificationsToSchedule.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: notificationsToSchedule });
+      console.log(`✓ تم بنجاح جدولة ${notificationsToSchedule.length} صلاة في نظام الأندرويد.`);
     }
 
   } catch (err) {
-    console.warn('Native scheduling skipped or failed:', err);
+    console.warn('Native scheduling error:', err);
   }
 }
 window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
-
 
 // ==================== التقاط الإشعارات والفحص المباشر ====================
 
@@ -1404,13 +1315,12 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
   const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   if (isAndroidApp && window.Capacitor.Plugins.LocalNotifications) {
     window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
-      // إذا ضغط المستخدم على زر "كتم" نتجاهل الأمر ولا نفتح التطبيق
       if (notificationAction.actionId === 'dismiss') return;
 
-      // إذا ضغط على الإشعار أو زر "صل الآن"، نطلق شاشة الأذان داخل التطبيق
       const data = notificationAction.notification.extra;
       if (data && data.prayerKey) {
-        const pTime12 = (typeof formatTo12Hour === 'function') ? formatTo12Hour(data.rawTime) : data.rawTime;
+        const fmtFn = window.formatTo12Hour || (typeof formatTo12Hour === 'function' ? formatTo12Hour : (t) => t);
+        const pTime12 = fmtFn(data.rawTime);
         if (typeof triggerAdhanFullScreen === 'function') {
           triggerAdhanFullScreen(data.prayerName, pTime12, null, false, data.prayerKey);
         }
@@ -1421,8 +1331,6 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
   // 2. محرك المراقبة الحي (يعمل فقط عندما يكون التطبيق مفتوحاً أمام المستخدم)
   setInterval(() => {
     if (typeof window.currentTimings === 'undefined' || !window.currentTimings) return;
-    
-    // إذا كان التطبيق مغلقاً أو مقفلاً، نتجاهل الفحص لأن الأندرويد سيتولى إطلاق الإشعار المجدول
     if (document.visibilityState !== 'visible') return;
 
     const now = new Date();
@@ -1441,7 +1349,7 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
         }
       }
     });
-  }, 10000); // يفحص كل 10 ثوانٍ
+  }, 10000);
 
   // المزامنة الأولية والجدولة عند الإقلاع
   syncAllAlarmsToHub();
