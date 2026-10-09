@@ -115,6 +115,109 @@ function playSynthesizedAdhanChime() {
   } catch(e) {}
 }
 
+// ==================== محرك الجدولة الأصلية المسبقة للأندرويد (Native Background Alarms) ====================
+async function scheduleNativeAndroidAlarms() {
+  const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (!isAndroidApp || !window.Capacitor.Plugins.LocalNotifications) return;
+
+  try {
+    // 1. طلب صلاحية الإشعارات الدقيقة من نظام الأندرويد
+    const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+    if (perm.display !== 'granted') return;
+
+    // 2. مسح أي جدولة قديمة لتفادي التكرار
+    const pending = await window.Capacitor.Plugins.LocalNotifications.getPending();
+    if (pending.notifications.length > 0) {
+      await window.Capacitor.Plugins.LocalNotifications.cancel(pending);
+    }
+
+    // 3. تجهيز بيانات الموقع للحساب الفلكي
+    const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0, tz: 3 };
+    const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
+    const method = loc.method || 4;
+    const asrMadhab = loc.asrMadhab || 0;
+    const offsets = loc.prayerOffsets || {};
+
+    const prayersList = [
+      { key: 'Fajr', name: 'الفجر', idOffset: 1 },
+      { key: 'Dhuhr', name: 'الظهر', idOffset: 2 },
+      { key: 'Asr', name: 'العصر', idOffset: 3 },
+      { key: 'Maghrib', name: 'المغرب', idOffset: 4 },
+      { key: 'Isha', name: 'العشاء', idOffset: 5 }
+    ];
+
+    const notificationsToSchedule = [];
+    const now = new Date();
+
+    // 4. جدولة الصلوات لـ 7 أيام قادمة في نظام الأندرويد نفسه!
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const targetDate = new Date(now);
+      targetDate.setDate(targetDate.getDate() + dayOffset);
+      
+      // استخدام المحرك الفلكي الداخلي الخاص بنا لحساب أوقات هذا اليوم
+      const dayTimings = (typeof calculateLocalSolarTimings === 'function') 
+        ? calculateLocalSolarTimings(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets)
+        : null;
+
+      if (!dayTimings) continue;
+
+      prayersList.forEach(p => {
+        const cfg = getPrayerAlarmConfig(p.key);
+        if (cfg.enabled === false) return; // لا نجدول الصلاة المعطلة
+
+        const timeStr = dayTimings[p.key];
+        if (!timeStr) return;
+
+        const [hStr, mStr] = timeStr.split(':');
+        const h = parseInt(hStr, 10);
+        const m = parseInt(mStr, 10);
+
+        const alarmDate = new Date(targetDate);
+        alarmDate.setHours(h, m, 0, 0);
+
+        // لا نجدول أوقاتاً في الماضي
+        if (alarmDate > now) {
+          // توليد ID فريد لكل صلاة في كل يوم (مثال: اليوم 244 + صلاة 1 = 2441)
+          const dayOfYear = Math.floor((alarmDate - new Date(alarmDate.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+          const uniqueId = parseInt(`${dayOfYear}${p.idOffset}`);
+
+          notificationsToSchedule.push({
+            id: uniqueId,
+            title: `حان الآن أذان ${p.name} 🕌`,
+            body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name}`,
+            schedule: { at: alarmDate, allowWhileIdle: true }, // allowWhileIdle تضمن عمله في الـ Doze Mode
+            sound: 'beep.wav', // صوت النظام الافتراضي للتنبيه لحين فتح التطبيق
+            actionTypeId: 'PRAYER_ACTIONS',
+            extra: { prayerKey: p.key, prayerName: p.name }
+          });
+        }
+      });
+    }
+
+    // 5. تسجيل أزرار الإشعار التفاعلية (صل الآن / كتم)
+    await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
+      types: [
+        {
+          id: 'PRAYER_ACTIONS',
+          actions: [
+            { id: 'pray_now', title: 'صَلِّ الآن 🕌', foreground: true },
+            { id: 'dismiss', title: 'كتم ✕', destructive: true }
+          ]
+        }
+      ]
+    });
+
+    // 6. تسليم الجدولة لنظام الأندرويد
+    if (notificationsToSchedule.length > 0) {
+      await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: notificationsToSchedule });
+    }
+
+  } catch (err) {
+    console.warn('Native scheduling skipped:', err);
+  }
+}
+window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
+
 // دالة إطلاق إشعار الأذان الرسمي في الخلفية وعلى شاشة القفل
 async function triggerBackgroundAdhanNotification(prayerKey, prayerName, prayerTime) {
   const cfg = getPrayerAlarmConfig(prayerKey);
