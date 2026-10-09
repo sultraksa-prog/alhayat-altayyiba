@@ -2337,13 +2337,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // التعرف الصارم على بيئة تطبيق الأندرويد الأصلية فقط
-  const isNativeAppEnv = !!(
-    window.location.protocol === 'capacitor:' ||
-    window.location.hostname === 'localhost' ||
-    (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
-  );
-
   // 1. تنزيل وحفظ الصورة (يدعم ذاكرة الأندرويد الأصلية + تنزيل الـ PWA)
   if (downloadStudioImageBtn) {
     downloadStudioImageBtn.onclick = async () => {
