@@ -1339,11 +1339,14 @@ async function scheduleNativeAndroidAlarms() {
       lightColor: '#10B981'
     });
 
-    // 4. مسح الجدولة السابقة لتفادي التكرار
+    // 4. مسح الجدولة السابقة ومسح أي إشعارات قديمة عالقة في ستارة الهاتف
     const pending = await window.Capacitor.Plugins.LocalNotifications.getPending();
     if (pending && pending.notifications && pending.notifications.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.cancel(pending);
     }
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.removeAllDeliveredNotifications();
+    } catch(e) {}
 
     // 5. جلب بيانات الموقع والإعدادات الحالية
     const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0, tz: 3 };
