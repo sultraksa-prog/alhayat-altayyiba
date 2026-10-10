@@ -1326,14 +1326,14 @@ async function scheduleNativeAndroidAlarms() {
       1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400
     ];
 
-    // 3. إنشاء قناة المنبه الفعلي المرتبطة بصوت الأذان المدمج
+   // 3. إنشاء قناة المنبه الجديدة بربط مباشر مع R.raw.adhan
     await window.Capacitor.Plugins.LocalNotifications.createChannel({
-      id: 'alhayat_adhan_alarm_v5',
+      id: 'alhayat_adhan_channel_v7',
       name: 'منبه أذان الصلوات المفروضة',
       description: 'منبه عالي الأولوية يصدح بصوت الأذان وقت دخول الصلاة',
-      importance: 5, // أقصى درجات الأهمية ليخترق شاشة القفل كمنبه حقيقي
-      visibility: 1, // يظهر على شاشة القفل
-      sound: 'adhan.mp3', // ملف الأذان المدمج في مجلد res/raw
+      importance: 5,
+      visibility: 1,
+      sound: 'adhan', // مجرد بدون .mp3 ليتعرف عليه نظام أندرويد فوراً
       vibration: true,
       lights: true,
       lightColor: '#10B981'
@@ -1394,12 +1394,13 @@ async function scheduleNativeAndroidAlarms() {
             id: uniqueId,
             title: `حان الآن أذان ${p.name} 🕌`,
             body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name} (${timeFormatted})`,
-            channelId: 'alhayat_adhan_alarm_v5',
-            sound: 'adhan.mp3', // تشغيل صوت الأذان في المنبه
+            channelId: 'alhayat_adhan_channel_v7',
+            sound: 'adhan', // اسم الصوت في res/raw
             schedule: { at: alarmDate, allowWhileIdle: true },
             actionTypeId: 'PRAYER_ACTIONS',
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
           });
+  
         }
       });
     }
