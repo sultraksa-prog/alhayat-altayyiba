@@ -34,6 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const pwaBtn = document.getElementById('installPwaBtn');
         const apkBtn = document.getElementById('downloadAndroidApkBtn');
         const iosBtn = document.getElementById('installIosAppBtn');
+        const pwaNotice = document.getElementById('pwaAlarmNoticeCard');
+
+        // إظهار الشريط فقط لمستخدمي الويب وإخفاؤه تماماً داخل تطبيق الأندرويد
+        if (pwaNotice) {
+          pwaNotice.style.display = (!installed && !isRunningStandalone && !isNativeAppEnv) ? 'flex' : 'none';
+        }
+        const noticeApkBtn = document.getElementById('btnNoticeDownloadApk');
+        if (noticeApkBtn) {
+          noticeApkBtn.onclick = () => {
+            if (APP_CONFIG.apkDownloadUrl) window.open(APP_CONFIG.apkDownloadUrl, '_blank');
+          };
+        }
 
         // 1. إذا كان التطبيق مثبتاً (PWA أو APK أصلي) -> إخفاء كل أزرار التثبيت لتنظيف الشاشة
         if (installed || isRunningStandalone || isNativeAppEnv) {
@@ -4545,7 +4557,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.115',
+    version: '2.1.116',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
