@@ -441,6 +441,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof window.applyPrayerSettingsUpdate === 'function') {
         window.applyPrayerSettingsUpdate();
       }
+      // إطلاق الجدولة الفورية لنظام الأندرويد بالوقت الجديد المعدل
+      if (typeof window.scheduleNativeAndroidAlarms === 'function') {
+        window.scheduleNativeAndroidAlarms();
+      }
     };
   }
 
