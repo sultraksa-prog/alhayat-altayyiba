@@ -4738,3 +4738,26 @@ body.scroll-locked,
   background: #F1F5F9;
   border: 1px solid #CBD5E1;
 }
+
+/* شريط إرشاد الـ PWA */
+.pwa-alarm-notice-card {
+  background: #FEF3C7;
+  border: 1.5px solid #FCD34D;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.btn-pwa-notice-action {
+  background: #D97706;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
