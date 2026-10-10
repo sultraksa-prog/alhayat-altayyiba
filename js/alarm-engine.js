@@ -1403,7 +1403,13 @@ async function scheduleNativeAndroidAlarms() {
             actionTypeId: 'PRAYER_ACTIONS',
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
           });
-  
+
+          // ==================== استدعاء المنبه الأصلي لنظام الأندرويد عبر الجسر ====================
+          if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarm === 'function') {
+            const savedNativeAudio = localStorage.getItem(`hayat_native_audio_${p.key}`) || '';
+            window.AndroidBridge.scheduleAlarm(alarmDate.getTime(), p.key, p.name, savedNativeAudio);
+          }
+
         }
       });
     }
