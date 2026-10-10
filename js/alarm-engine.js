@@ -1318,7 +1318,7 @@ async function scheduleNativeAndroidAlarms() {
     const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
     if (perm.display !== 'granted') return;
 
-    // 2. مصفوفة اهتزاز نبضية متواصلة لمدة 30 ثانية كاملة (30,000 ملي ثانية)
+    // 2. مصفوفة اهتزاز نبضية متواصلة لمدة 30 ثانية كاملة
     const continuous30SecVibration = [
       0, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400,
       1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400,
@@ -1326,30 +1326,26 @@ async function scheduleNativeAndroidAlarms() {
       1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400
     ];
 
-    // 3. حذف القنوات القديمة العالقة لكسر الجمود
-    try {
-      await window.Capacitor.Plugins.LocalNotifications.deleteChannel({ id: 'prayer_channel_high' });
-    } catch(e) {}
-
-    // 4. إنشاء قناة جديدة كلياً بأعلى درجات الصوت والاهتزاز وإضاءة الشاشة
+    // 3. إنشاء قناة المنبه الفعلي المرتبطة بصوت الأذان المدمج
     await window.Capacitor.Plugins.LocalNotifications.createChannel({
-      id: 'alhayat_prayer_alarm_v4',
-      name: 'أذان الصلوات وتنبيهات الأوقات',
-      description: 'إشعارات عالية الأولوية تضيء الشاشة وتهتز بقوة وقت الأذان',
-      importance: 5, // أقصى درجات الأهمية لتخترق شاشة القفل (Heads-up)
-      visibility: 1, // تظهر علناً فوق قفل الشاشة
+      id: 'alhayat_adhan_alarm_v5',
+      name: 'منبه أذان الصلوات المفروضة',
+      description: 'منبه عالي الأولوية يصدح بصوت الأذان وقت دخول الصلاة',
+      importance: 5, // أقصى درجات الأهمية ليخترق شاشة القفل كمنبه حقيقي
+      visibility: 1, // يظهر على شاشة القفل
+      sound: 'adhan.mp3', // ملف الأذان المدمج في مجلد res/raw
       vibration: true,
       lights: true,
       lightColor: '#10B981'
     });
 
-    // 5. مسح أي جدولة سابقة فوراً لمنع التضارب
+    // 4. مسح الجدولة السابقة لتفادي التكرار
     const pending = await window.Capacitor.Plugins.LocalNotifications.getPending();
     if (pending && pending.notifications && pending.notifications.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.cancel(pending);
     }
 
-    // 6. جلب بيانات الموقع والإعدادات الحالية
+    // 5. جلب بيانات الموقع والإعدادات الحالية
     const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0, tz: 3 };
     const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
     const method = loc.method || 4;
@@ -1367,7 +1363,7 @@ async function scheduleNativeAndroidAlarms() {
     const notificationsToSchedule = [];
     const now = new Date();
 
-    // 7. جدولة الصلوات لـ 7 أيام قادمة
+    // 6. جدولة الصلوات لـ 7 أيام قادمة
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
       const targetDate = new Date(now);
       targetDate.setDate(targetDate.getDate() + dayOffset);
@@ -1389,7 +1385,6 @@ async function scheduleNativeAndroidAlarms() {
         alarmDate.setHours(parseInt(hStr, 10), parseInt(mStr, 10), 0, 0);
 
         if (alarmDate > now) {
-          // معرّف فريد ديناميكي يعتمد على تاريخ ووقت الصلاة بالدقيقة لمنع التجاهل
           const uniqueId = parseInt(`${dayOffset + 1}${p.idOffset}${parseInt(hStr, 10)}${parseInt(mStr, 10)}`.slice(0, 9));
 
           const fmtTimeFn = window.formatTo12Hour || (typeof formatTo12Hour === 'function' ? formatTo12Hour : (t) => t);
@@ -1399,7 +1394,8 @@ async function scheduleNativeAndroidAlarms() {
             id: uniqueId,
             title: `حان الآن أذان ${p.name} 🕌`,
             body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name} (${timeFormatted})`,
-            channelId: 'alhayat_prayer_alarm_v4',
+            channelId: 'alhayat_adhan_alarm_v5',
+            sound: 'adhan.mp3', // تشغيل صوت الأذان في المنبه
             schedule: { at: alarmDate, allowWhileIdle: true },
             actionTypeId: 'PRAYER_ACTIONS',
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
@@ -1408,7 +1404,7 @@ async function scheduleNativeAndroidAlarms() {
       });
     }
 
-    // 8. تسجيل أزرار الإشعار
+    // 7. تسجيل أزرار التفاعل
     await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
       types: [
         {
@@ -1421,10 +1417,10 @@ async function scheduleNativeAndroidAlarms() {
       ]
     });
 
-    // 9. تسليم الجدولة لنظام الأندرويد
+    // 8. تسليم الجدولة لنظام الأندرويد
     if (notificationsToSchedule.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: notificationsToSchedule });
-      console.log(`✓ تم بنجاح جدولة ${notificationsToSchedule.length} صلاة في الأندرويد.`);
+      console.log(`✓ تم بنجاح جدولة ${notificationsToSchedule.length} منبهاً بصوت الأذان.`);
     }
 
   } catch (err) {
