@@ -1013,6 +1013,16 @@
       </header>
 
       <div class="other-settings-body">
+        <!-- شريط توجيهي يظهر فقط لمستخدمي المتصفح والـ PWA -->
+        <div class="pwa-alarm-notice-card" id="pwaAlarmNoticeCard" style="display: none;">
+          <span style="font-size: 20px;">💡</span>
+          <div style="flex: 1; text-align: right;">
+            <h4 style="font-size: 13.5px; font-weight: 800; margin: 0; color: #92400E;">تنبيه لمستخدمي المتصفح</h4>
+            <p style="font-size: 11px; margin: 2px 0 0 0; color: #78350F; line-height: 1.4;">لتشغيل الأذان بدقة في الخلفية وإضاءة الشاشة وهي مقفلة كمنبه حقيقي، يرجى تثبيت تطبيق الأندرويد الكامل المتاح مجاناً.</p>
+          </div>
+          <button type="button" class="btn-pwa-notice-action" id="btnNoticeDownloadApk">تحميل APK</button>
+        </div>
+
         <!-- 1. المفتاح الكلي للإشعار -->
         <div class="other-settings-card">
           <div class="other-setting-row">
