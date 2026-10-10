@@ -917,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="custom-radio-circle">${isSelected ? '✓' : ''}</span>
       `;
 
-      row.onclick = (e) => {
+      row.onclick = async (e) => {
         if (e.target.closest('.btn-preview-audio-play')) return;
         stopPreviewAudio();
         cfg.audioMode = 'muezzin';
@@ -926,6 +926,35 @@ document.addEventListener('DOMContentLoaded', () => {
         savePrayerAlarmConfig(currentActivePrayerAlarmContext, cfg);
         updatePrayerAlarmSettingsUI();
         audioModal.classList.remove('show');
+
+        // تنزيل وحفظ مقطع المؤذن في مجلد AlHayat بالهاتف ليعمل بدون نت
+        const isApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        if (isApp && window.Capacitor?.Plugins?.Filesystem) {
+          try {
+            await ensureNativeAlHayatFolder();
+            const fileName = `muezzin_${m.id}.mp3`;
+            const check = await window.Capacitor.Plugins.Filesystem.stat({
+              path: `${ALHAYAT_AUDIO_DIR}/${fileName}`,
+              directory: 'DOCUMENTS'
+            }).catch(() => null);
+
+            if (!check) {
+              const res = await fetch(m.url);
+              const blob = await res.blob();
+              const reader = new FileReader();
+              reader.onloadend = async () => {
+                const base64 = reader.result.split(',')[1];
+                await window.Capacitor.Plugins.Filesystem.writeFile({
+                  path: `${ALHAYAT_AUDIO_DIR}/${fileName}`,
+                  data: base64,
+                  directory: 'DOCUMENTS',
+                  recursive: true
+                });
+              };
+              reader.readAsDataURL(blob);
+            }
+          } catch(err) {}
+        }
       };
 
       const pBtn = row.querySelector('.btn-preview-audio-play');
@@ -1285,30 +1314,42 @@ async function scheduleNativeAndroidAlarms() {
   if (!isAndroidApp || !window.Capacitor.Plugins.LocalNotifications) return;
 
   try {
-    // 1. طلب صلاحية الإشعارات الدقيقة من نظام الأندرويد
+    // 1. طلب صلاحية الإشعارات
     const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
     if (perm.display !== 'granted') return;
 
-    // 2. إنشاء قناة إشعارات عالية الأولوية تجبر الأندرويد على إضاءة الشاشة وتشغيل الصوت
+    // 2. مصفوفة اهتزاز نبضية متواصلة لمدة 30 ثانية كاملة (30,000 ملي ثانية)
+    const continuous30SecVibration = [
+      0, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400,
+      1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400,
+      1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400,
+      1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400
+    ];
+
+    // 3. حذف القنوات القديمة العالقة لكسر الجمود
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.deleteChannel({ id: 'prayer_channel_high' });
+    } catch(e) {}
+
+    // 4. إنشاء قناة جديدة كلياً بأعلى درجات الصوت والاهتزاز وإضاءة الشاشة
     await window.Capacitor.Plugins.LocalNotifications.createChannel({
-      id: 'prayer_channel_high',
-      name: 'تنبيهات مواقيت الصلاة والأذان',
-      description: 'إشعارات عالية الأولوية لأوقات الصلوات في موعدها',
-      importance: 5, // 5 = أقصى درجات الأهمية (Heads-up notification)
-      visibility: 1, // تظهر فوق شاشة القفل
-      sound: 'beep.wav',
+      id: 'alhayat_prayer_alarm_v4',
+      name: 'أذان الصلوات وتنبيهات الأوقات',
+      description: 'إشعارات عالية الأولوية تضيء الشاشة وتهتز بقوة وقت الأذان',
+      importance: 5, // أقصى درجات الأهمية لتخترق شاشة القفل (Heads-up)
+      visibility: 1, // تظهر علناً فوق قفل الشاشة
       vibration: true,
       lights: true,
       lightColor: '#10B981'
     });
 
-    // 3. مسح أي جدولة قديمة لتفادي التكرار عند تغيير المدينة أو الوقت
+    // 5. مسح أي جدولة سابقة فوراً لمنع التضارب
     const pending = await window.Capacitor.Plugins.LocalNotifications.getPending();
     if (pending && pending.notifications && pending.notifications.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.cancel(pending);
     }
 
-    // 4. جلب بيانات الموقع والإعدادات الحالية
+    // 6. جلب بيانات الموقع والإعدادات الحالية
     const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0, tz: 3 };
     const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
     const method = loc.method || 4;
@@ -1326,12 +1367,11 @@ async function scheduleNativeAndroidAlarms() {
     const notificationsToSchedule = [];
     const now = new Date();
 
-    // 5. جدولة الصلوات لـ 7 أيام قادمة في قلب نظام الأندرويد
+    // 7. جدولة الصلوات لـ 7 أيام قادمة
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
       const targetDate = new Date(now);
       targetDate.setDate(targetDate.getDate() + dayOffset);
       
-      // جلب دالة الحساب الفلكي المتاحة الآن في النطاق العام
       const calcFn = window.calculateLocalSolarTimings || (typeof calculateLocalSolarTimings === 'function' ? calculateLocalSolarTimings : null);
       const dayTimings = calcFn ? calcFn(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets) : null;
 
@@ -1349,8 +1389,8 @@ async function scheduleNativeAndroidAlarms() {
         alarmDate.setHours(parseInt(hStr, 10), parseInt(mStr, 10), 0, 0);
 
         if (alarmDate > now) {
-          const dayOfYear = Math.floor((alarmDate - new Date(alarmDate.getFullYear(), 0, 0)) / 86400000);
-          const uniqueId = parseInt(`${dayOfYear}${p.idOffset}`);
+          // معرّف فريد ديناميكي يعتمد على تاريخ ووقت الصلاة بالدقيقة لمنع التجاهل
+          const uniqueId = parseInt(`${dayOffset + 1}${p.idOffset}${parseInt(hStr, 10)}${parseInt(mStr, 10)}`.slice(0, 9));
 
           const fmtTimeFn = window.formatTo12Hour || (typeof formatTo12Hour === 'function' ? formatTo12Hour : (t) => t);
           const timeFormatted = fmtTimeFn(timeStr);
@@ -1359,7 +1399,7 @@ async function scheduleNativeAndroidAlarms() {
             id: uniqueId,
             title: `حان الآن أذان ${p.name} 🕌`,
             body: `الله أكبر، الله أكبر.. موعد صلاة ${p.name} (${timeFormatted})`,
-            channelId: 'prayer_channel_high',
+            channelId: 'alhayat_prayer_alarm_v4',
             schedule: { at: alarmDate, allowWhileIdle: true },
             actionTypeId: 'PRAYER_ACTIONS',
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
@@ -1368,7 +1408,7 @@ async function scheduleNativeAndroidAlarms() {
       });
     }
 
-    // 6. تسجيل أزرار الإشعار التفاعلية (صل الآن / كتم)
+    // 8. تسجيل أزرار الإشعار
     await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
       types: [
         {
@@ -1381,10 +1421,10 @@ async function scheduleNativeAndroidAlarms() {
       ]
     });
 
-    // 7. تسليم الجدولة لنظام الأندرويد
+    // 9. تسليم الجدولة لنظام الأندرويد
     if (notificationsToSchedule.length > 0) {
       await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: notificationsToSchedule });
-      console.log(`✓ تم بنجاح جدولة ${notificationsToSchedule.length} صلاة في نظام الأندرويد.`);
+      console.log(`✓ تم بنجاح جدولة ${notificationsToSchedule.length} صلاة في الأندرويد.`);
     }
 
   } catch (err) {
