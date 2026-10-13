@@ -1308,81 +1308,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
- // ==================== جدولة منبهات AlarmManager الأصلية (مستقلة عن إذن الإشعارات) ====================
-function scheduleNativeBridgeAlarms() {
-  const status = { at: new Date().toISOString(), bridge: false, scheduled: 0, first: null, errors: [] };
-  try {
-    const isApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-    if (!isApp) return status;
-
-    const bridge = window.AndroidBridge;
-    status.bridge = !!(bridge && typeof bridge.scheduleAlarm === 'function');
-    if (!status.bridge) {
-      status.errors.push('AndroidBridge.scheduleAlarm غير موجود');
-      return status;
-    }
-
-    const calcFn = window.calculateLocalSolarTimings;
-    if (typeof calcFn !== 'function') return null; // التطبيق لم يجهز بعد، ستتكرر المحاولة لاحقاً
-
-    const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0 };
-    const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
-    const method = loc.method || 4;
-    const asrMadhab = loc.asrMadhab || 0;
-    const offsets = loc.prayerOffsets || {};
-    const prayers = [
-      { key: 'Fajr', name: 'الفجر' },
-      { key: 'Dhuhr', name: 'الظهر' },
-      { key: 'Asr', name: 'العصر' },
-      { key: 'Maghrib', name: 'المغرب' },
-      { key: 'Isha', name: 'العشاء' }
-    ];
-    const now = new Date();
-
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      const targetDate = new Date(now);
-      targetDate.setDate(targetDate.getDate() + dayOffset);
-      const dayTimings = calcFn(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets);
-      if (!dayTimings) continue;
-
-      for (const p of prayers) {
-        const cfg = getPrayerAlarmConfig(p.key);
-        if (cfg.enabled === false) continue;
-        const timeStr = dayTimings[p.key];
-        if (!timeStr) continue;
-
-        const parts = String(timeStr).split(' ')[0].split(':');
-        const alarmDate = new Date(targetDate);
-        alarmDate.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-        if (alarmDate <= now) continue;
-
-        try {
-          const savedNativeAudio = localStorage.getItem(`hayat_native_audio_${p.key}`) || '';
-          bridge.scheduleAlarm(alarmDate.getTime(), p.key, p.name, savedNativeAudio);
-          status.scheduled++;
-          if (!status.first) status.first = { prayer: p.name, at: alarmDate.toString() };
-        } catch (e) {
-          if (status.errors.length < 3) status.errors.push(String((e && e.message) || e));
-        }
-      }
-    }
-  } catch (err) {
-    status.errors.push('خطأ في الجدولة: ' + String((err && err.message) || err));
-  }
-
-  try { localStorage.setItem('hayat_native_alarm_status', JSON.stringify(status)); } catch (e) {}
-  window.__nativeAlarmStatus = status;
-  return status;
-}
-window.scheduleNativeBridgeAlarms = scheduleNativeBridgeAlarms;
-
  // ==================== محرك الجدولة الأصلية المسبقة للأندرويد (Native Background Alarms) ====================
 async function scheduleNativeAndroidAlarms() {
   const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-
-  // أولاً: المنبهات الأصلية للنظام، بدون انتظار أي إذن
-  scheduleNativeBridgeAlarms();
-
   if (!isAndroidApp || !window.Capacitor.Plugins.LocalNotifications) return;
 
   try {
@@ -1476,7 +1404,11 @@ async function scheduleNativeAndroidAlarms() {
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
           });
 
-          // (جدولة المنبه الأصلي أصبحت في scheduleNativeBridgeAlarms وتعمل مستقلة عن إذن الإشعارات)
+          // ==================== استدعاء المنبه الأصلي لنظام الأندرويد عبر الجسر ====================
+          if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarm === 'function') {
+            const savedNativeAudio = localStorage.getItem(`hayat_native_audio_${p.key}`) || '';
+            window.AndroidBridge.scheduleAlarm(alarmDate.getTime(), p.key, p.name, savedNativeAudio);
+          }
 
         }
       });
@@ -1554,61 +1486,5 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
   runSystemPermissionsDiagnostic();
   if (isAndroidApp) {
     scheduleNativeAndroidAlarms();
-  }
-
-  // ==================== لوحة فحص الأذان (تشخيص مؤقت) ====================
-  if (isAndroidApp) {
-    const dbgBtn = document.createElement('button');
-    dbgBtn.textContent = '🛠 فحص الأذان';
-    dbgBtn.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:99999;background:#09203F;color:#FDE68A;border:1px solid #D4AF37;border-radius:20px;padding:8px 14px;font-size:13px;';
-
-    const dbgPanel = document.createElement('div');
-    dbgPanel.style.cssText = 'display:none;position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.85);color:#fff;padding:20px;overflow:auto;direction:rtl;font-size:14px;line-height:1.8;';
-
-    const dbgText = document.createElement('div');
-    dbgText.style.cssText = 'white-space:pre-wrap;margin-bottom:16px;';
-
-    const mkBtn = (label) => {
-      const b = document.createElement('button');
-      b.textContent = label;
-      b.style.cssText = 'display:block;width:100%;margin:8px 0;padding:12px;border-radius:12px;border:1px solid #D4AF37;background:#09203F;color:#FDE68A;font-size:15px;';
-      return b;
-    };
-    const testBtn = mkBtn('⏱ اختبار منبه أصلي بعد 20 ثانية');
-    const refreshBtn = mkBtn('🔄 تحديث الحالة');
-    const closeBtn = mkBtn('إغلاق');
-
-    const renderStatus = async () => {
-      let st = window.__nativeAlarmStatus;
-      if (!st) { try { st = JSON.parse(localStorage.getItem('hayat_native_alarm_status')); } catch (e) {} }
-      let notifPerm = 'غير معروف';
-      try {
-        const cp = await window.Capacitor.Plugins.LocalNotifications.checkPermissions();
-        notifPerm = cp.display;
-      } catch (e) {}
-      const lines = [];
-      lines.push('جسر الأندرويد: ' + (st ? (st.bridge ? 'موجود ✓' : 'غير موجود ✗') : 'لم تبدأ الجدولة بعد'));
-      lines.push('عدد المنبهات الأصلية المجدولة: ' + (st ? st.scheduled : '-'));
-      lines.push('أقرب منبه: ' + (st && st.first ? (st.first.prayer + ' — ' + st.first.at) : '-'));
-      lines.push('إذن الإشعارات: ' + notifPerm);
-      lines.push('أخطاء: ' + (st && st.errors && st.errors.length ? '\n' + st.errors.join('\n') : 'لا يوجد'));
-      lines.push('آخر تحديث: ' + (st ? st.at : '-'));
-      dbgText.textContent = lines.join('\n');
-    };
-
-    dbgBtn.onclick = () => { dbgPanel.style.display = 'block'; renderStatus(); };
-    closeBtn.onclick = () => { dbgPanel.style.display = 'none'; };
-    refreshBtn.onclick = () => { scheduleNativeBridgeAlarms(); renderStatus(); };
-    testBtn.onclick = () => {
-      try {
-        window.AndroidBridge.scheduleAlarm(Date.now() + 20000, 'Fajr', 'اختبار', '');
-        dbgText.textContent = 'تمت جدولة منبه تجريبي بعد 20 ثانية.\nالآن: اضغط زر الطاقة لإطفاء الشاشة وانتظر.\nيجب أن يظهر إشعار وشاشة أذان وصوت.';
-      } catch (e) {
-        dbgText.textContent = 'فشل الاختبار: ' + String((e && e.message) || e);
-      }
-    };
-
-    dbgPanel.append(dbgText, testBtn, refreshBtn, closeBtn);
-    document.body.append(dbgBtn, dbgPanel);
   }
 });
