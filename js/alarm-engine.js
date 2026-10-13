@@ -1308,9 +1308,81 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+ // ==================== جدولة منبهات AlarmManager الأصلية (مستقلة عن إذن الإشعارات) ====================
+function scheduleNativeBridgeAlarms() {
+  const status = { at: new Date().toISOString(), bridge: false, scheduled: 0, first: null, errors: [] };
+  try {
+    const isApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    if (!isApp) return status;
+
+    const bridge = window.AndroidBridge;
+    status.bridge = !!(bridge && typeof bridge.scheduleAlarm === 'function');
+    if (!status.bridge) {
+      status.errors.push('AndroidBridge.scheduleAlarm غير موجود');
+      return status;
+    }
+
+    const calcFn = window.calculateLocalSolarTimings;
+    if (typeof calcFn !== 'function') return null; // التطبيق لم يجهز بعد، ستتكرر المحاولة لاحقاً
+
+    const loc = JSON.parse(localStorage.getItem('hayat_saved_location')) || { lat: 21.4225, lng: 39.8262, method: 4, asrMadhab: 0 };
+    const tz = loc.timezoneOffset || (loc.lng > 40 ? 3 : 2);
+    const method = loc.method || 4;
+    const asrMadhab = loc.asrMadhab || 0;
+    const offsets = loc.prayerOffsets || {};
+    const prayers = [
+      { key: 'Fajr', name: 'الفجر' },
+      { key: 'Dhuhr', name: 'الظهر' },
+      { key: 'Asr', name: 'العصر' },
+      { key: 'Maghrib', name: 'المغرب' },
+      { key: 'Isha', name: 'العشاء' }
+    ];
+    const now = new Date();
+
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const targetDate = new Date(now);
+      targetDate.setDate(targetDate.getDate() + dayOffset);
+      const dayTimings = calcFn(targetDate, loc.lat, loc.lng, tz, method, asrMadhab, offsets);
+      if (!dayTimings) continue;
+
+      for (const p of prayers) {
+        const cfg = getPrayerAlarmConfig(p.key);
+        if (cfg.enabled === false) continue;
+        const timeStr = dayTimings[p.key];
+        if (!timeStr) continue;
+
+        const parts = String(timeStr).split(' ')[0].split(':');
+        const alarmDate = new Date(targetDate);
+        alarmDate.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+        if (alarmDate <= now) continue;
+
+        try {
+          const savedNativeAudio = localStorage.getItem(`hayat_native_audio_${p.key}`) || '';
+          bridge.scheduleAlarm(alarmDate.getTime(), p.key, p.name, savedNativeAudio);
+          status.scheduled++;
+          if (!status.first) status.first = { prayer: p.name, at: alarmDate.toString() };
+        } catch (e) {
+          if (status.errors.length < 3) status.errors.push(String((e && e.message) || e));
+        }
+      }
+    }
+  } catch (err) {
+    status.errors.push('خطأ في الجدولة: ' + String((err && err.message) || err));
+  }
+
+  try { localStorage.setItem('hayat_native_alarm_status', JSON.stringify(status)); } catch (e) {}
+  window.__nativeAlarmStatus = status;
+  return status;
+}
+window.scheduleNativeBridgeAlarms = scheduleNativeBridgeAlarms;
+
  // ==================== محرك الجدولة الأصلية المسبقة للأندرويد (Native Background Alarms) ====================
 async function scheduleNativeAndroidAlarms() {
   const isAndroidApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+  // أولاً: المنبهات الأصلية للنظام، بدون انتظار أي إذن
+  scheduleNativeBridgeAlarms();
+
   if (!isAndroidApp || !window.Capacitor.Plugins.LocalNotifications) return;
 
   try {
@@ -1404,11 +1476,7 @@ async function scheduleNativeAndroidAlarms() {
             extra: { prayerKey: p.key, prayerName: p.name, rawTime: timeStr }
           });
 
-          // ==================== استدعاء المنبه الأصلي لنظام الأندرويد عبر الجسر ====================
-          if (window.AndroidBridge && typeof window.AndroidBridge.scheduleAlarm === 'function') {
-            const savedNativeAudio = localStorage.getItem(`hayat_native_audio_${p.key}`) || '';
-            window.AndroidBridge.scheduleAlarm(alarmDate.getTime(), p.key, p.name, savedNativeAudio);
-          }
+          // (جدولة المنبه الأصلي أصبحت في scheduleNativeBridgeAlarms وتعمل مستقلة عن إذن الإشعارات)
 
         }
       });
@@ -1487,4 +1555,5 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
   if (isAndroidApp) {
     scheduleNativeAndroidAlarms();
   }
-});
+
+  });
