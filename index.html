@@ -502,12 +502,16 @@
           </div>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </div>
-        <!-- 2. إشعارات الصلاة -->
-        <div class="settings-menu-card" onclick="alert('إشعارات الصلاة ستتوفر قريباً')">
+        <!-- 2. إدارة أذونات وصلاحيات التطبيق -->
+        <div class="settings-menu-card highlight-card" id="openPermissionsFromSettingsBtn">
           <div class="settings-item-icon bg-icon-amber">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
-          <span class="settings-item-title">إشعارات الصلاة</span>
+          <div style="flex-grow: 1; text-align: right;">
+            <h4 class="settings-item-title" style="margin: 0; font-size: 15px;">أذونات وصلاحيات التطبيق</h4>
+            <span style="font-size: 11.5px; color: var(--text-secondary);">فحص وتفعيل صلاحيات الأذان والموقع والبطارية</span>
+          </div>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </div>
 
         <!-- 3. إعدادات القرآن الكريم -->
@@ -1333,20 +1337,28 @@
       <span id="audioToastMessage">تمت العملية بنجاح</span>
     </div>
 
-    <!-- نافذة فحص وتشخيص الصلاحيات مع أزرار الإصلاح -->
+    <!-- نافذة التحقق من أذونات وصلاحيات التطبيق الشاملة والموحدة -->
     <div class="bottom-sheet-backdrop" id="permissionsDiagModal" style="z-index: 360;">
-      <div class="bottom-sheet" style="max-height:85vh; overflow-y:auto;">
+      <div class="bottom-sheet" style="max-height:86vh; display:flex; flex-direction:column;">
         <div class="sheet-drag-handle"></div>
-        <div class="sheet-header">
-          <h3 class="sheet-title">التحقق من أذونات الأذان والتنبيهات</h3>
-          <button type="button" class="modal-btn-link" id="closePermissionsDiagBtn">✕</button>
+        <div class="sheet-header" style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🛡️</span>
+            <h3 class="sheet-title" style="margin: 0; font-size: 16px;">التحقق من أذونات التطبيق</h3>
+          </div>
+          <button type="button" class="modal-btn-link" id="closePermissionsDiagBtn" style="font-size: 18px;">✕</button>
         </div>
-        <div class="diagnostic-items-col">
-          <!-- بطاقة التحكم الشامل بالتنبيهات والتشغيل الدائم في الخلفية -->
-          <div class="diag-item-card" id="cardMasterBgAlarms" style="background:#EEF6FC; border:1.5px solid #BCD8F0; margin-bottom:4px;">
-            <div>
-              <h4 style="font-size:14px; font-weight:800; margin:0; color:var(--primary-blue);">التشغيل المستمر والتنبيه في الخلفية</h4>
-              <p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">إبقاء محرك الأذان يعمل عند إغلاق التطبيق أو قفل الشاشة</p>
+
+        <div class="diagnostic-items-col" style="flex: 1; overflow-y: auto; padding-right: 2px;">
+          
+          <!-- 0. بطاقة التحكم بالتشغيل المستمر والتنبيهات في الخلفية -->
+          <div class="diag-unified-card" style="background:#EEF6FC; border-color:#BCD8F0;">
+            <div class="diag-icon-box bg-icon-blue">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title" style="color:var(--primary-blue);">التشغيل المستمر في الخلفية</h4>
+              <p class="diag-item-desc">تشغيل محرك التنبيهات وإطلاق الأذان في موعده تلقائياً</p>
             </div>
             <label class="ios-switch">
               <input type="checkbox" id="toggleMasterBackgroundAlarms" checked>
@@ -1354,21 +1366,100 @@
             </label>
           </div>
 
-          <div class="diag-item-card granted" id="diagCardNotification">
-            <div><h4 style="font-size:14px; font-weight:800; margin:0;">أذونات الإشعارات</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لإطلاق صوت وتنبيه الصلاة في موعدها</p></div>
-            <button type="button" class="btn-diag-fix" id="btnFixNotification" style="display:none;">إصلاح الآن</button>
-            <span class="diag-status-badge">مفعل ✓</span>
+          <!-- 1. أذونات الإشعارات -->
+          <div class="diag-unified-card" id="diagCardNotification">
+            <div class="diag-icon-box bg-icon-emerald">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title">أذونات الإشعارات والتنبيهات</h4>
+              <p class="diag-item-desc">لإطلاق صوت وتنبيه الصلاة في موعدها على الشاشة</p>
+            </div>
+            <div class="diag-action-slot">
+              <button type="button" class="btn-diag-unified-fix" id="btnFixNotification" style="display:none;">إصلاح الآن</button>
+              <span class="diag-unified-badge badge-active" id="badgeNotification">مفعل ✓</span>
+            </div>
           </div>
 
-          <div class="diag-item-card granted">
-            <div><h4 style="font-size:14px; font-weight:800; margin:0;">تحسين البطارية (التشغيل الدائم)</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لضمان عدم إغلاق الأندرويد للتطبيق في الخلفية</p></div>
-            <span class="diag-status-badge">مفعل ✓</span>
+          <!-- 2. صلاحية الموقع الجغرافي (GPS) -->
+          <div class="diag-unified-card" id="diagCardLocation">
+            <div class="diag-icon-box bg-icon-sky">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title">صلاحية الموقع الجغرافي (GPS)</h4>
+              <p class="diag-item-desc">لحساب مواقيت الصلاة الفلكية بدقة وتوجيه القبلة</p>
+            </div>
+            <div class="diag-action-slot">
+              <button type="button" class="btn-diag-unified-fix" id="btnFixLocation" style="display:none;">إصلاح الآن</button>
+              <span class="diag-unified-badge badge-active" id="badgeLocation">مفعل ✓</span>
+            </div>
           </div>
 
-          <div class="diag-item-card granted">
-            <div><h4 style="font-size:14px; font-weight:800; margin:0;">الظهور فوق التطبيقات والنافذة العائمة</h4><p style="font-size:11.5px; color:var(--text-secondary); margin:2px 0 0 0;">لإظهار شاشة الأذان أثناء استخدام تطبيقات أخرى</p></div>
-            <span class="diag-status-badge">مفعل ✓</span>
+          <!-- 3. المنبهات والتذكيرات الدقيقة (أندرويد 12+) -->
+          <div class="diag-unified-card" id="diagCardExactAlarm">
+            <div class="diag-icon-box bg-icon-amber">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6M19 3l3 3"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title">المنبهات والتذكيرات الدقيقة</h4>
+              <p class="diag-item-desc">لإيقاظ معالج الهاتف في ثانية الأذان الدقيقة دون تأخير</p>
+            </div>
+            <div class="diag-action-slot">
+              <button type="button" class="btn-diag-unified-fix" id="btnFixExactAlarm">إصلاح الآن</button>
+              <span class="diag-unified-badge badge-active" id="badgeExactAlarm" style="display:none;">مفعل ✓</span>
+            </div>
           </div>
+
+          <!-- 4. استثناء تحسين البطارية -->
+          <div class="diag-unified-card" id="diagCardBattery">
+            <div class="diag-icon-box bg-icon-teal">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"/><line x1="22" y1="11" x2="22" y2="13"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title">تحسين البطارية (غير مقيّد)</h4>
+              <p class="diag-item-desc">لمنع الهاتف من تجميد التطبيق وإسكاته أثناء قفل الشاشة</p>
+            </div>
+            <div class="diag-action-slot">
+              <button type="button" class="btn-diag-unified-fix" id="btnFixBattery">إصلاح الآن</button>
+              <span class="diag-unified-badge badge-active" id="badgeBattery" style="display:none;">مفعل ✓</span>
+            </div>
+          </div>
+
+          <!-- 5. الظهور فوق التطبيقات وشاشة القفل -->
+          <div class="diag-unified-card" id="diagCardOverlay">
+            <div class="diag-icon-box bg-icon-purple">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title">الظهور فوق التطبيقات وقفل الشاشة</h4>
+              <p class="diag-item-desc">لإظهار نافذة الأذان العائمة وزر الإيقاف فوق قفل الهاتف</p>
+            </div>
+            <div class="diag-action-slot">
+              <button type="button" class="btn-diag-unified-fix" id="btnFixOverlay">إصلاح الآن</button>
+              <span class="diag-unified-badge badge-active" id="badgeOverlay" style="display:none;">مفعل ✓</span>
+            </div>
+          </div>
+
+          <!-- 6. التشغيل التلقائي (Autostart) -->
+          <div class="diag-unified-card" id="diagCardAutostart">
+            <div class="diag-icon-box bg-icon-mint">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div class="diag-info-col">
+              <h4 class="diag-item-title">التشغيل التلقائي (Autostart)</h4>
+              <p class="diag-item-desc">لإعادة جدولة منبهات الأذان تلقائياً عند إعادة تشغيل الهاتف</p>
+            </div>
+            <div class="diag-action-slot">
+              <button type="button" class="btn-diag-unified-fix" id="btnFixAutostart">إصلاح الآن</button>
+              <span class="diag-unified-badge badge-active" id="badgeAutostart" style="display:none;">مفعل ✓</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top: 14px;">
+          <button type="button" class="btn-confirm-prayer-offset" id="btnConfirmClosePermissionsModal" style="width: 100%; padding: 11px 0; font-size: 15px;">حسناً، فهمت</button>
         </div>
       </div>
     </div>
