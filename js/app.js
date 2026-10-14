@@ -3632,20 +3632,28 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return `${String(finalH).padStart(2, '0')}:${String(finalM).padStart(2, '0')}`;
   }
 
-  // المحرك الفلكي الدائم لحساب أوقات الليل الثلاثة (الثلث الأول، منتصف الليل، الثلث الأخير)
+  // المحرك الفلكي الدائم لحساب أوقات الليل الثلاثة بدقة تامة لليوم والليلة
   function getCalculatedNightMilestones() {
     if (!currentTimings || !currentTimings.Maghrib || !currentTimings.Fajr) return null;
-    let baseDate = getTargetDateObject();
+    let now = getTargetDateObject();
 
     const [mH, mM] = currentTimings.Maghrib.split(' ')[0].split(':').map(Number);
     const [fH, fM] = currentTimings.Fajr.split(' ')[0].split(':').map(Number);
 
-    const maghribDate = new Date(baseDate.getTime());
-    maghribDate.setHours(mH, mM, 0, 0);
+    let maghribDate = new Date(now.getTime());
+    let fajrNextDate = new Date(now.getTime());
 
-    const fajrNextDate = new Date(baseDate.getTime());
-    fajrNextDate.setDate(fajrNextDate.getDate() + 1);
-    fajrNextDate.setHours(fH, fM, 0, 0);
+    // إذا كنا في ساعات الصباح الباكر (بين منتصف الليل والظهر): نحسب ليلة اليوم المنقضية فجراً
+    if (now.getHours() < 12) {
+      maghribDate.setDate(maghribDate.getDate() - 1);
+      maghribDate.setHours(mH, mM, 0, 0);
+      fajrNextDate.setHours(fH, fM, 0, 0);
+    } else {
+      // إذا كنا بعد الظهر أو في المساء/الليل: فالمغرب هو اليوم والفجر هو غداً
+      maghribDate.setHours(mH, mM, 0, 0);
+      fajrNextDate.setDate(fajrNextDate.getDate() + 1);
+      fajrNextDate.setHours(fH, fM, 0, 0);
+    }
 
     const totalNightMs = Math.max(1, fajrNextDate.getTime() - maghribDate.getTime());
     const t1Date = new Date(maghribDate.getTime() + (totalNightMs / 3));
@@ -3896,6 +3904,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const isNightTime = (prevP.key === 'Isha');
       const heroNightRow = document.getElementById('heroNightMilestonesRow');
       const markerT1 = document.getElementById('timelineFirstThirdMarker');
+      const midnightMarker = document.getElementById('timelineMidnightMarker'); // تم تعريفه هنا لحل الخطأ
       const markerTLast = document.getElementById('timelineLastThirdMarker');
       const nightData = getCalculatedNightMilestones();
 
@@ -4517,7 +4526,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.119',
+    version: '2.1.120',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
