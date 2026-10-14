@@ -4530,7 +4530,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   if (autoDetectLocationBtn) {
     autoDetectLocationBtn.addEventListener('click', () => {
-      autoDetectLocationBtn.innerHTML = `<span>جاري التحديد عبر الأقمار والشبكة...</span>`;
+      const originalBtnHtml = `
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+        <span>تحديد موقعي الحالي تلقائياً (GPS)</span>
+      `;
+      autoDetectLocationBtn.innerHTML = `<span>جاري البحث عبر الأقمار والشبكة... 🛰️</span>`;
 
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -4547,17 +4551,25 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
               }
             } catch (e) {}
 
+            autoDetectLocationBtn.innerHTML = originalBtnHtml;
             selectCity(detectedCity, lat, lng, '');
+            if (typeof showGuidanceToast === 'function') {
+              showGuidanceToast(`✨ تم تحديد موقعك بنجاح: ${detectedCity}`);
+            }
           },
           (err) => {
-            alert('تعذر تحديد موقع GPS بدقة، يمكنك اختيار مدينتك من القائمة.');
-            autoDetectLocationBtn.innerHTML = `<span>تحديد موقعي الحالي تلقائياً (GPS)</span>`;
+            autoDetectLocationBtn.innerHTML = originalBtnHtml;
+            if (typeof showGuidanceToast === 'function') {
+              showGuidanceToast('تعذر تحديد موقع GPS، يمكنك اختيار مدينتك مباشرة من القائمة 📍');
+            }
           },
-          { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
+          { timeout: 15000, enableHighAccuracy: true, maximumAge: 300000 }
         );
       } else {
-        alert('المتصفح لا يدعم تحديد الموقع.');
-        autoDetectLocationBtn.innerHTML = `<span>تحديد موقعي الحالي تلقائياً (GPS)</span>`;
+        autoDetectLocationBtn.innerHTML = originalBtnHtml;
+        if (typeof showGuidanceToast === 'function') {
+          showGuidanceToast('المتصفح لا يدعم ميزة تحديد الموقع الجغرافي ⚠️');
+        }
       }
     });
   }
@@ -4632,7 +4644,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.122',
+    version: '2.1.123',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
