@@ -1132,49 +1132,149 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // تشخيص الصلاحيات
+  // فتح وإدارة نافذة أذونات وصلاحيات التطبيق الشاملة
   const openDiagBtn = document.getElementById('openPermissionsDiagBtn');
+  const openPermFromSettings = document.getElementById('openPermissionsFromSettingsBtn');
   const diagModal = document.getElementById('permissionsDiagModal');
   const closeDiagBtn = document.getElementById('closePermissionsDiagBtn');
+  const confirmClosePermBtn = document.getElementById('btnConfirmClosePermissionsModal');
 
-  if (openDiagBtn && diagModal) {
-    openDiagBtn.onclick = () => {
-      runSystemPermissionsDiagnostic();
-      diagModal.classList.add('show');
-    };
+  function openAndDiagnosePermissions() {
+    if (!diagModal) return;
+    runSystemPermissionsDiagnostic();
+    diagModal.classList.add('show');
   }
+
+  if (openDiagBtn) openDiagBtn.onclick = openAndDiagnosePermissions;
+  if (openPermFromSettings) openPermFromSettings.onclick = openAndDiagnosePermissions;
+
   if (closeDiagBtn && diagModal) {
     closeDiagBtn.onclick = () => diagModal.classList.remove('show');
   }
+  if (confirmClosePermBtn && diagModal) {
+    confirmClosePermBtn.onclick = () => diagModal.classList.remove('show');
+  }
 
-  function runSystemPermissionsDiagnostic() {
-    const notifCard = document.getElementById('diagCardNotification');
-    const notifBtn = document.getElementById('btnFixNotification');
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        if (notifCard) {
-          notifCard.className = 'diag-item-card granted';
-          const badge = notifCard.querySelector('.diag-status-badge');
-          if (badge) badge.textContent = 'مفعل ✓';
-        }
-        if (notifBtn) notifBtn.style.display = 'none';
+  // محرك التحقق الشامل من أذونات وصلاحيات التطبيق الست
+  async function runSystemPermissionsDiagnostic() {
+    const isApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+    // دالة مساعدة لتحديث مظهر البطاقة
+    function updateCardStatus(cardId, badgeId, btnId, isGranted, fixCallback) {
+      const card = document.getElementById(cardId);
+      const badge = document.getElementById(badgeId);
+      const btn = document.getElementById(btnId);
+      if (!card || !badge || !btn) return;
+
+      if (isGranted) {
+        card.className = 'diag-unified-card status-granted';
+        badge.className = 'diag-unified-badge badge-active';
+        badge.textContent = 'مفعل ✓';
+        badge.style.display = 'inline-block';
+        btn.style.display = 'none';
       } else {
-        if (notifCard) {
-          notifCard.className = 'diag-item-card missing';
-          const badge = notifCard.querySelector('.diag-status-badge');
-          if (badge) badge.textContent = 'غير مفعل ⚠️';
-        }
-        if (notifBtn) {
-          notifBtn.style.display = 'inline-block';
-          notifBtn.onclick = async () => {
-            const res = await Notification.requestPermission();
-            runSystemPermissionsDiagnostic();
-            if (res === 'granted') {
-              showAudioFeedbackToast('تم تفعيل إشعارات وأذان شاشة القفل بنجاح ✨', '🔔');
-            }
-          };
-        }
+        card.className = 'diag-unified-card status-missing';
+        badge.className = 'diag-unified-badge badge-warn';
+        badge.textContent = 'غير مفعل ⚠️';
+        badge.style.display = 'none'; // نخفي الشارة ونبرز زر الإصلاح
+        btn.style.display = 'inline-block';
+        btn.onclick = fixCallback;
       }
+    }
+
+    // 1. فحص إذن الإشعارات
+    let isNotifGranted = false;
+    if ('Notification' in window) {
+      isNotifGranted = (Notification.permission === 'granted');
+    }
+    if (isApp && window.Capacitor?.Plugins?.LocalNotifications) {
+      try {
+        const p = await window.Capacitor.Plugins.LocalNotifications.checkPermissions();
+        isNotifGranted = (p.display === 'granted');
+      } catch(e) {}
+    }
+    updateCardStatus('diagCardNotification', 'badgeNotification', 'btnFixNotification', isNotifGranted, async () => {
+      if (isApp && window.Capacitor?.Plugins?.LocalNotifications) {
+        const res = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+        if (res.display === 'granted') {
+          showAudioFeedbackToast('تم تفعيل أذونات الإشعارات بنجاح ✓', '🔔');
+        } else {
+          openNativeAppSettings();
+        }
+      } else if ('Notification' in window) {
+        const res = await Notification.requestPermission();
+        if (res === 'granted') showAudioFeedbackToast('تم تفعيل الإشعارات بنجاح ✓', '🔔');
+      }
+      runSystemPermissionsDiagnostic();
+    });
+
+    // 2. فحص صلاحية الموقع الجغرافي (GPS)
+    let isLocGranted = false;
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const q = await navigator.permissions.query({ name: 'geolocation' });
+        isLocGranted = (q.state === 'granted');
+      }
+    } catch(e) {}
+    updateCardStatus('diagCardLocation', 'badgeLocation', 'btnFixLocation', isLocGranted, () => {
+      const autoBtn = document.getElementById('autoDetectLocationBtn');
+      if (autoBtn) autoBtn.click();
+      setTimeout(runSystemPermissionsDiagnostic, 1500);
+    });
+
+    // 3. المنبهات الدقيقة (خاصة بهواتف الأندرويد)
+    if (isApp) {
+      const isExactGranted = localStorage.getItem('hayat_exact_alarm_granted') !== 'false';
+      updateCardStatus('diagCardExactAlarm', 'badgeExactAlarm', 'btnFixExactAlarm', isExactGranted, () => {
+        openNativeAppSettings('android.settings.REQUEST_SCHEDULE_EXACT_ALARM');
+      });
+
+      // 4. تحسين البطارية (غير مقيّد)
+      const isBatteryOk = localStorage.getItem('hayat_battery_unrestricted') === 'true';
+      updateCardStatus('diagCardBattery', 'badgeBattery', 'btnFixBattery', isBatteryOk, () => {
+        localStorage.setItem('hayat_battery_unrestricted', 'true');
+        openNativeAppSettings('android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS');
+        setTimeout(runSystemPermissionsDiagnostic, 1000);
+      });
+
+      // 5. الظهور فوق التطبيقات وشاشة القفل
+      const isOverlayOk = localStorage.getItem('hayat_overlay_granted') === 'true';
+      updateCardStatus('diagCardOverlay', 'badgeOverlay', 'btnFixOverlay', isOverlayOk, () => {
+        localStorage.setItem('hayat_overlay_granted', 'true');
+        openNativeAppSettings('android.settings.action.MANAGE_OVERLAY_PERMISSION');
+        setTimeout(runSystemPermissionsDiagnostic, 1000);
+      });
+
+      // 6. التشغيل التلقائي (Autostart)
+      const isAutostartOk = localStorage.getItem('hayat_autostart_granted') === 'true';
+      updateCardStatus('diagCardAutostart', 'badgeAutostart', 'btnFixAutostart', isAutostartOk, () => {
+        localStorage.setItem('hayat_autostart_granted', 'true');
+        openNativeAppSettings();
+        setTimeout(runSystemPermissionsDiagnostic, 1000);
+      });
+    } else {
+      // إخفاء الصلاحيات الخاصة بالأندرويد لمستخدمي المتصفح والـ PWA
+      ['diagCardExactAlarm', 'diagCardBattery', 'diagCardOverlay', 'diagCardAutostart'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+  }
+
+  // دالة مساعدة لفتح صفحة إعدادات التطبيق في الأندرويد
+  function openNativeAppSettings(customAction = null) {
+    if (window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function') {
+      window.AndroidBridge.openAppSettings();
+      return;
+    }
+    try {
+      if (customAction) {
+        window.location.href = `intent:#Intent;action=${customAction};end`;
+      } else {
+        window.location.href = 'intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;package=com.alhayat.app;end';
+      }
+    } catch(e) {
+      alert('يرجى الدخول إلى إعدادات الهاتف > التطبيقات > الحياة الطيبة لتفعيل الصلاحية.');
     }
   }
 
