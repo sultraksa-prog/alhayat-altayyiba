@@ -1152,7 +1152,21 @@ document.addEventListener('DOMContentLoaded', () => {
     closeDiagBtn.onclick = () => diagModal.classList.remove('show');
   }
   if (confirmClosePermBtn && diagModal) {
-    confirmClosePermBtn.onclick = () => diagModal.classList.remove('show');
+const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic');
+
+  if (closeDiagBtn && diagModal) {
+    closeDiagBtn.onclick = () => diagModal.classList.remove('show');
+  }
+  if (refreshPermBtn) {
+    refreshPermBtn.onclick = () => {
+      refreshPermBtn.textContent = 'جاري الفحص... ⏳';
+      runSystemPermissionsDiagnostic().then(() => {
+        setTimeout(() => {
+          refreshPermBtn.textContent = '🔄 إعادة فحص الصلاحيات';
+        }, 500);
+      });
+    };
+  }
   }
 
   // محرك التحقق الشامل من أذونات وصلاحيات التطبيق الست
@@ -1208,18 +1222,29 @@ document.addEventListener('DOMContentLoaded', () => {
       runSystemPermissionsDiagnostic();
     });
 
-    // 2. فحص صلاحية الموقع الجغرافي (GPS)
+    // 2. فحص صلاحية الموقع الجغرافي (GPS) بدقة عبر أندرويد والويب
     let isLocGranted = false;
-    try {
-      if (navigator.permissions && navigator.permissions.query) {
-        const q = await navigator.permissions.query({ name: 'geolocation' });
-        isLocGranted = (q.state === 'granted');
-      }
-    } catch(e) {}
+    if (isApp && window.AndroidBridge && typeof window.AndroidBridge.isLocationGranted === 'function') {
+      // فحص أندرويد الأصلي الحقيقي المباشر
+      isLocGranted = window.AndroidBridge.isLocationGranted();
+    } else {
+      // فحص بيئة الويب والـ PWA
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const q = await navigator.permissions.query({ name: 'geolocation' });
+          isLocGranted = (q.state === 'granted');
+        }
+      } catch(e) {}
+    }
+
     updateCardStatus('diagCardLocation', 'badgeLocation', 'btnFixLocation', isLocGranted, () => {
-      const autoBtn = document.getElementById('autoDetectLocationBtn');
-      if (autoBtn) autoBtn.click();
-      setTimeout(runSystemPermissionsDiagnostic, 1500);
+      if (isApp) {
+        openNativeAppSettings();
+      } else {
+        const autoBtn = document.getElementById('autoDetectLocationBtn');
+        if (autoBtn) autoBtn.click();
+      }
+      setTimeout(runSystemPermissionsDiagnostic, 1000);
     });
 
     // 3. المنبهات الدقيقة (خاصة بهواتف الأندرويد)
