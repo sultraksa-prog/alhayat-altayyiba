@@ -3632,6 +3632,37 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     return `${String(finalH).padStart(2, '0')}:${String(finalM).padStart(2, '0')}`;
   }
 
+  // المحرك الفلكي الدائم لحساب أوقات الليل الثلاثة (الثلث الأول، منتصف الليل، الثلث الأخير)
+  function getCalculatedNightMilestones() {
+    if (!currentTimings || !currentTimings.Maghrib || !currentTimings.Fajr) return null;
+    let baseDate = getTargetDateObject();
+
+    const [mH, mM] = currentTimings.Maghrib.split(' ')[0].split(':').map(Number);
+    const [fH, fM] = currentTimings.Fajr.split(' ')[0].split(':').map(Number);
+
+    const maghribDate = new Date(baseDate.getTime());
+    maghribDate.setHours(mH, mM, 0, 0);
+
+    const fajrNextDate = new Date(baseDate.getTime());
+    fajrNextDate.setDate(fajrNextDate.getDate() + 1);
+    fajrNextDate.setHours(fH, fM, 0, 0);
+
+    const totalNightMs = Math.max(1, fajrNextDate.getTime() - maghribDate.getTime());
+    const t1Date = new Date(maghribDate.getTime() + (totalNightMs / 3));
+    const midDate = new Date(maghribDate.getTime() + (totalNightMs / 2));
+    const tLastDate = new Date(maghribDate.getTime() + (totalNightMs * 2 / 3));
+
+    const fmt = (d) => formatTo12Hour(`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`);
+
+    return {
+      t1Date, midDate, tLastDate,
+      t1Str: fmt(t1Date),
+      midStr: fmt(midDate),
+      tLastStr: fmt(tLastDate)
+    };
+  }
+  window.getCalculatedNightMilestones = getCalculatedNightMilestones;
+
   // 2. تحديث الواجهة والصلوات وتطبيق التعديل اليدوي سواء كان أونلاين أو أوفلاين
   function updatePrayerUI(apiData) {
     const rawTimings = apiData.timings;
@@ -3671,6 +3702,24 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     currentGregorianText = gregFormatter.format(targetDate) + ' م';
 
     renderDateDisplay();
+
+    // تحديث مواقيت الليل الثلاثة دائماً في نافذة التعجب (!) فور تحميل المواقيت
+    const nightTimes = getCalculatedNightMilestones();
+    if (nightTimes) {
+      const dispT1 = document.getElementById('fiqhFirstThirdTimeDisplay');
+      const dispMid = document.getElementById('fiqhMidnightTimeDisplay');
+      const dispTLast = document.getElementById('fiqhLastThirdTimeDisplay');
+      if (dispT1) dispT1.textContent = nightTimes.t1Str;
+      if (dispMid) dispMid.textContent = nightTimes.midStr;
+      if (dispTLast) dispTLast.textContent = nightTimes.tLastStr;
+
+      const heroT1 = document.getElementById('heroFirstThirdTime');
+      const heroMid = document.getElementById('heroMidnightTime');
+      const heroTLast = document.getElementById('heroLastThirdTime');
+      if (heroT1) heroT1.textContent = nightTimes.t1Str;
+      if (heroMid) heroMid.textContent = nightTimes.midStr;
+      if (heroTLast) heroTLast.textContent = nightTimes.tLastStr;
+    }
 
     const returnTodayBtn = document.getElementById('returnTodayBtn');
     if (returnTodayBtn) {
@@ -3843,164 +3892,47 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           expirationLabel = 'متبقي على خروج وقت الفجر';
         }
       }
-      // ج) فترة الليل (حساب الثلث الأول، منتصف الليل، والثلث الأخير بدقة)
-      else if (prevP.key === 'Isha' || prevP.key === 'Maghrib') {
-        const maghribDate = prayerDates.find(p => p.key === 'Maghrib').date;
-        const fajrTomorrow = (prevP.key === 'Isha') ? targetNextTime : (prayerDates.find(p => p.key === 'Fajr')?.targetDate || prayerDates[0].date);
-        
-        const totalNightMs = Math.max(1, fajrTomorrow.getTime() - maghribDate.getTime());
-        const firstThirdDate = new Date(maghribDate.getTime() + (totalNightMs / 3));
-        const midnightDate = new Date(maghribDate.getTime() + (totalNightMs / 2));
-        const lastThirdDate = new Date(maghribDate.getTime() + (totalNightMs * 2 / 3));
-
-        // تحديث مواقيت الليل في نافذة التعجب (!)
-        const dispT1 = document.getElementById('fiqhFirstThirdTimeDisplay');
-        const dispMid = document.getElementById('fiqhMidnightTimeDisplay');
-        const dispTLast = document.getElementById('fiqhLastThirdTimeDisplay');
-        if (dispT1) dispT1.textContent = formatTo12Hour(`${String(firstThirdDate.getHours()).padStart(2,'0')}:${String(firstThirdDate.getMinutes()).padStart(2,'0')}`);
-        if (dispMid) dispMid.textContent = formatTo12Hour(`${String(midnightDate.getHours()).padStart(2,'0')}:${String(midnightDate.getMinutes()).padStart(2,'0')}`);
-        if (dispTLast) dispTLast.textContent = formatTo12Hour(`${String(lastThirdDate.getHours()).padStart(2,'0')}:${String(lastThirdDate.getMinutes()).padStart(2,'0')}`);
-
-        if (prevP.key === 'Isha') {
-          if (now < midnightDate) {
-            currentPrayerEndTime = midnightDate;
-            expirationLabel = 'متبقي على نهاية وقت العشاء';
-          } else if (now >= midnightDate && now < lastThirdDate) {
-            hasPrayerEnded = true;
-            endedNoticeLabel = 'انتهى وقت صلاة العشاء (منتصف الليل)';
-          } else {
-            hasPrayerEnded = true;
-            endedNoticeLabel = 'الثلث الأخير من الليل 🌙 (وقت السحر والوتر)';
-          }
-        }
-      }
-
-      // 6. إدارة التناوب التلقائي: 10 ثوانٍ للصلاة القادمة و 5 ثوانٍ لانتهاء الفرض
-      const cycleMod = countdownCycleSeconds % 15;
-      let showExpirationMode = (cycleMod >= 10);
-
-      if (manualCountdownModeOverride === 'expire') showExpirationMode = true;
-      else if (manualCountdownModeOverride === 'next') showExpirationMode = false;
-
-      // 7. مرحلة الأذان والإقامة
-      const iqamahDefaults = { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 10, Isha: 15 };
-      const savedIqamah = JSON.parse(localStorage.getItem('hayat_iqamah_settings')) || iqamahDefaults;
-      const prevIqamahMins = savedIqamah[prevP.key] || 15;
-      const diffFromPrevSec = Math.floor((now - prevP.date) / 1000);
-      const isDuringIqamah = (diffFromPrevSec >= 0 && diffFromPrevSec < (prevIqamahMins * 60));
-
-      const statusTag = document.getElementById('currentPrayerStatusTag');
-      const countdownTimerEl = document.getElementById('countdownTimer');
-      const flipBox = document.getElementById('countdownFlipContainer');
-
-      // حساب وقت الصلاة القادمة الثابت
-      const diffSec = Math.max(0, Math.floor((targetNextTime - now) / 1000));
-      const hours = Math.floor(diffSec / 3600);
-      const minutes = Math.floor((diffSec % 3600) / 60);
-      const seconds = diffSec % 60;
-      const nextPrayerCountdownText = `${String(hours).padStart(2, '0')} : ${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
-
-      // فحص دخول وقت الصلاة عبر المحرك المركزي الموحد
-      if (diffFromPrevSec >= 0 && diffFromPrevSec < 60) {
-        if (typeof window.handlePrayerTimeEnter === 'function') {
-          window.handlePrayerTimeEnter(prevP.key, prevP.name, prevP.rawTime);
-        }
-      }
-      
-      if (isDuringIqamah) {
-        const remIqamahSec = (prevIqamahMins * 60) - diffFromPrevSec;
-        const iM = Math.floor(remIqamahSec / 60);
-        const iS = remIqamahSec % 60;
-        if (statusTag) statusTag.textContent = `حان الآن أذان ${prevP.name}`;
-        if (countdownTimerEl) {
-          countdownTimerEl.textContent = `الإقامة: ${String(iM).padStart(2, '0')}:${String(iS).padStart(2, '0')}`;
-          countdownTimerEl.style.color = '#86EFAC';
-        }
-        if (flipBox) flipBox.classList.remove('mode-expiration');
-      } else if (showExpirationMode) {
-        // إذا كنا في وضع التناوب:
-        if (hasPrayerEnded) {
-          // أ) وقت الصلاة قد انتهى بالفعل (بعد منتصف الليل أو بعد الشروق)
-          if (statusTag) statusTag.textContent = endedNoticeLabel;
-          // إبقاء العداد يعد تنازلياً نحو الصلاة القادمة بلون عنبري ليعرف كم تبقّى
-          if (countdownTimerEl) {
-            countdownTimerEl.textContent = nextPrayerCountdownText;
-          }
-          if (flipBox) flipBox.classList.add('mode-expiration');
-        } else if (currentPrayerEndTime > now) {
-          // ب) الصلاة ما زالت في وقتها ويُحسب الوقت المتبقي لانتهائها
-          const diffExpSec = Math.max(0, Math.floor((currentPrayerEndTime - now) / 1000));
-          const expH = Math.floor(diffExpSec / 3600);
-          const expM = Math.floor((diffExpSec % 3600) / 60);
-          const expS = diffExpSec % 60;
-
-          if (statusTag) statusTag.textContent = expirationLabel;
-          if (countdownTimerEl) {
-            countdownTimerEl.textContent = `${String(expH).padStart(2, '0')} : ${String(expM).padStart(2, '0')} : ${String(expS).padStart(2, '0')}`;
-          }
-          if (flipBox) flipBox.classList.add('mode-expiration');
-        }
-      } else {
-        // وضع الصلاة القادمة المعتاد (اللون الذهبي)
-        if (statusTag) statusTag.textContent = `باقي على ${nextP.name}`;
-        if (countdownTimerEl) {
-          countdownTimerEl.textContent = nextPrayerCountdownText;
-        }
-        if (flipBox) flipBox.classList.remove('mode-expiration');
-
-        // تنبيه قرب خروج الوقت في آخر 15 دقيقة
-        const warnEnabled = localStorage.getItem('hayat_show_expiration_warning') !== 'false';
-        const warnBanner = document.getElementById('prayerExpirationBanner');
-        const warnText = document.getElementById('prayerExpirationText');
-        if (warnBanner) {
-          if (warnEnabled && diffSec <= 900 && diffSec > 0 && prevP.key !== 'Sunrise') {
-            warnBanner.style.display = 'flex';
-            if (warnText) warnText.textContent = `يوشك وقت صلاة ${prevP.name} على الخروج (متبقي ${Math.ceil(diffSec / 60)} د)`;
-          } else {
-            warnBanner.style.display = 'none';
-          }
-        }
-      }
-
-      // 8. تحريك المسار الزمني وعلامة منتصف الليل الفاصلة
-      let prevTimeMs = prevP.date.getTime();
-      let nextTimeMs = targetNextTime.getTime();
-      if (prevTimeMs > nextTimeMs) {
-        prevTimeMs -= (24 * 3600 * 1000);
-      }
-
-      const totalSpan = Math.max(1, nextTimeMs - prevTimeMs);
-      const elapsed = Math.max(0, now.getTime() - prevTimeMs);
-      const progressPercent = Math.min(100, Math.max(0, (elapsed / totalSpan) * 100));
-
-      const trackFill = document.getElementById('timelineTrackProgress');
-      const trackThumb = document.getElementById('timelineTrackThumb');
-      const midnightMarker = document.getElementById('timelineMidnightMarker');
-
-      const prevNameEl = document.getElementById('prevPrayerNameDisplay');
-      const prevTimeEl = document.getElementById('prevPrayerTimeDisplay');
-      const nextNameEl = document.getElementById('nextPrayerNameDisplay');
-      const nextTimeEl = document.getElementById('nextPrayerTimeDisplay');
-
-      if (trackFill) trackFill.style.width = `${progressPercent}%`;
-      if (trackThumb) trackThumb.style.right = `${progressPercent}%`;
-
-      // وضع علامات أوقات الليل الثلاثة (الثلث الأول، منتصف الليل، الثلث الأخير) على المسار
+      // ج) فترة الليل (إدارة شريط الواجهة الرئيسية وعلامات المسار ونصوص الحالة)
+      const isNightTime = (prevP.key === 'Isha');
+      const heroNightRow = document.getElementById('heroNightMilestonesRow');
       const markerT1 = document.getElementById('timelineFirstThirdMarker');
       const markerTLast = document.getElementById('timelineLastThirdMarker');
+      const nightData = getCalculatedNightMilestones();
 
-      if (prevP.key === 'Isha' && nextP.key === 'Fajr') {
+      if (isNightTime && nightData) {
+        if (heroNightRow) heroNightRow.style.display = 'flex';
+
         const maghribDate = prayerDates.find(p => p.key === 'Maghrib').date;
         const totalNightMs = Math.max(1, targetNextTime.getTime() - maghribDate.getTime());
         
-        const m1Percent = Math.min(100, Math.max(0, (((maghribDate.getTime() + totalNightMs / 3) - prevTimeMs) / totalSpan) * 100));
-        const midPercent = Math.min(100, Math.max(0, (((maghribDate.getTime() + totalNightMs / 2) - prevTimeMs) / totalSpan) * 100));
-        const mLastPercent = Math.min(100, Math.max(0, (((maghribDate.getTime() + totalNightMs * 2 / 3) - prevTimeMs) / totalSpan) * 100));
+        const m1Percent = Math.min(100, Math.max(0, ((nightData.t1Date.getTime() - prevTimeMs) / totalSpan) * 100));
+        const midPercent = Math.min(100, Math.max(0, ((nightData.midDate.getTime() - prevTimeMs) / totalSpan) * 100));
+        const mLastPercent = Math.min(100, Math.max(0, ((nightData.tLastDate.getTime() - prevTimeMs) / totalSpan) * 100));
 
         if (markerT1) { markerT1.style.display = 'block'; markerT1.style.right = `${m1Percent}%`; }
         if (midnightMarker) { midnightMarker.style.display = 'block'; midnightMarker.style.right = `${midPercent}%`; }
         if (markerTLast) { markerTLast.style.display = 'block'; markerTLast.style.right = `${mLastPercent}%`; }
+
+        // تمييز المرحلة النشطة حالياً في الليل
+        const colT1 = document.getElementById('colFirstThird');
+        const colMid = document.getElementById('colMidnight');
+        const colLast = document.getElementById('colLastThird');
+        if (colT1) colT1.classList.toggle('active-phase', now < nightData.t1Date);
+        if (colMid) colMid.classList.toggle('active-phase', now >= nightData.t1Date && now < nightData.midDate);
+        if (colLast) colLast.classList.toggle('active-phase', now >= nightData.lastThirdDate);
+
+        if (now < nightData.midDate) {
+          currentPrayerEndTime = nightData.midDate;
+          expirationLabel = 'متبقي على نهاية وقت العشاء';
+        } else if (now >= nightData.midDate && now < nightData.lastThirdDate) {
+          hasPrayerEnded = true;
+          endedNoticeLabel = 'انتهى وقت صلاة العشاء (منتصف الليل)';
+        } else {
+          hasPrayerEnded = true;
+          endedNoticeLabel = 'الثلث الأخير من الليل 🌙 (وقت السحر والوتر)';
+        }
       } else {
+        if (heroNightRow) heroNightRow.style.display = 'none';
         if (markerT1) markerT1.style.display = 'none';
         if (midnightMarker) midnightMarker.style.display = 'none';
         if (markerTLast) markerTLast.style.display = 'none';
@@ -4585,7 +4517,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.118',
+    version: '2.1.119',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
