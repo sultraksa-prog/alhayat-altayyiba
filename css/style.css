@@ -440,17 +440,28 @@ body {
   text-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
 }
 
-/* علامة منتصف الليل الشرعي على المسار المنزلق */
-.timeline-midnight-marker {
+/* علامات محطات الليل الثلاث (الثلث الأول، منتصف الليل، الثلث الأخير) */
+.timeline-night-marker {
   position: absolute;
   top: -3px;
   width: 3px;
-  height: 12px;
-  background: #FCD34D;
+  height: 13px;
   border-radius: 2px;
-  box-shadow: 0 0 6px rgba(252, 211, 77, 0.9);
-  z-index: 2;
+  z-index: 3;
   transform: translateX(50%);
+  pointer-events: none;
+}
+.marker-third-first {
+  background: #93C5FD;
+  box-shadow: 0 0 6px rgba(147, 197, 253, 0.9);
+}
+.marker-midnight {
+  background: #FCD34D;
+  box-shadow: 0 0 8px rgba(252, 211, 77, 0.95);
+}
+.marker-third-last {
+  background: #86EFAC;
+  box-shadow: 0 0 6px rgba(134, 239, 172, 0.9);
 }
 
 /* ==================== تنسيقات نافذة الفقه والمراجع ==================== */
