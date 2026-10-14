@@ -3904,9 +3904,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
       const isNightTime = (prevP.key === 'Isha');
       const heroNightRow = document.getElementById('heroNightMilestonesRow');
       const markerT1 = document.getElementById('timelineFirstThirdMarker');
-      const midnightMarker = document.getElementById('timelineMidnightMarker'); // تم تعريفه هنا لحل الخطأ
+      const midnightMarker = document.getElementById('timelineMidnightMarker');
       const markerTLast = document.getElementById('timelineLastThirdMarker');
-      const nightData = getCalculatedNightMilestones();
+      const nightData = (typeof getCalculatedNightMilestones === 'function') ? getCalculatedNightMilestones() : null;
 
       if (isNightTime && nightData) {
         if (heroNightRow) heroNightRow.style.display = 'flex';
@@ -3946,6 +3946,28 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         if (midnightMarker) midnightMarker.style.display = 'none';
         if (markerTLast) markerTLast.style.display = 'none';
       }
+
+      // 8. تحريك المسار الزمني وتحديث نصوص الصلاة السابقة والقادمة
+      let prevTimeMs = prevP.date.getTime();
+      let nextTimeMs = targetNextTime.getTime();
+      if (prevTimeMs > nextTimeMs) {
+        prevTimeMs -= (24 * 3600 * 1000);
+      }
+
+      const totalSpan = Math.max(1, nextTimeMs - prevTimeMs);
+      const elapsed = Math.max(0, now.getTime() - prevTimeMs);
+      const progressPercent = Math.min(100, Math.max(0, (elapsed / totalSpan) * 100));
+
+      const trackFill = document.getElementById('timelineTrackProgress');
+      const trackThumb = document.getElementById('timelineTrackThumb');
+      if (trackFill) trackFill.style.width = `${progressPercent}%`;
+      if (trackThumb) trackThumb.style.right = `${progressPercent}%`;
+
+      // تعريف عناصر الصلاة السابقة والقادمة وحمايتها من ReferenceError
+      const prevNameEl = document.getElementById('prevPrayerNameDisplay');
+      const prevTimeEl = document.getElementById('prevPrayerTimeDisplay');
+      const nextNameEl = document.getElementById('nextPrayerNameDisplay');
+      const nextTimeEl = document.getElementById('nextPrayerTimeDisplay');
 
       if (prevNameEl) prevNameEl.textContent = prevP.name;
       if (prevTimeEl) prevTimeEl.textContent = formatTo12Hour(prevP.rawTime);
@@ -4526,7 +4548,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.120',
+    version: '2.1.121',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
