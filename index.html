@@ -112,13 +112,15 @@
             <span class="hero-countdown-digits" id="countdownTimer">00 : 00 : 00</span>
           </div>
 
-          <!-- مسار التقدم الزمني مع علامة منتصف الليل الشرعي الفاصلة -->
+          <!-- مسار التقدم الزمني مع فواصل أوقات الليل الثلاثة -->
           <div class="hero-timeline-section">
             <div class="hero-timeline-track">
               <div class="hero-timeline-fill" id="timelineTrackProgress"></div>
               <div class="hero-timeline-knob" id="timelineTrackThumb"></div>
-              <!-- علامة منتصف الليل الفاصلة على المسار -->
-              <div class="timeline-midnight-marker" id="timelineMidnightMarker" style="display: none;" title="منتصف الليل الشرعي (نهاية وقت العشاء)"></div>
+              <!-- علامات أوقات الليل الفاصلة على المسار -->
+              <div class="timeline-night-marker marker-third-first" id="timelineFirstThirdMarker" style="display: none;" title="نهاية الثلث الأول من الليل"></div>
+              <div class="timeline-night-marker marker-midnight" id="timelineMidnightMarker" style="display: none;" title="منتصف الليل الشرعي (نهاية وقت العشاء)"></div>
+              <div class="timeline-night-marker marker-third-last" id="timelineLastThirdMarker" style="display: none;" title="بداية الثلث الأخير من الليل (وقت السحر والوتر)"></div>
             </div>
             <div class="hero-timeline-labels">
               <div class="timeline-node-item node-prev">
@@ -948,6 +950,42 @@
         </div>
 
         <div class="fiqh-modal-body-scroll">
+          <!-- تنبيه وقت الشروق وصلاة الضحى بالنص المعتمد -->
+          <div class="fiqh-info-card" style="background:#FFFDF5; border-color:#FDE68A;">
+            <div class="fiqh-card-head">
+              <span class="fiqh-badge-gold">تنبيه فقهي هـام</span>
+              <h4 style="color:#92400E;">وقت الشروق وصلاة الضحى</h4>
+            </div>
+            <p class="fiqh-explanation" style="font-size:12.5px; line-height:1.75; color:#78350F; margin:0; font-weight:700;">
+              تنبيه: وقتُ الشروق هو لحظةُ طلوعِ الشمس من الأفق، وهو وقتُ الإسفار ووقتُ النهي عن الصلاة، وليس وقتَ صلاةِ الضحى. وتبدأ صلاةُ الضحى بعد الشروق بنحو ربع ساعة عندما ترتفعُ الشمسُ قِيد رُمح.
+            </p>
+          </div>
+
+          <!-- بطاقة أوقات الليل الثلاثة المحسوبة فلكياً لليوم -->
+          <div class="fiqh-info-card" style="background:#F0F9FF; border-color:#BAE6FD;">
+            <div class="fiqh-card-head">
+              <span class="fiqh-badge-gold" style="background:#E0F2FE; color:#0369A1;">مواقيت الليل الفلكية</span>
+              <h4 style="color:#0C4A6E;">أوقات الليل المباركة لليوم</h4>
+            </div>
+            <div class="fiqh-prayers-grid">
+              <div class="fiqh-prayer-item" style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="fp-name" style="color:#0369A1;">نهاية الثلث الأول:</span>
+                <span class="fp-desc" id="fiqhFirstThirdTimeDisplay" style="font-weight:800; color:var(--primary-blue); direction:ltr;">--:--</span>
+              </div>
+              <div class="fiqh-prayer-item" style="display:flex; justify-content:space-between; align-items:center; background:#FEF3C7; border-color:#FCD34D;">
+                <span class="fp-name" style="color:#92400E;">منتصف الليل الشرعي:</span>
+                <span class="fp-desc" id="fiqhMidnightTimeDisplay" style="font-weight:800; color:#B45309; direction:ltr;">--:--</span>
+              </div>
+              <div class="fiqh-prayer-item" style="display:flex; justify-content:space-between; align-items:center; background:#ECFDF5; border-color:#BBF7D0;">
+                <span class="fp-name" style="color:#15803D;">بداية الثلث الأخير (السحر):</span>
+                <span class="fp-desc" id="fiqhLastThirdTimeDisplay" style="font-weight:800; color:#15803D; direction:ltr;">--:--</span>
+              </div>
+            </div>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:8px; line-height:1.5;">
+              * يُحسب الليل شرعاً وفلكياً بتقسيم كامل المدة الواقعة بين أذان المغرب وأذان فجر اليوم التالي.
+            </p>
+          </div>
+
           <!-- بطاقة منتصف الليل والعشاء -->
           <div class="fiqh-info-card highlight-night">
             <div class="fiqh-card-head">
