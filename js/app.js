@@ -4544,14 +4544,14 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   if (autoDetectLocationBtn) {
     autoDetectLocationBtn.addEventListener('click', () => {
-      // فحص وجود الإنترنت أولاً؛ وإظهار نافذة التنبيه الرسمية فوراً في حال الانقطاع
-      if (!ensureOnlineWithModal()) return;
+      // 1. فحص توفر الإنترنت
+      if (typeof ensureOnlineWithModal === 'function' && !ensureOnlineWithModal()) return;
 
       const originalBtnHtml = `
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
         <span>تحديد موقعي الحالي تلقائياً (GPS)</span>
       `;
-      autoDetectLocationBtn.innerHTML = `<span>جاري البحث عبر الأقمار والشبكة... 🛰️</span>`;
+      autoDetectLocationBtn.innerHTML = `<span>جاري التحديد السريع للموقع... ⚡</span>`;
 
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -4559,17 +4559,44 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             let detectedCity = 'موقعي الحالي';
+            let detectedCountry = '';
 
+            // أ) حساب رياضي فوري لأقرب مدينة مخزنة في التطبيق (أوفلاين 100% في 1 ميلي ثانية)
+            if (typeof REGION_CITIES !== 'undefined' && Array.isArray(REGION_CITIES)) {
+              let minDistance = Infinity;
+              REGION_CITIES.forEach(c => {
+                const dLat = (c.lat - lat) * (Math.PI / 180);
+                const dLng = (c.lng - lng) * (Math.PI / 180);
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(lat * (Math.PI / 180)) * Math.cos(c.lat * (Math.PI / 180)) *
+                          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                const dist = 6371 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  detectedCity = c.name;
+                  detectedCountry = c.country;
+                }
+              });
+            }
+
+            // ب) محاولة جلب الاسم الدقيق من السيرفر مع مهلة أمان صارمة (2.5 ثانية فقط) لمنع التعليق
             try {
-              const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`);
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 2500);
+              const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`, { signal: controller.signal });
+              clearTimeout(timeoutId);
               const geoData = await geoRes.json();
-              if (geoData.city || geoData.locality || geoData.principalSubdivision) {
+              if (geoData && (geoData.city || geoData.locality || geoData.principalSubdivision)) {
                 detectedCity = geoData.city || geoData.locality || geoData.principalSubdivision;
+                if (geoData.countryName) detectedCountry = geoData.countryName;
               }
-            } catch (e) {}
+            } catch (e) {
+              // في حال بطء السيرفر، يعتمد مباشرة على أقرب مدينة تم حسابها رياضياً بنجاح
+            }
 
+            // ج) تطبيق المدينة فوراً وإغلاق النافذة
             autoDetectLocationBtn.innerHTML = originalBtnHtml;
-            selectCity(detectedCity, lat, lng, '');
+            selectCity(detectedCity, lat, lng, detectedCountry);
             if (typeof showGuidanceToast === 'function') {
               showGuidanceToast(`✨ تم تحديد موقعك بنجاح: ${detectedCity}`);
             }
@@ -4577,10 +4604,11 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           (err) => {
             autoDetectLocationBtn.innerHTML = originalBtnHtml;
             if (typeof showGuidanceToast === 'function') {
-              showGuidanceToast('تعذر تحديد موقع GPS، يمكنك اختيار مدينتك مباشرة من القائمة 📍');
+              showGuidanceToast('تعذر التقاط الإحداثيات، يمكنك اختيار مدينتك من القائمة 📍');
             }
           },
-          { timeout: 15000, enableHighAccuracy: true, maximumAge: 300000 }
+          // enableHighAccuracy: false تمنع تعليق الهاتف وتلتقط الموقع فوراً عبر الشبكة
+          { timeout: 10000, enableHighAccuracy: false, maximumAge: 600000 }
         );
       } else {
         autoDetectLocationBtn.innerHTML = originalBtnHtml;
@@ -4661,7 +4689,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.124',
+    version: '2.1.125',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
