@@ -939,6 +939,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(() => null);
 
             if (!check) {
+              // التحقق من توفر الإنترنت قبل محاولة تنزيل صوت المؤذن
+              if (typeof window.ensureOnlineWithModal === 'function' && !window.ensureOnlineWithModal()) {
+                return;
+              }
+
               const res = await fetch(m.url);
               const blob = await res.blob();
               const reader = new FileReader();
