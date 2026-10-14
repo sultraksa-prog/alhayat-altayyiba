@@ -4438,6 +4438,9 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   // البحث في الخريطة العالمية أونلاين
   async function searchCityOnline(query) {
+    // التحقق من توفر الإنترنت قبل البحث في الخريطة
+    if (typeof ensureOnlineWithModal === 'function' && !ensureOnlineWithModal()) return;
+
     const cleanQuery = query.trim();
     if (!quickCitiesGrid) return;
 
@@ -4528,8 +4531,22 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     locationBadge.addEventListener('click', openManualLocationModal);
   }
 
+  // دالة مركزية موحدة لفحص الاتصال بالإنترنت وإظهار نافذة التنبيه المعتمدة
+  function ensureOnlineWithModal() {
+    if (!navigator.onLine) {
+      const offlineModal = document.getElementById('offlineUpdateModal');
+      if (offlineModal) offlineModal.classList.add('show');
+      return false;
+    }
+    return true;
+  }
+  window.ensureOnlineWithModal = ensureOnlineWithModal;
+
   if (autoDetectLocationBtn) {
     autoDetectLocationBtn.addEventListener('click', () => {
+      // فحص وجود الإنترنت أولاً؛ وإظهار نافذة التنبيه الرسمية فوراً في حال الانقطاع
+      if (!ensureOnlineWithModal()) return;
+
       const originalBtnHtml = `
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
         <span>تحديد موقعي الحالي تلقائياً (GPS)</span>
@@ -4644,7 +4661,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.123',
+    version: '2.1.124',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
