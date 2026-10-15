@@ -4689,7 +4689,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.128',
+    version: '2.1.129',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -5444,10 +5444,11 @@ ${nightSectionText}✨ تطبيق الحياة الطيبة • رفيقك في 
 
         // الأعمدة الثلاثة لأوقات الليل
         const colW = boxW / 3;
-        const cxRight = 100 + (colW / 2);        // الثلث الأول (يمين)
+        const cxRight = 100 + (colW * 2) + (colW / 2); // الثلث الأخير (يمين)
         const cxCenter = 100 + colW + (colW / 2); // منتصف الليل (وسط)
-        const cxLeft = 100 + (colW * 2) + (colW / 2); // الثلث الأخير (يسار)
-
+        const cxLeft = 100 + (colW / 2);         // الثلث الأول (يسار)
+        
+        
         // فواصل رأسية دقيقة بين الأعمدة
         ctx.strokeStyle = tConfig.isTwoTone ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.2)';
         ctx.lineWidth = 1;
