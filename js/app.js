@@ -4689,7 +4689,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.127',
+    version: '2.1.128',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -4763,7 +4763,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
     });
   }
 
-  // 1. مشاركة مواقيت اليوم كنص (يدعم الأندرويد والـ PWA)
+  // 1. مشاركة مواقيت اليوم كنص (يدعم الأندرويد والـ PWA مع أوقات الليل)
   if (btnShareAsText) {
     btnShareAsText.addEventListener('click', async () => {
       let timingsText = '';
@@ -4773,6 +4773,17 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         });
       }
 
+      // تجهيز مواقيت أثلاث الليل المحسوبة بدقة لليوم
+      let nightSectionText = '';
+      const nightData = (typeof getCalculatedNightMilestones === 'function') ? getCalculatedNightMilestones() : null;
+      if (nightData) {
+        nightSectionText = 
+`🌙 مواقيت الليل:
+• نهاية الثلث الأول: ${nightData.t1Str}
+• منتصف الليل الشرعي: ${nightData.midStr}
+• بداية الثلث الأخير: ${nightData.tLastStr}\n\n`;
+      }
+
       const fullShareMessage = 
 `🕌 مواقيت الصلاة - ${userLocation.city}
 🗓️ يوم: ${currentDayName || 'السبت'}
@@ -4780,7 +4791,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 📆 التاريخ الميلادي: ${currentGregorianText}
 
 ${timingsText}
-✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
+${nightSectionText}✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
 📲 الرابط: ${APP_CONFIG.url}`;
 
       const isAndroidApp = !!(window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
@@ -5390,62 +5401,129 @@ ${timingsText}
 
       drawTaperedDividerWithRosette(ctx, 425, tConfig.dividerColor, 720, 26);
 
-      // ==================== 3. جدول الصلوات الست بمظهر نقي وصافٍ ====================
-      let startY = 495;
+      // ==================== 3. جدول الصلوات الست بمظهر نقي وموزون ====================
+      let startY = 472;
       PRAYER_KEYS.forEach((p) => {
         ctx.fillStyle = tConfig.cardRowBg;
         ctx.beginPath();
-        ctx.roundRect(100, startY - 48, canvas.width - 200, 84, 18);
+        ctx.roundRect(100, startY - 42, canvas.width - 200, 76, 16);
         ctx.fill();
 
         ctx.strokeStyle = tConfig.cardRowBorder;
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        ctx.font = 'bold 36px "Cairo", sans-serif';
+        ctx.font = 'bold 34px "Cairo", sans-serif';
         ctx.fillStyle = tConfig.prayerNameColor;
         ctx.textAlign = 'right';
-        ctx.fillText(p.name, canvas.width - 150, startY + 8);
+        ctx.fillText(p.name, canvas.width - 145, startY + 8);
 
         ctx.fillStyle = tConfig.prayerTimeColor;
         ctx.textAlign = 'left';
         const formattedT = currentTimings ? formatTo12Hour(currentTimings[p.key]) : '--:--';
-        ctx.fillText(formattedT, 150, startY + 8);
+        ctx.fillText(formattedT, 145, startY + 8);
 
-        startY += 108;
+        startY += 96;
       });
+
+      // ==================== 3.1 شريط مواقيت أثلاث الليل الثلاثة داخل الصورة ====================
+      const nightData = (typeof getCalculatedNightMilestones === 'function') ? getCalculatedNightMilestones() : null;
+      if (nightData) {
+        const nightBoxY = 1048;
+        const boxW = canvas.width - 200;
+
+        // خلفية كبسولة مواقيت الليل
+        ctx.fillStyle = tConfig.isTwoTone ? 'rgba(0, 0, 0, 0.05)' : 'rgba(3, 12, 24, 0.45)';
+        ctx.beginPath();
+        ctx.roundRect(100, nightBoxY - 26, boxW, 96, 16);
+        ctx.fill();
+
+        ctx.strokeStyle = tConfig.isTwoTone ? tConfig.cardRowBorder : 'rgba(253, 230, 138, 0.35)';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+
+        // الأعمدة الثلاثة لأوقات الليل
+        const colW = boxW / 3;
+        const cxRight = 100 + (colW / 2);        // الثلث الأول (يمين)
+        const cxCenter = 100 + colW + (colW / 2); // منتصف الليل (وسط)
+        const cxLeft = 100 + (colW * 2) + (colW / 2); // الثلث الأخير (يسار)
+
+        // فواصل رأسية دقيقة بين الأعمدة
+        ctx.strokeStyle = tConfig.isTwoTone ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(100 + colW, nightBoxY - 14); ctx.lineTo(100 + colW, nightBoxY + 56);
+        ctx.moveTo(100 + (colW * 2), nightBoxY - 14); ctx.lineTo(100 + (colW * 2), nightBoxY + 56);
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+
+        // 1. الثلث الأول
+        ctx.font = '700 21px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.isTwoTone ? '#64748B' : '#CBD5E1';
+        ctx.fillText('نهاية الثلث الأول', cxRight, nightBoxY + 2);
+        ctx.font = 'bold 26px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.isTwoTone ? '#0284C7' : '#93C5FD';
+        ctx.fillText(nightData.t1Str, cxRight, nightBoxY + 42);
+
+        // 2. منتصف الليل الشرعي
+        ctx.font = '700 21px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.isTwoTone ? '#92400E' : '#FDE68A';
+        ctx.fillText('منتصف الليل الشرعي', cxCenter, nightBoxY + 2);
+        ctx.font = 'bold 26px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.isTwoTone ? '#D97706' : '#FCD34D';
+        ctx.fillText(nightData.midStr, cxCenter, nightBoxY + 42);
+
+        // 3. بداية الثلث الأخير
+        ctx.font = '700 21px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.isTwoTone ? '#15803D' : '#86EFAC';
+        ctx.fillText('بداية الثلث الأخير', cxLeft, nightBoxY + 2);
+        ctx.font = 'bold 26px "Cairo", sans-serif';
+        ctx.fillStyle = tConfig.isTwoTone ? '#16A34A' : '#86EFAC';
+        ctx.fillText(nightData.tLastStr, cxLeft, nightBoxY + 42);
+      }
 
       // ==================== 4. الفوتر وشعار الصرح المذهب الحقيقي ====================
       if (shareCardSettings.withBranding) {
-        drawTaperedDividerWithRosette(ctx, 1175, tConfig.dividerColor, 700, 26);
-        drawRealBrandEmblem(ctx, canvas.width / 2, 1245, 0.72, tConfig.emblemGold);
+        drawTaperedDividerWithRosette(ctx, 1185, tConfig.dividerColor, 700, 24);
+        drawRealBrandEmblem(ctx, canvas.width / 2, 1250, 0.70, tConfig.emblemGold);
 
         ctx.textAlign = 'center';
-        ctx.font = 'bold 34px "Cairo", sans-serif';
+        ctx.font = 'bold 32px "Cairo", sans-serif';
         ctx.fillStyle = tConfig.footerTextColor;
         ctx.fillText('الحياة الطيبة', canvas.width / 2, 1362);
 
-        ctx.font = '600 23px "Cairo", sans-serif';
+        ctx.font = '600 22px "Cairo", sans-serif';
         ctx.fillStyle = tConfig.footerSubColor;
-        ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', canvas.width / 2, 1405);
+        ctx.fillText('تطبيق الحياة الطيبة • رفيقك في الطاعة', canvas.width / 2, 1402);
       }
 
       const isAndroidApp = !!(window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
 
-      // إعداد نص الرسالة المرافقة
+      // إعداد نص الرسالة المرافقة متضمنة مواقيت الليل
       let timingsText = '';
       if (currentTimings) {
         PRAYER_KEYS.forEach(p => {
           timingsText += `• ${p.name}: ${formatTo12Hour(currentTimings[p.key])}\n`;
         });
       }
+
+      let nightSectionText = '';
+      if (nightData) {
+        nightSectionText = 
+`🌙 مواقيت الليل:
+• نهاية الثلث الأول: ${nightData.t1Str}
+• منتصف الليل الشرعي: ${nightData.midStr}
+• بداية الثلث الأخير: ${nightData.tLastStr}\n\n`;
+      }
+
       const fullShareMessage = `🕌 مواقيت الصلاة - ${userLocation.city}
 🗓️ يوم: ${currentDayName || 'السبت'}
 📅 التاريخ الهجري: ${currentHijriText}
 📆 التاريخ الميلادي: ${currentGregorianText}
 
 ${timingsText}
-✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
+${nightSectionText}✨ تطبيق الحياة الطيبة • رفيقك في الطاعة
 📲 الرابط: ${APP_CONFIG.url}`;
 
       // خاص بالأندرويد: مشاركة الصورة الأصلية عبر كاباسيتور
