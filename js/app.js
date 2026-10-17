@@ -4533,7 +4533,13 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
 
   // دالة مركزية موحدة لفحص الاتصال بالإنترنت وإظهار نافذة التنبيه المعتمدة
   function ensureOnlineWithModal() {
-    if (!navigator.onLine) {
+    let online = navigator.onLine;
+    // إذا كان يعمل على تطبيق الأندرويد، استشارة عتاد الهاتف الفعلي مباشرة
+    if (window.AndroidBridge && typeof window.AndroidBridge.isNetworkConnected === 'function') {
+      online = window.AndroidBridge.isNetworkConnected();
+    }
+
+    if (!online) {
       const offlineModal = document.getElementById('offlineUpdateModal');
       if (offlineModal) offlineModal.classList.add('show');
       return false;
@@ -4578,7 +4584,12 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         <span>تحديد موقعي الحالي تلقائياً (GPS)</span>
       `;
 
-      // 1. فحص فوري لعتاد الأندرويد: هل مفتاح الـ GPS مطفأ في الهاتف؟
+      // 1. التسلسل الأول: فحص الإنترنت أولاً (في حال عدم وجود اتصال تظهر نافذة النت فوراً ويتوقف)
+      if (typeof ensureOnlineWithModal === 'function' && !ensureOnlineWithModal()) {
+        return;
+      }
+
+      // 2. التسلسل الثاني: فحص مفتاح الـ GPS في الهاتف بعد التأكد من وجود الإنترنت
       if (window.AndroidBridge && typeof window.AndroidBridge.isLocationServiceEnabled === 'function') {
         if (!window.AndroidBridge.isLocationServiceEnabled()) {
           showGpsDisabledModal();
@@ -4586,11 +4597,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
         }
       }
 
-      // 2. فحص توفر الإنترنت
-      if (typeof ensureOnlineWithModal === 'function' && !ensureOnlineWithModal()) return;
-
       autoDetectLocationBtn.innerHTML = `<span>جاري التحديد السريع للموقع... ⚡</span>`;
-
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
@@ -4730,7 +4737,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.130',
+    version: '2.1.131',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
