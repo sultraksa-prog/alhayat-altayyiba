@@ -557,22 +557,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. تبويب القبلة
+  // 2. تبويب القبلة وزر التحكم بالهيدر
   const tabQiblaBtn = document.getElementById('tabQibla');
   const screenQiblaView = document.getElementById('screen-qibla');
+  const toggleQiblaSensorBtn = document.getElementById('toggleQiblaSensorBtn');
+
   if (tabQiblaBtn && screenQiblaView) {
     tabQiblaBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      attemptNavigateFromTabs(screenQiblaView, () => {
-        if (typeof initQiblaCompass === 'function') initQiblaCompass();
-      });
+      attemptNavigateFromTabs(screenQiblaView);
+    });
+  }
+
+  // ربط زر تشغيل/إيقاف القبلة الدائم في الهيدر
+  if (toggleQiblaSensorBtn) {
+    toggleQiblaSensorBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleQiblaCompassManual();
     });
   }
 
   const backFromQiblaBtn = document.getElementById('backToHomeFromQiblaBtn');
   if (backFromQiblaBtn) {
     backFromQiblaBtn.addEventListener('click', () => {
-      if (typeof stopQiblaCompass === 'function') stopQiblaCompass();
       showScreen(screenHome);
     });
   }
@@ -3318,7 +3325,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (screen !== screenAzkarReader) {
       stopAutoScrolling();
     }
+
+    // 1. إيقاف حساسات القبلة فوراً عند الانتقال إلى أي شاشة أخرى
+    const screenQiblaEl = document.getElementById('screen-qibla');
+    if (screen !== screenQiblaEl && typeof stopQiblaCompass === 'function') {
+      stopQiblaCompass();
+    }
+
     originalShowScreen(screen, pushToHistory);
+
+    // 2. تشغيل البوصلة تلقائياً فور الدخول إلى شاشة القبلة
+    if (screen === screenQiblaEl && typeof startQiblaCompassAuto === 'function') {
+      startQiblaCompassAuto();
+    }
 
     // تحديث ظهور زر التراجع فور اكتمال تنشيط الشاشة
     updateUndoButtonVisibility();
@@ -4737,7 +4756,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.132',
+    version: '2.1.133',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -6031,6 +6050,7 @@ ${APP_CONFIG.url}`;
   const KAABA_COORDS = { lat: 21.422487, lng: 39.826206 };
   let qiblaBearingAngle = 0;
   let isCompassActive = false;
+  let isQiblaAlignedVibrated = false; // لمنع الاهتزاز المستمر عند محاذاة القبلة
   let currentQiblaMode = 'gps';
   let qiblaLeafletMap = null;
   let qiblaPolyline = null;
@@ -6208,10 +6228,23 @@ ${APP_CONFIG.url}`;
     if (isAligned) {
       if (compassDial) compassDial.classList.add('aligned');
       if (kaabaTopBeacon) kaabaTopBeacon.classList.add('aligned');
-      if (navigator.vibrate) navigator.vibrate(50);
+
+      // اهتزاز ثلاثي متتابع هادئ لمرة واحدة فقط عند الوصول لزاوية القبلة ثم التوقف التام
+      if (!isQiblaAlignedVibrated) {
+        if (navigator.vibrate) {
+          // 3 نبضات لطيفة: [اهتزاز، صمت، اهتزاز، صمت، اهتزاز]
+          navigator.vibrate([60, 80, 60, 80, 60]);
+        }
+        isQiblaAlignedVibrated = true;
+      }
     } else {
       if (compassDial) compassDial.classList.remove('aligned');
       if (kaabaTopBeacon) kaabaTopBeacon.classList.remove('aligned');
+
+      // إعادة تسليح الاهتزاز فقط عند الابتعاد عن زاوية القبلة بأكثر من 10 درجات
+      if (diff > 10 && diff < 350) {
+        isQiblaAlignedVibrated = false;
+      }
     }
   }
 
@@ -6241,6 +6274,25 @@ ${APP_CONFIG.url}`;
     });
   }
 
+  // تحديث حالة وشكل زر تشغيل/إيقاف القبلة في الهيدر
+  function updateQiblaToggleBtnUI(isActive) {
+    const btn = document.getElementById('toggleQiblaSensorBtn');
+    if (!btn) return;
+    if (isActive) {
+      btn.style.background = '#DCFCE7';
+      btn.style.borderColor = '#86EFAC';
+      btn.style.color = '#15803D';
+      btn.setAttribute('title', 'إيقاف البوصلة مؤقتاً');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`;
+    } else {
+      btn.style.background = '#F1F5F9';
+      btn.style.borderColor = '#CBD5E1';
+      btn.style.color = 'var(--text-muted)';
+      btn.setAttribute('title', 'تشغيل البوصلة');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`;
+    }
+  }
+
   function bindCompassListeners() {
     if (isCompassActive) return;
     if ('ondeviceorientationabsolute' in window) {
@@ -6249,14 +6301,36 @@ ${APP_CONFIG.url}`;
       window.addEventListener('deviceorientation', handleDeviceOrientation, true);
     }
     isCompassActive = true;
+    updateQiblaToggleBtnUI(true);
   }
 
   function stopQiblaCompass() {
     window.removeEventListener('deviceorientationabsolute', handleDeviceOrientation, true);
     window.removeEventListener('deviceorientation', handleDeviceOrientation, true);
     isCompassActive = false;
+    isQiblaAlignedVibrated = false;
+    updateQiblaToggleBtnUI(false);
   }
   window.stopQiblaCompass = stopQiblaCompass;
+
+  // تشغيل البوصلة تلقائياً
+  function startQiblaCompassAuto() {
+    initQiblaCompass();
+    bindCompassListeners();
+  }
+  window.startQiblaCompassAuto = startQiblaCompassAuto;
+
+  // التبديل اليدوي للبوصلة عبر زر الهيدر
+  function toggleQiblaCompassManual() {
+    if (isCompassActive) {
+      stopQiblaCompass();
+      if (typeof showGuidanceToast === 'function') showGuidanceToast('تم إيقاف حركة البوصلة مؤقتاً ⏸️');
+    } else {
+      startQiblaCompassAuto();
+      if (typeof showGuidanceToast === 'function') showGuidanceToast('تم تشغيل البوصلة ومستشعرات الحركة 🧭');
+    }
+  }
+  window.toggleQiblaCompassManual = toggleQiblaCompassManual;
 
   // تجربة تدوير البوصلة بالماوس للمطور عند الفحص بالكمبيوتر
   const dialElement = document.getElementById('compassDial');
