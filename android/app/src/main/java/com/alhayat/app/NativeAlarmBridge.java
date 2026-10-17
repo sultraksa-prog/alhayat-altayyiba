@@ -191,4 +191,55 @@ public class NativeAlarmBridge {
             }
         }
     }
+
+    // 11. فحص هل صلاحية النافذة العائمة (الظهور فوق التطبيقات) ممنوحة
+    @JavascriptInterface
+    public boolean hasOverlayPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            return android.provider.Settings.canDrawOverlays(context);
+        }
+        return true;
+    }
+
+    // 12. طلب إذن الظهور فوق التطبيقات مباشرة
+    @JavascriptInterface
+    public void requestOverlayPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            try {
+                Intent intent = new Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:" + context.getPackageName())
+                );
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            } catch (Exception e) {
+                openAppSettings();
+            }
+        }
+    }
+
+    // 13. تشغيل كرت المسبحة العائم فوق الشاشة الرئيسية
+    @JavascriptInterface
+    public void showFloatingTasbeeh(String dhikrText, int currentCount, int targetCount) {
+        if (!hasOverlayPermission()) {
+            requestOverlayPermission();
+            return;
+        }
+        try {
+            Intent intent = new Intent(context, FloatingTasbeehService.class);
+            intent.putExtra("dhikrText", dhikrText);
+            intent.putExtra("currentCount", currentCount);
+            intent.putExtra("targetCount", targetCount);
+            context.startService(intent);
+        } catch (Exception ignored) {}
+    }
+
+    // 14. إغلاق المسبحة العائمة
+    @JavascriptInterface
+    public void closeFloatingTasbeeh() {
+        try {
+            Intent intent = new Intent(context, FloatingTasbeehService.class);
+            context.stopService(intent);
+        } catch (Exception ignored) {}
+    }
 }
