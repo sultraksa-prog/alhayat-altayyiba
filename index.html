@@ -3396,6 +3396,21 @@
       </div>
     </div>
 
+    <!-- نافذة تنبيه تفعيل خدمة الموقع (GPS) في الهاتف -->
+    <div class="custom-modal-backdrop" id="gpsDisabledModal" style="z-index: 450;">
+      <div class="custom-modal-card text-center" style="max-width: 320px;">
+        <div class="offline-modal-icon-box" style="background: #FEF3C7; color: #D97706;">📍</div>
+        <h3 class="modal-card-title" style="margin-bottom: 6px;">خدمة الموقع (GPS) معطّلة</h3>
+        <p class="celebration-text" style="font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+          خدمة الموقع (GPS) مغلقة في هاتفك. يرجى تشغيلها ليتمكن التطبيق من التقاط إحداثياتك وحساب مواقيت الصلاة بدقة.
+        </p>
+        <div class="modal-actions-row" style="justify-content: center; gap: 14px;">
+          <button type="button" class="modal-btn-link text-muted" id="closeGpsDisabledModalBtn">لاحقاً</button>
+          <button type="button" class="modal-btn-primary" id="openLocationSettingsBtn" style="padding: 9px 22px;">تشغيل الموقع 📍</button>
+        </div>
+      </div>
+    </div>
+
     <!-- نافذة التثبيت الشاملة (تأكيد التثبيت / إرشادات الآيفون / التطبيق مثبت بالفعل) -->
     <div class="custom-modal-backdrop" id="pwaInstallModal">
       <div class="custom-modal-card text-center" style="max-width: 330px;">
