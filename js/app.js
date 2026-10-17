@@ -7200,12 +7200,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // أ) بيئة الأندرويد الأصيلة عند تجميع الـ APK
       if (window.AndroidBridge && typeof window.AndroidBridge.showFloatingTasbeeh === 'function') {
-        const hasPermission = window.AndroidBridge.hasOverlayPermission ? window.AndroidBridge.hasOverlayPermission() : true;
-        if (!hasPermission) {
-          window.AndroidBridge.requestOverlayPermission();
+        const hasPerm = (typeof window.AndroidBridge.hasOverlayPermission === 'function')
+          ? window.AndroidBridge.hasOverlayPermission()
+          : true;
+
+        if (!hasPerm) {
+          if (typeof window.AndroidBridge.requestOverlayPermission === 'function') {
+            window.AndroidBridge.requestOverlayPermission();
+          }
+          if (typeof showGuidanceToast === 'function') {
+            showGuidanceToast('يرجى تفعيل صلاحية الظهور فوق التطبيقات لتشغيل المسبحة العائمة 🪟');
+          }
           return;
         }
-        window.AndroidBridge.showFloatingTasbeeh(activeItem.text, tasbeehStats.countsMap[activeItem.id] || 0, tasbeehTarget);
+
+        const curCount = tasbeehStats.countsMap[activeItem.id] || 0;
+        window.AndroidBridge.showFloatingTasbeeh(activeItem.text, curCount, tasbeehTarget);
+        if (typeof showGuidanceToast === 'function') {
+          showGuidanceToast('تم تشغيل المسبحة العائمة بنجاح ✨ يمكنك الآن استخدامها خارج التطبيق');
+        }
         return;
       }
 
