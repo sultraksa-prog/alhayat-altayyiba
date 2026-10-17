@@ -116,4 +116,30 @@ public class NativeAlarmBridge {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
+
+    // 7. فحص هل مفتاح الـ GPS وخدمات الموقع مفعّلة في عتاد الهاتف
+    @JavascriptInterface
+    public boolean isLocationServiceEnabled() {
+        try {
+            android.location.LocationManager lm = (android.location.LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            if (lm == null) return false;
+            return lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+                   lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // 8. فتح صفحة تفعيل مفتاح الـ GPS في إعدادات النظام مباشرة
+    @JavascriptInterface
+    public void openLocationSettings() {
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            // كإجراء احتياطي في حال اختلاف واجهة النظام
+            openAppSettings();
+        }
+    }
 }
