@@ -2220,6 +2220,14 @@
         </div>
 
         <div class="tasbeeh-top-actions">
+          <!-- زر فتوى وضوابط استخدام المسبحة -->
+          <button type="button" class="t-icon-circle-action" id="openTasbeehFatwaBtn" title="فتوى وضوابط التسبيح بالمسبحة">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </button>
+
           <button type="button" class="t-icon-circle-action" id="tasbeehResetBtn" title="إعادة ضبط">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           </button>
@@ -2388,6 +2396,63 @@
           <button type="button" class="modal-btn-link text-emerald" id="resetAllAzkarBtn">إعادة تعيين جميع العدادات</button>
           <hr class="setting-divider">
           <button type="button" class="modal-btn-link text-muted" id="cancelResetModalBtn">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- نافذة فتوى وضوابط التسبيح بالمسبحة والخاتم -->
+    <div class="custom-modal-backdrop" id="tasbeehFatwaModal" style="z-index: 500;">
+      <div class="custom-modal-card" style="max-width: 360px; max-height: 85vh; display: flex; flex-direction: column; padding: 20px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 22px;">📜</span>
+            <h3 class="modal-card-title" style="margin: 0; font-size: 16px; color: #15803D;">حكم التسبيح بالمسبحة والخاتم</h3>
+          </div>
+          <button type="button" class="modal-btn-link" id="closeTasbeehFatwaIconBtn" style="font-size: 18px; color: var(--text-muted);">✕</button>
+        </div>
+
+        <!-- نص الفتوى المحقق في صندوق قابل للتمرير -->
+        <div style="flex: 1; overflow-y: auto; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; font-size: 13px; line-height: 1.8; color: var(--text-main); text-align: justify;">
+          <p style="margin-bottom: 12px; color: #166534; font-weight: 700;">
+            أخي وفقك الله الأصل والسنة في التسبيح هو العقد بالأصابع، لما فيه من أجر مضاعف واتباع لهدي النبي ﷺ. أما استخدام خاتم التسبيح أو المسبحة فهو جائز كوسيلة لضبط العدد فقط، بشرط ألا يُعتقد أفضليته على اليد، ولا يُعتقد أنه سنة نبوية، ولا يُتخذ شعاراً للطاعة أو موافقةً لأهل البدع في تخصيص أنواع معينة منها. ومع الجواز، يرى العلماء أن تركها والالتزام بالعد باليد هو الأفضل والأولى.
+          </p>
+
+          <div style="height: 1px; background: #CBD5E1; margin: 12px 0;"></div>
+
+          <h4 style="font-size: 13.5px; font-weight: 800; color: #1E293B; margin-bottom: 6px;">نص فتوى الشيخ الدكتور سليمان الرحيلي حفظه الله:</h4>
+          
+          <p style="margin-bottom: 8px; background: #FFFFFF; padding: 8px 10px; border-radius: 8px; border-right: 3px solid #10B981;">
+            <strong>السؤال:</strong> ما حكم استخدام خاتم التسبيح لضبط عدد التسبيح؟ فأنا أستخدمه لضبط العدد حيث إني أداوم على ذلك صباحاً أو مساءً وقد تعودت عليه وأشعر بالطمأنينة بعد الذكر اليومي.
+          </p>
+
+          <p style="margin-bottom: 8px;">
+            <strong>الجواب:</strong> يقول الشيخ د. سليمان الرحيلي:<br>
+            «هذا الخاتم الذي فيه الأرقام ويُعد به الذكر، نقول أولاً إنه خلاف السنة؛ فإن السنة أن الذكر يُعد بالأصابع، فإن النبي ﷺ كان يعقد التسبيح بيمينه الشريفة. فإذا عقدت التسبيح بيدك اليمنى أو بيديك، فقد فعلت عبادتين: الذكر والعقد، فتؤجر على الأمرين. ومن وجه آخر في تفضيل العقد باليدين، أن اليد تكون معك في قبرك وتبعث معك، أما خاتم التسبيح والمسبحة فلا تكون معك في قبرك ولا تبعث معك.
+          </p>
+
+          <p style="margin-bottom: 6px;"><strong>لكن هل يجوز للإنسان أن يسبح بالمسبحة أو بخاتم التسبيح؟ نقول: يجوز بشروط:</strong></p>
+          <ul style="padding-right: 18px; margin: 0 0 10px 0;">
+            <li style="margin-bottom: 6px;"><strong>الشرط الأول:</strong> ألا يعتقد أن التسبيح بالمسبحة أو بالخاتم أفضل من العد باليد ولا مساوٍ له؛ فلا يجوز أن يعتقد أن الخاتم أفضل من اليد، لأن العقد باليد هو فعل النبي ﷺ.</li>
+            <li style="margin-bottom: 6px;"><strong>الشرط الثاني:</strong> ألا يعتقد أن ذلك سنة، وإنما يعتقد أن هذه وسيلة فقط؛ لأن هذا لم يكن من سنة النبي ﷺ، فلا يجوز أن يعتقد أنها سنة.</li>
+            <li style="margin-bottom: 6px;"><strong>الشرط الثالث:</strong> ألا يجعل ذلك شعاراً على الطاعة؛ بأن يضع الخاتم في إصبعه ويُريه الناس ليدل على أنه يطيع ويذكر الله، فهذا لا يجوز.</li>
+            <li style="margin-bottom: 6px;"><strong>الشرط الرابع:</strong> ألا يوافق أهل البدع؛ بمعنى ألا يجعل مسبحته كمسابح أهل البدع، حيث يخصصون أنواعاً معينة للعوام ومراتبهم، فلا يجوز أن يجعل ذلك على مراتب أهل البدع.</li>
+          </ul>
+
+          <p style="margin: 0; background: #DCFCE7; padding: 8px 10px; border-radius: 8px; color: #14532D; font-weight: 700;">
+            فإذا كان ذلك كذلك، فإن الذي يظهر -والله أعلم- أن التسبيح والعد بالمسبحة أو الحصى جائز، لكن تركه أفضل إذا توفرت هذه الشروط».
+          </p>
+        </div>
+
+        <!-- خيار عدم الإظهار مرة أخرى -->
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 12px; user-select: none;">
+          <input type="checkbox" id="chkDontShowTasbeehFatwa" style="width: 18px; height: 18px; accent-color: #15803D;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">قرأت وفهمت الفتوى ولا أرغب في إظهارها تلقائياً مرة أخرى</span>
+        </label>
+
+        <!-- أزرار الإجراءات -->
+        <div class="modal-actions-row" style="margin-top: 14px; gap: 10px;">
+          <button type="button" class="modal-btn-link text-muted" id="btnCloseTasbeehFatwaBtn" style="flex: 1; border: 1px solid #CBD5E1; border-radius: 12px; padding: 10px;">إغلاق</button>
+          <button type="button" class="modal-btn-primary" id="btnConfirmTasbeehFatwa" style="flex: 2; padding: 10px; background: #15803D;">موافق</button>
         </div>
       </div>
     </div>
