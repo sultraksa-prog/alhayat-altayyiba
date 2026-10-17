@@ -165,4 +165,30 @@ public class NativeAlarmBridge {
             return false;
         }
     }
+
+    // 10. فتح إعدادات الـ Wi-Fi وشبكة الإنترنت في الهاتف بنقرة واحدة
+    @JavascriptInterface
+    public void openWifiSettings() {
+        try {
+            // في أندرويد 10 وما بعده: فتح لوحة الاتصال السريعة بالإنترنت (Wi-Fi وبيانات الهاتف)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                Intent intent = new Intent(android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            } else {
+                Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            }
+        } catch (Exception e) {
+            try {
+                // كإجراء احتياطي للأجهزة التي تختلف فيها واجهة النظام
+                Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            } catch (Exception ex) {
+                openAppSettings();
+            }
+        }
+    }
 }
