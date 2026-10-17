@@ -138,8 +138,31 @@ public class NativeAlarmBridge {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } catch (Exception e) {
-            // كإجراء احتياطي في حال اختلاف واجهة النظام
             openAppSettings();
+        }
+    }
+
+    // 9. فحص حقيقي ودقيق للاتصال بالإنترنت من نظام أندرويد مباشرة (مطابق للـ PWA)
+    @JavascriptInterface
+    public boolean isNetworkConnected() {
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                android.net.Network net = cm.getActiveNetwork();
+                if (net == null) return false;
+                android.net.NetworkCapabilities cap = cm.getNetworkCapabilities(net);
+                return cap != null && (
+                    cap.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    cap.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    cap.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+                );
+            } else {
+                android.net.NetworkInfo info = cm.getActiveNetworkInfo();
+                return info != null && info.isConnected();
+            }
+        } catch (Exception e) {
+            return false;
         }
     }
 }
