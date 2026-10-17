@@ -4542,15 +4542,53 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   }
   window.ensureOnlineWithModal = ensureOnlineWithModal;
 
+  // دالة إظهار نافذة تفعيل الـ GPS في الهاتف
+  function showGpsDisabledModal() {
+    const modal = document.getElementById('gpsDisabledModal');
+    if (modal) modal.classList.add('show');
+  }
+
+  const closeGpsDisabledModalBtn = document.getElementById('closeGpsDisabledModalBtn');
+  const openLocationSettingsBtn = document.getElementById('openLocationSettingsBtn');
+
+  if (closeGpsDisabledModalBtn) {
+    closeGpsDisabledModalBtn.onclick = () => {
+      const modal = document.getElementById('gpsDisabledModal');
+      if (modal) modal.classList.remove('show');
+    };
+  }
+
+  if (openLocationSettingsBtn) {
+    openLocationSettingsBtn.onclick = () => {
+      const modal = document.getElementById('gpsDisabledModal');
+      if (modal) modal.classList.remove('show');
+
+      if (window.AndroidBridge && typeof window.AndroidBridge.openLocationSettings === 'function') {
+        window.AndroidBridge.openLocationSettings();
+      } else if (window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function') {
+        window.AndroidBridge.openAppSettings();
+      }
+    };
+  }
+
   if (autoDetectLocationBtn) {
     autoDetectLocationBtn.addEventListener('click', () => {
-      // 1. فحص توفر الإنترنت
-      if (typeof ensureOnlineWithModal === 'function' && !ensureOnlineWithModal()) return;
-
       const originalBtnHtml = `
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
         <span>تحديد موقعي الحالي تلقائياً (GPS)</span>
       `;
+
+      // 1. فحص فوري لعتاد الأندرويد: هل مفتاح الـ GPS مطفأ في الهاتف؟
+      if (window.AndroidBridge && typeof window.AndroidBridge.isLocationServiceEnabled === 'function') {
+        if (!window.AndroidBridge.isLocationServiceEnabled()) {
+          showGpsDisabledModal();
+          return;
+        }
+      }
+
+      // 2. فحص توفر الإنترنت
+      if (typeof ensureOnlineWithModal === 'function' && !ensureOnlineWithModal()) return;
+
       autoDetectLocationBtn.innerHTML = `<span>جاري التحديد السريع للموقع... ⚡</span>`;
 
       if ('geolocation' in navigator) {
@@ -4603,12 +4641,15 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
           },
           (err) => {
             autoDetectLocationBtn.innerHTML = originalBtnHtml;
-            if (typeof showGuidanceToast === 'function') {
+            // إذا كان الخطأ بسبب أن الـ GPS مغلق في الجهاز (POSITION_UNAVAILABLE أو TIMEOUT)
+            if (err.code === 2 || err.code === 3) {
+              showGpsDisabledModal();
+            } else if (typeof showGuidanceToast === 'function') {
               showGuidanceToast('تعذر التقاط الإحداثيات، يمكنك اختيار مدينتك من القائمة 📍');
             }
           },
-          // enableHighAccuracy: false تمنع تعليق الهاتف وتلتقط الموقع فوراً عبر الشبكة
-          { timeout: 10000, enableHighAccuracy: false, maximumAge: 600000 }
+          // تقليص المهلة لـ 5 ثوانٍ بدلاً من 10 لمنع الانتظار الممل في حال فشل الالتقاط
+          { timeout: 5000, enableHighAccuracy: false, maximumAge: 600000 }
         );
       } else {
         autoDetectLocationBtn.innerHTML = originalBtnHtml;
@@ -4689,7 +4730,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.129',
+    version: '2.1.130',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
