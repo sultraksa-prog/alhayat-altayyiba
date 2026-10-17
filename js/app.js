@@ -4756,7 +4756,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.133',
+    version: '2.1.134',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -6750,7 +6750,23 @@ function initTasbeehEngine() {
   renderCurvedBeads();
   applyTasbeehThemeAndMode();
   updateTasbeehUI();
+
+  // فحص وإظهار نافذة الفتوى تلقائياً إذا لم يكن المستخدم قد وافق عليها مسبقاً
+  checkAndShowTasbeehFatwa();
 }
+
+function checkAndShowTasbeehFatwa(forceOpen = false) {
+  const modal = document.getElementById('tasbeehFatwaModal');
+  if (!modal) return;
+  const acknowledged = localStorage.getItem('hayat_tasbeeh_fatwa_acknowledged') === 'true';
+
+  if (forceOpen || !acknowledged) {
+    const chk = document.getElementById('chkDontShowTasbeehFatwa');
+    if (chk) chk.checked = acknowledged;
+    modal.classList.add('show');
+  }
+}
+window.checkAndShowTasbeehFatwa = checkAndShowTasbeehFatwa;
 
 // تحديث النافذة العائمة
 let pipCanvas = null;
@@ -6831,6 +6847,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Date.now() - lastSwipeTime < 450) return;
       incrementTasbeeh(e);
     });
+  }
+
+  // ربط أحداث نافذة فتوى المسبحة
+  const openFatwaBtn = document.getElementById('openTasbeehFatwaBtn');
+  const fatwaModal = document.getElementById('tasbeehFatwaModal');
+  const closeFatwaIconBtn = document.getElementById('closeTasbeehFatwaIconBtn');
+  const closeFatwaBtn = document.getElementById('btnCloseTasbeehFatwaBtn');
+  const confirmFatwaBtn = document.getElementById('btnConfirmTasbeehFatwa');
+  const chkDontShowFatwa = document.getElementById('chkDontShowTasbeehFatwa');
+
+  if (openFatwaBtn) {
+    openFatwaBtn.onclick = () => checkAndShowTasbeehFatwa(true);
+  }
+  if (closeFatwaIconBtn && fatwaModal) {
+    closeFatwaIconBtn.onclick = () => fatwaModal.classList.remove('show');
+  }
+  if (closeFatwaBtn && fatwaModal) {
+    closeFatwaBtn.onclick = () => fatwaModal.classList.remove('show');
+  }
+  if (confirmFatwaBtn && fatwaModal) {
+    confirmFatwaBtn.onclick = () => {
+      if (chkDontShowFatwa && chkDontShowFatwa.checked) {
+        localStorage.setItem('hayat_tasbeeh_fatwa_acknowledged', 'true');
+      }
+      fatwaModal.classList.remove('show');
+    };
   }
 
   // فتح نافذة اختيار التسبيحة
