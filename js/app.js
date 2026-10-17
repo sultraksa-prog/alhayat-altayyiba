@@ -4737,7 +4737,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.131',
+    version: '2.1.132',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -5766,12 +5766,12 @@ ${APP_CONFIG.url}`;
         window.AndroidBridge.openWifiSettings();
         return;
       }
-      try {
-        window.location.href = "intent:#Intent;action=android.settings.WIFI_SETTINGS;end";
-      } catch (e) {}
+      // في حال المتصفح العادي الذي يمنع الوصول لإعدادات العتاد
+      if (typeof showGuidanceToast === 'function') {
+        showGuidanceToast('يرجى تفعيل الواي فاي أو بيانات الهاتف من إعدادات جهازك 📶');
+      }
     };
   }
-
   // دالة موحدة ومتطابقة لإظهار نافذة أحدث إصدار
   function showUpToDateDisplay() {
     if (!upToDateModal) return;
