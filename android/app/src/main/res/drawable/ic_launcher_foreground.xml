@@ -6,352 +6,280 @@
     android:viewportWidth="512"
     android:viewportHeight="512">
 
-    <!-- هالة النور الروحانية المشعة خلف الصرح المعماري -->
-    <path android:pathData="M 256,190 m -170,0 a 170,170 0 1,1 340,0 a 170,170 0 1,1 -340,0">
+    <!-- 1. هالة النور الروحاني المشعة خلف الصرح (أقوى وأكثر تشبعاً) -->
+    <path android:pathData="M 256,190 m -175,0 a 175,175 0 1,1 350,0 a 175,175 0 1,1 -350,0">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:centerX="256"
                 android:centerY="190"
-                android:gradientRadius="170"
+                android:gradientRadius="175"
                 android:type="radial">
-                <item android:color="#44FCD34D" android:offset="0.0" />
-                <item android:color="#18D4AF37" android:offset="0.60" />
+                <item android:color="#66FCD34D" android:offset="0.0" />
+                <item android:color="#33EAB308" android:offset="0.45" />
+                <item android:color="#12D4AF37" android:offset="0.75" />
                 <item android:color="#0009203F" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- كتلة الصرح المعماري المذهب المصقول بالكامل -->
+    <!-- كتلة الصرح داخل الدائرة الآمنة -->
     <group
         android:scaleX="0.68"
         android:scaleY="0.68"
         android:pivotX="256"
         android:pivotY="256">
 
-        <!-- 1. الهلال الشريف ودرة النور العلوية -->
+        <!-- 2. طبقة الظل المعماري الساقط ثلاثي الأبعاد (Faux 3D Drop Shadow) -->
+        <group android:translateY="8">
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 256,58 A 22,22 0 1,1 256,102 A 16.5,16.5 0 1,0 256,58 Z" />
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 256,124 C 278,144 294,166 288,190 L 224,190 C 218,166 234,144 256,124 Z" />
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 218,190 L 294,190 L 290,202 L 222,202 Z" />
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 210,262 L 302,262 L 296,292 L 216,292 Z" />
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 204,358 L 308,358 L 302,428 L 210,428 Z" />
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 302,428 C 348,428 410,410 422,364 C 388,382 336,408 302,426 Z M 210,428 C 164,428 102,410 90,364 C 124,382 176,408 210,426 Z" />
+            <path
+                android:fillColor="#99020810"
+                android:pathData="M 76,432 L 436,432 L 420,448 L 92,448 Z" />
+        </group>
+
+        <!-- 3. الهلال الشريف ودرة النور العلوية -->
         <path android:pathData="M 256,58 A 22,22 0 1,1 256,102 A 16.5,16.5 0 1,0 256,58 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="234"
+                    android:startY="58"
+                    android:endX="278"
+                    android:endY="102"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FFFFFF" android:offset="0.0" />
+                    <item android:color="#FDE68A" android:offset="0.30" />
+                    <item android:color="#D4AF37" android:offset="0.70" />
+                    <item android:color="#92400E" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path
-            android:fillColor="#FFFBEB"
-            android:pathData="M 256,80 m -3.2,0 a 3.2,3.2 0 1,1 6.4,0 a 3.2,3.2 0 1,1 -6.4,0" />
+            android:fillColor="#FFFFFF"
+            android:pathData="M 256,80 m -3.5,0 a 3.5,3.5 0 1,1 7,0 a 3.5,3.5 0 1,1 -7,0" />
 
         <!-- سارية الهلال -->
         <path android:pathData="M 254.5,102 L 257.5,102 L 257.5,124 L 254.5,124 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="254"
+                    android:startY="102"
+                    android:endX="258"
+                    android:endY="124"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FFFBEB" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
 
-        <!-- 2. قبة المئذنة الملكية المضلعة -->
+        <!-- 4. قبة المئذنة الملكية المضلعة بتدرج الذهب اللامع -->
         <path android:pathData="M 256,124 C 278,144 294,166 288,190 L 224,190 C 218,166 234,144 256,124 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="256"
+                    android:startY="124"
+                    android:endX="256"
+                    android:endY="190"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FFFFFF" android:offset="0.0" />
+                    <item android:color="#FDE68A" android:offset="0.25" />
+                    <item android:color="#EAB308" android:offset="0.55" />
+                    <item android:color="#B45309" android:offset="0.85" />
+                    <item android:color="#78350F" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
+        <!-- حليات وتضليع القبة -->
         <path
             android:pathData="M 256,124 Q 263,158 266,190"
             android:strokeWidth="2.2"
-            android:strokeColor="#7A5618" />
+            android:strokeColor="#78350F" />
         <path
             android:pathData="M 256,124 Q 249,158 246,190"
             android:strokeWidth="2.2"
-            android:strokeColor="#7A5618" />
+            android:strokeColor="#78350F" />
 
-        <!-- 3. شرفة الأذان العلوية (المقرنصات والتاج) -->
+        <!-- 5. شرفة الأذان العلوية (المقرنصات والتاج) -->
         <path android:pathData="M 218,190 L 294,190 L 290,202 L 222,202 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="0"
-                    android:startY="0"
-                    android:endX="512"
-                    android:endY="512"
+                    android:startX="218"
+                    android:startY="190"
+                    android:endX="294"
+                    android:endY="202"
                     android:type="linear">
-                    <item android:color="#EED17C" android:offset="0.0" />
-                    <item android:color="#B88E33" android:offset="0.40" />
-                    <item android:color="#7A5618" android:offset="0.80" />
-                    <item android:color="#462E08" android:offset="1.0" />
+                    <item android:color="#FEF3C7" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#5E3A06" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path
             android:pathData="M 220,196 L 292,196"
             android:strokeWidth="2"
-            android:strokeColor="#FCE182" />
+            android:strokeColor="#FEF08A" />
 
-        <!-- 4. طابق الغرفة النورانية العلوية (النوافذ الثلاثية) -->
+        <!-- 6. طابق الغرفة النورانية العلوية (النوافذ الثلاثية) -->
         <path android:pathData="M 225,202 h 62 v 60 h -62 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="225"
+                    android:startY="202"
+                    android:endX="287"
+                    android:endY="262"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FEF9C3" android:offset="0.0" />
+                    <item android:color="#EAB308" android:offset="0.50" />
+                    <item android:color="#854D0E" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path
             android:pathData="M 225,202 L 225,262"
             android:strokeWidth="3"
-            android:strokeColor="#7A5618" />
+            android:strokeColor="#78350F" />
         <path
             android:pathData="M 287,202 L 287,262"
             android:strokeWidth="3"
-            android:strokeColor="#7A5618" />
-        <!-- أقواس النوافذ المفرغة بلون العمق الكحلي -->
+            android:strokeColor="#78350F" />
+
+        <!-- تجاويف الأقواس بلون العمق الكحلي الداكن -->
         <path
             android:fillColor="#040F1D"
             android:pathData="M 249,262 L 249,222 C 249,214 263,214 263,222 L 263,262 Z M 269,262 L 269,228 C 269,222 279,222 279,228 L 279,262 Z M 233,262 L 233,228 C 233,222 243,222 243,228 L 243,262 Z" />
 
-        <!-- 5. الشرفة الرئيسية الكبرى -->
+        <!-- 7. الشرفة الرئيسية الكبرى -->
         <path android:pathData="M 210,262 L 302,262 L 296,278 L 216,278 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="0"
-                    android:startY="0"
-                    android:endX="512"
-                    android:endY="512"
+                    android:startX="210"
+                    android:startY="262"
+                    android:endX="302"
+                    android:endY="278"
                     android:type="linear">
-                    <item android:color="#EED17C" android:offset="0.0" />
-                    <item android:color="#B88E33" android:offset="0.40" />
-                    <item android:color="#7A5618" android:offset="0.80" />
-                    <item android:color="#462E08" android:offset="1.0" />
+                    <item android:color="#FDE68A" android:offset="0.0" />
+                    <item android:color="#B45309" android:offset="0.50" />
+                    <item android:color="#451A03" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path android:pathData="M 216,278 L 222,292 L 290,292 L 296,278 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="216"
+                    android:startY="278"
+                    android:endX="296"
+                    android:endY="292"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FFFBEB" android:offset="0.0" />
+                    <item android:color="#F59E0B" android:offset="0.50" />
+                    <item android:color="#78350F" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
 
-        <!-- 6. الجسد المعماري الأوسط (برج المئذنة) -->
+        <!-- 8. الجسد المعماري الأوسط (برج المئذنة المنقوش) -->
         <path android:pathData="M 220,292 h 72 v 66 h -72 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="220"
+                    android:startY="292"
+                    android:endX="292"
+                    android:endY="358"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FEF08A" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#854D0E" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path
             android:pathData="M 220,292 L 220,358"
             android:strokeWidth="4"
-            android:strokeColor="#7A5618" />
+            android:strokeColor="#78350F" />
         <path
             android:pathData="M 292,292 L 292,358"
             android:strokeWidth="4"
-            android:strokeColor="#7A5618" />
+            android:strokeColor="#78350F" />
 
-        <!-- نجمة البرج الإسلامية -->
+        <!-- نجمة البرج الإسلامية الهندسية -->
         <path
             android:fillColor="#040F1D"
             android:strokeWidth="1.8"
-            android:strokeColor="#B88E33"
+            android:strokeColor="#FDE68A"
             android:pathData="M 256,309 L 268,313 L 272,325 L 268,337 L 256,341 L 244,337 L 240,325 L 244,313 Z" />
         <path
-            android:fillColor="#FFF8DB"
+            android:fillColor="#FFFBEB"
             android:pathData="M 256,325 m -4.5,0 a 4.5,4.5 0 1,1 9,0 a 4.5,4.5 0 1,1 -9,0" />
 
-        <!-- 7. الإفريز الفاصل الممتد -->
+        <!-- 9. الإفريز الفاصل الممتد -->
         <path android:pathData="M 204,358 L 308,358 L 302,372 L 210,372 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="0"
-                    android:startY="0"
-                    android:endX="512"
-                    android:endY="512"
+                    android:startX="204"
+                    android:startY="358"
+                    android:endX="308"
+                    android:endY="372"
                     android:type="linear">
-                    <item android:color="#EED17C" android:offset="0.0" />
-                    <item android:color="#B88E33" android:offset="0.40" />
-                    <item android:color="#7A5618" android:offset="0.80" />
-                    <item android:color="#462E08" android:offset="1.0" />
+                    <item android:color="#FEF3C7" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#451A03" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path
             android:pathData="M 206,365 L 306,365"
             android:strokeWidth="2.5"
-            android:strokeColor="#FCE182" />
+            android:strokeColor="#FEF08A" />
 
-        <!-- 8. الطابق السفلي والبهو المعماري والقوس المحرابي الأندلسي -->
+        <!-- 10. البهو المعماري السفلي والمحراب الأندلسي -->
         <path android:pathData="M 210,372 h 92 v 56 h -92 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
+                    android:startX="210"
+                    android:startY="372"
+                    android:endX="302"
+                    android:endY="428"
                     android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
+                    <item android:color="#FEF08A" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#78350F" android:offset="1.0" />
                 </gradient>
             </aapt:attr>
         </path>
         <path
-            android:fillColor="#7A5618"
+            android:fillColor="#78350F"
             android:pathData="M 210,372 h 10 v 56 h -10 Z M 292,372 h 10 v 56 h -10 Z" />
 
-        <!-- تجويف المحراب الداخلي -->
+        <!-- تجويف المحراب الأندلسي -->
         <path
             android:fillColor="#040F1D"
             android:pathData="M 235,428 L 235,392 C 235,372 277,372 277,392 L 277,428 Z" />
         <path
             android:pathData="M 238,428 L 238,394 C 238,377 274,377 274,394 L 274,428"
             android:strokeWidth="2.5"
-            android:strokeColor="#FCE182" />
+            android:strokeColor="#FEF08A" />
 
-        <!-- 9. الأجنحة الزخرفية الإسلامية الجانبية (Arabesque Wings) بتدرجات الذهب اللامع والعتيق -->
+        <!-- 11. الأجنحة الزخرفية الإسلامية (Arabesque Wings) مشبعة بتدرج الذهب ثلاثي الأبعاد -->
         <path android:pathData="M 302,428 C 324,428 348,418 368,402 C 354,394 340,398 332,408 C 322,402 312,414 302,422 Z">
             <aapt:attr name="android:fillColor">
                 <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
-                    android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
-                </gradient>
-            </aapt:attr>
-        </path>
-        <path android:pathData="M 308,426 C 342,424 382,410 404,382 C 392,374 374,382 366,394 C 348,390 326,408 308,420 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="0"
-                    android:startY="0"
-                    android:endX="512"
-                    android:endY="512"
-                    android:type="linear">
-                    <item android:color="#EED17C" android:offset="0.0" />
-                    <item android:color="#B88E33" android:offset="0.40" />
-                    <item android:color="#7A5618" android:offset="0.80" />
-                    <item android:color="#462E08" android:offset="1.0" />
-                </gradient>
-            </aapt:attr>
-        </path>
-
-        <path android:pathData="M 210,428 C 188,428 164,418 144,402 C 158,394 172,398 180,408 C 190,402 200,414 210,422 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="102"
-                    android:startY="0"
-                    android:endX="410"
-                    android:endY="512"
-                    android:type="linear">
-                    <item android:color="#FFF8DB" android:offset="0.0" />
-                    <item android:color="#FCE182" android:offset="0.25" />
-                    <item android:color="#D4AF37" android:offset="0.55" />
-                    <item android:color="#9A7228" android:offset="0.85" />
-                    <item android:color="#5E4314" android:offset="1.0" />
-                </gradient>
-            </aapt:attr>
-        </path>
-        <path android:pathData="M 204,426 C 170,424 130,410 108,382 C 120,374 138,382 146,394 C 164,390 186,408 204,420 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="0"
-                    android:startY="0"
-                    android:endX="512"
-                    android:endY="512"
-                    android:type="linear">
-                    <item android:color="#EED17C" android:offset="0.0" />
-                    <item android:color="#B88E33" android:offset="0.40" />
-                    <item android:color="#7A5618" android:offset="0.80" />
-                    <item android:color="#462E08" android:offset="1.0" />
-                </gradient>
-            </aapt:attr>
-        </path>
-
-        <!-- 10. قاعدة الصرح الراسخة -->
-        <path android:pathData="M 76,432 L 436,432 L 420,442 L 92,442 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="0"
-                    android:startY="0"
-                    android:endX="512"
-                    android:endY="512"
-                    android:type="linear">
-                    <item android:color="#EED17C" android:offset="0.0" />
-                    <item android:color="#B88E33" android:offset="0.40" />
-                    <item android:color="#7A5618" android:offset="0.80" />
-                    <item android:color="#462E08" android:offset="1.0" />
-                </gradient>
-            </aapt:attr>
-        </path>
-        <path
-            android:pathData="M 80,432 L 432,432"
-            android:strokeWidth="3"
-            android:strokeColor="#FCE182" />
-        <path
-            android:fillColor="#FCE182"
-            android:pathData="M 180,442 h 152 v 6 h -152 Z" />
-
-    </group>
-</vector>
+                    android:startX="302"
+                    android:startY="394"
