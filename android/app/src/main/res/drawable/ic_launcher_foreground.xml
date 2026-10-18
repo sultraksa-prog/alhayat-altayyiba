@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- صرح الحياة الطيبة المذهب بالوسط -->
+    <group
+        android:scaleX="0.68"
+        android:scaleY="0.68"
+        android:pivotX="256"
+        android:pivotY="256">
+
+        <!-- 1. الهلال الشريف والسارية -->
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 256,58 A 22,22 0 1,1 256,102 A 16.5,16.5 0 1,0 256,58 Z" />
+        <path
+            android:fillColor="#FFFBEB"
+            android:pathData="M 256,80 m -3.2,0 a 3.2,3.2 0 1,1 6.4,0 a 3.2,3.2 0 1,1 -6.4,0" />
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 254.5,102 L 257.5,102 L 257.5,124 L 254.5,124 Z" />
+
+        <!-- 2. قبة المئذنة الملكية -->
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 256,124 C 278,144 294,166 288,190 L 224,190 C 218,166 234,144 256,124 Z" />
+
+        <!-- 3. شرفة الأذان العلوية -->
+        <path
+            android:fillColor="#D4AF37"
+            android:pathData="M 218,190 L 294,190 L 290,202 L 222,202 Z" />
+
+        <!-- 4. طابق الغرفة النورانية العلوية -->
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 225,202 h 62 v 60 h -62 Z" />
+        <path
+            android:fillColor="#09203F"
+            android:pathData="M 249,262 L 249,222 C 249,214 263,214 263,222 L 263,262 Z M 269,262 L 269,228 C 269,222 279,222 279,228 L 279,262 Z M 233,262 L 233,228 C 233,222 243,222 243,228 L 243,262 Z" />
+
+        <!-- 5. الشرفة الرئيسية الكبرى والمقرنصات -->
+        <path
+            android:fillColor="#D4AF37"
+            android:pathData="M 210,262 L 302,262 L 296,278 L 216,278 Z" />
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 216,278 L 222,292 L 290,292 L 296,278 Z" />
+
+        <!-- 6. جسد المئذنة المنقوش -->
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 220,292 h 72 v 66 h -72 Z" />
+        <path
+            android:fillColor="#09203F"
+            android:pathData="M 256,309 L 268,313 L 272,325 L 268,337 L 256,341 L 244,337 L 240,325 L 244,313 Z" />
+
+        <!-- 7. الإفريز الفاصل -->
+        <path
+            android:fillColor="#D4AF37"
+            android:pathData="M 204,358 L 308,358 L 302,372 L 210,372 Z" />
+
+        <!-- 8. البهو المعماري والقوس المحرابي الأندلسي -->
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 210,372 h 92 v 56 h -92 Z" />
+        <path
+            android:fillColor="#09203F"
+            android:pathData="M 235,428 L 235,392 C 235,372 277,372 277,392 L 277,428 Z" />
+
+        <!-- 9. الأجنحة الزخرفية الإسلامية الجانبية -->
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 302,428 C 324,428 348,418 368,402 C 354,394 340,398 332,408 C 322,402 312,414 302,422 Z M 210,428 C 188,428 164,418 144,402 C 158,394 172,398 180,408 C 190,402 200,414 210,422 Z" />
+        <path
+            android:fillColor="#D4AF37"
+            android:pathData="M 308,426 C 342,424 382,410 404,382 C 392,374 374,382 366,394 C 348,390 326,408 308,420 Z M 204,426 C 170,424 130,410 108,382 C 120,374 138,382 146,394 C 164,390 186,408 204,420 Z" />
+
+        <!-- 10. قاعدة الصرح الراسخة -->
+        <path
+            android:fillColor="#D4AF37"
+            android:pathData="M 76,432 L 436,432 L 420,442 L 92,442 Z" />
+        <path
+            android:fillColor="#FCD34D"
+            android:pathData="M 180,442 h 152 v 6 h -152 Z" />
+
+    </group>
+</vector>
