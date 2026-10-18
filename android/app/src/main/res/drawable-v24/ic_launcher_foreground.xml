@@ -283,3 +283,110 @@
                 <gradient
                     android:startX="302"
                     android:startY="394"
+                    android:endX="368"
+                    android:endY="428"
+                    android:type="linear">
+                    <item android:color="#FFFBEB" android:offset="0.0" />
+                    <item android:color="#FCD34D" android:offset="0.45" />
+                    <item android:color="#92400E" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:pathData="M 308,426 C 342,424 382,410 404,382 C 392,374 374,382 366,394 C 348,390 326,408 308,420 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="308"
+                    android:startY="374"
+                    android:endX="404"
+                    android:endY="426"
+                    android:type="linear">
+                    <item android:color="#FDE68A" android:offset="0.0" />
+                    <item android:color="#B45309" android:offset="0.55" />
+                    <item android:color="#451A03" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:pathData="M 302,428 C 350,428 398,406 422,364 C 408,358 394,368 388,382 C 366,380 336,408 302,426 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="302"
+                    android:startY="358"
+                    android:endX="422"
+                    android:endY="428"
+                    android:type="linear">
+                    <item android:color="#FFF8DB" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#78350F" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <!-- الجناح الأيسر المتطابق -->
+        <path android:pathData="M 210,428 C 188,428 164,418 144,402 C 158,394 172,398 180,408 C 190,402 200,414 210,422 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="210"
+                    android:startY="394"
+                    android:endX="144"
+                    android:endY="428"
+                    android:type="linear">
+                    <item android:color="#FFFBEB" android:offset="0.0" />
+                    <item android:color="#FCD34D" android:offset="0.45" />
+                    <item android:color="#92400E" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:pathData="M 204,426 C 170,424 130,410 108,382 C 120,374 138,382 146,394 C 164,390 186,408 204,420 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="204"
+                    android:startY="374"
+                    android:endX="108"
+                    android:endY="426"
+                    android:type="linear">
+                    <item android:color="#FDE68A" android:offset="0.0" />
+                    <item android:color="#B45309" android:offset="0.55" />
+                    <item android:color="#451A03" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:pathData="M 210,428 C 162,428 114,406 90,364 C 104,358 118,368 124,382 C 146,380 176,408 210,426 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="210"
+                    android:startY="358"
+                    android:endX="90"
+                    android:endY="428"
+                    android:type="linear">
+                    <item android:color="#FFF8DB" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#78350F" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <!-- 12. قاعدة الصرح الراسخة -->
+        <path android:pathData="M 76,432 L 436,432 L 420,442 L 92,442 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="76"
+                    android:startY="432"
+                    android:endX="436"
+                    android:endY="442"
+                    android:type="linear">
+                    <item android:color="#FEF08A" android:offset="0.0" />
+                    <item android:color="#D4AF37" android:offset="0.50" />
+                    <item android:color="#78350F" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path
+            android:pathData="M 80,432 L 432,432"
+            android:strokeWidth="3"
+            android:strokeColor="#FEF08A" />
+        <path
+            android:fillColor="#FEF08A"
+            android:pathData="M 180,442 h 152 v 6 h -152 Z" />
+
+    </group>
+</vector>
