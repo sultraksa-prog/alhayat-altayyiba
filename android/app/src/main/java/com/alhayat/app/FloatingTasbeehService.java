@@ -79,53 +79,61 @@ public class FloatingTasbeehService extends Service {
         } catch (Exception ignored) {}
     }
 
+    private int dp(float value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
     private View buildFloatingWidgetView() {
         FrameLayout root = new FrameLayout(this);
 
-        // الكرت الأخضر الزيتي الأساسي
+        // الكرت الملكي المكبر (3 أضعاف الحجم السابق)
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER);
-        card.setPadding(36, 24, 36, 24);
+        card.setPadding(dp(28), dp(20), dp(28), dp(20));
+        card.setMinimumWidth(dp(170)); // عرض كبير وفسيح ومريح للمس
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.parseColor("#1E503F")); // اللون الزيتي الزمردي المطابق للصورة
-        bg.setCornerRadius(38f);
-        bg.setStroke(2, Color.parseColor("#2D7A5F"));
+        bg.setColor(Color.parseColor("#09203F")); // الكحلي الملكي لهوية التطبيق
+        bg.setCornerRadius(dp(32));
+        bg.setStroke(dp(3f), Color.parseColor("#D4AF37")); // إطار ذهبي مذهب بارز
         card.setBackground(bg);
 
-        // 1. نص الذكر
+        // 1. نص الذكر (مكبر باللون الذهبي الفاتح)
         tvDhikr = new TextView(this);
         tvDhikr.setText(dhikrText);
-        tvDhikr.setTextColor(Color.parseColor("#E2E8F0"));
-        tvDhikr.setTextSize(14f);
+        tvDhikr.setTextColor(Color.parseColor("#FDE68A"));
+        tvDhikr.setTextSize(18f);
+        tvDhikr.setTypeface(null, android.graphics.Typeface.BOLD);
         tvDhikr.setGravity(Gravity.CENTER);
 
-        // 2. العداد الكبير
+        // 2. العداد العملاق (واضح جداً من مسافة بعيدة)
         tvCount = new TextView(this);
         tvCount.setText(String.valueOf(currentCount));
         tvCount.setTextColor(Color.WHITE);
-        tvCount.setTextSize(34f);
+        tvCount.setTextSize(54f);
         tvCount.setTypeface(null, android.graphics.Typeface.BOLD);
         tvCount.setGravity(Gravity.CENTER);
 
-        // 3. الهدف والتقدم
+        // 3. الهدف والتقدم (بالأخضر الزمردي المشرق)
         tvProgress = new TextView(this);
         tvProgress.setText(currentCount + " / " + targetCount);
-        tvProgress.setTextColor(Color.parseColor("#A7F3D0"));
-        tvProgress.setTextSize(12f);
+        tvProgress.setTextColor(Color.parseColor("#86EFAC"));
+        tvProgress.setTextSize(15f);
+        tvProgress.setTypeface(null, android.graphics.Typeface.BOLD);
         tvProgress.setGravity(Gravity.CENTER);
 
         card.addView(tvDhikr);
         card.addView(tvCount);
         card.addView(tvProgress);
 
-        // زر إغلاق صغير (✕) في الزاوية العلوية
+        // زر إغلاق أنيق في الزاوية
         TextView closeBtn = new TextView(this);
         closeBtn.setText("✕");
-        closeBtn.setTextColor(Color.parseColor("#94A3B8"));
-        closeBtn.setTextSize(11f);
-        closeBtn.setPadding(12, 6, 12, 6);
+        closeBtn.setTextColor(Color.parseColor("#FCD34D"));
+        closeBtn.setTextSize(14f);
+        closeBtn.setTypeface(null, android.graphics.Typeface.BOLD);
+        closeBtn.setPadding(dp(14), dp(8), dp(14), dp(8));
         FrameLayout.LayoutParams closeParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
