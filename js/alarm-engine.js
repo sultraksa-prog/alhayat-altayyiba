@@ -1262,12 +1262,21 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
         setTimeout(runSystemPermissionsDiagnostic, 1000);
       });
 
-      // 5. الظهور فوق التطبيقات وشاشة القفل
-      const isOverlayOk = localStorage.getItem('hayat_overlay_granted') === 'true';
+      // 5. الظهور فوق التطبيقات والمسبحة العائمة (فحص أندرويد الفعلي الحي)
+      let isOverlayOk = false;
+      if (isApp && window.AndroidBridge && typeof window.AndroidBridge.hasOverlayPermission === 'function') {
+        isOverlayOk = window.AndroidBridge.hasOverlayPermission();
+      } else {
+        isOverlayOk = localStorage.getItem('hayat_overlay_granted') === 'true';
+      }
+
       updateCardStatus('diagCardOverlay', 'badgeOverlay', 'btnFixOverlay', isOverlayOk, () => {
-        localStorage.setItem('hayat_overlay_granted', 'true');
-        openNativeAppSettings('android.settings.action.MANAGE_OVERLAY_PERMISSION');
-        setTimeout(runSystemPermissionsDiagnostic, 1000);
+        if (isApp && window.AndroidBridge && typeof window.AndroidBridge.requestOverlayPermission === 'function') {
+          window.AndroidBridge.requestOverlayPermission();
+        } else {
+          openNativeAppSettings('android.settings.action.MANAGE_OVERLAY_PERMISSION');
+        }
+        setTimeout(runSystemPermissionsDiagnostic, 1200);
       });
 
       // 6. التشغيل التلقائي (Autostart)
