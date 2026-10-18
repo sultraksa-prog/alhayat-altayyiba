@@ -500,9 +500,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!activeScreen || activeScreen === screenHome) {
       const now = Date.now();
       if (lastExitAttemptTime > 0 && (now - lastExitAttemptTime < 2000)) {
-        // الضغطة الثانية المؤكدة خلال ثانيتين: خروج فوري ونهائي
+        // الضغطة الثانية المؤكدة خلال ثانيتين: خروج فوري ونهائي من التطبيق
         hideExitToast();
         lastExitAttemptTime = 0;
+
+        // إغلاق حقيقي لأندرويد عبر الجسر الأصلي أو محرك كاباسيتور
+        if (window.AndroidBridge && typeof window.AndroidBridge.exitApp === 'function') {
+          window.AndroidBridge.exitApp();
+          return;
+        }
+        if (window.Capacitor?.Plugins?.App?.exitApp) {
+          window.Capacitor.Plugins.App.exitApp();
+          return;
+        }
+
         try { window.close(); } catch(e) {}
         history.back();
       } else {
@@ -519,6 +530,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
   });
+
+  // التقاط زر الرجوع المادي وإيماءة السحب في هواتف الأندرويد عبر Capacitor
+  if (window.Capacitor?.Plugins?.App) {
+    window.Capacitor.Plugins.App.addListener('backButton', () => {
+      window.dispatchEvent(new Event('popstate'));
+    });
+  }
 
   let pendingExitTargetScreen = null;
 
@@ -4756,7 +4774,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.135',
+    version: '2.1.136',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
