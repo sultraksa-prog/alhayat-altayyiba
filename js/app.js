@@ -4756,7 +4756,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.134',
+    version: '2.1.135',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -7189,28 +7189,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const pipBtn = document.getElementById('startFloatingWidgetBtn');
   const pipPermissionModal = document.getElementById('tasbeehPipPermissionModal');
   const closePipPermBtn = document.getElementById('closePipPermissionBtn');
+  const grantPipPermBtn = document.getElementById('grantPipPermissionBtn');
 
   if (closePipPermBtn && pipPermissionModal) {
     closePipPermBtn.onclick = () => pipPermissionModal.classList.remove('show');
+  }
+
+  // عند الضغط على زر الإعدادات في النافذة المنبثقة: نقل المستخدم لمكان منح الإذن فوراً
+  if (grantPipPermBtn && pipPermissionModal) {
+    grantPipPermBtn.onclick = () => {
+      pipPermissionModal.classList.remove('show');
+      if (window.AndroidBridge && typeof window.AndroidBridge.requestOverlayPermission === 'function') {
+        window.AndroidBridge.requestOverlayPermission();
+      }
+    };
   }
 
   if (pipBtn) {
     pipBtn.onclick = async () => {
       const activeItem = getActiveTasbeehItem();
 
-      // أ) بيئة الأندرويد الأصيلة عند تجميع الـ APK
+      // أ) بيئة الأندرويد الأصيلة: فحص الصلاحية وإظهار النافذة التوجيهية إن لم تكن ممنوحة
       if (window.AndroidBridge && typeof window.AndroidBridge.showFloatingTasbeeh === 'function') {
         const hasPerm = (typeof window.AndroidBridge.hasOverlayPermission === 'function')
           ? window.AndroidBridge.hasOverlayPermission()
           : true;
 
         if (!hasPerm) {
-          if (typeof window.AndroidBridge.requestOverlayPermission === 'function') {
-            window.AndroidBridge.requestOverlayPermission();
-          }
-          if (typeof showGuidanceToast === 'function') {
-            showGuidanceToast('يرجى تفعيل صلاحية الظهور فوق التطبيقات لتشغيل المسبحة العائمة 🪟');
-          }
+          // إظهار النافذة المنبثقة التوجيهية أولاً لمنع القفز المفاجئ للإعدادات
+          if (pipPermissionModal) pipPermissionModal.classList.add('show');
           return;
         }
 
