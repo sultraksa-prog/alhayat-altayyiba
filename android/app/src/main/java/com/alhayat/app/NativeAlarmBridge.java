@@ -242,4 +242,14 @@ public class NativeAlarmBridge {
             context.stopService(intent);
         } catch (Exception ignored) {}
     }
+
+    // 15. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
+    @JavascriptInterface
+    public void exitApp() {
+        if (context instanceof android.app.Activity) {
+            ((android.app.Activity) context).runOnUiThread(() -> {
+                ((android.app.Activity) context).finishAffinity();
+            });
+        }
+    }
 }
