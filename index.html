@@ -1426,14 +1426,14 @@
             </div>
           </div>
 
-          <!-- 5. الظهور فوق التطبيقات وشاشة القفل -->
+          <!-- 5. الظهور فوق التطبيقات (المسبحة العائمة وشاشة الأذان) -->
           <div class="diag-unified-card" id="diagCardOverlay">
             <div class="diag-icon-box bg-icon-purple">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
             </div>
             <div class="diag-info-col">
-              <h4 class="diag-item-title">الظهور فوق التطبيقات وقفل الشاشة</h4>
-              <p class="diag-item-desc">لإظهار نافذة الأذان العائمة وزر الإيقاف فوق قفل الهاتف</p>
+              <h4 class="diag-item-title">المسبحة العائمة والظهور فوق التطبيقات</h4>
+              <p class="diag-item-desc">لتشغيل كرت المسبحة خارج التطبيق وعرض شاشة الأذان فوق القفل</p>
             </div>
             <div class="diag-action-slot">
               <button type="button" class="btn-diag-unified-fix" id="btnFixOverlay">إصلاح الآن</button>
@@ -3407,16 +3407,18 @@
       </div>
     </div>
 
-<!-- نافذة إرشاد تفعيل صلاحية الظهور فوق التطبيقات -->
-    <div class="custom-modal-backdrop" id="tasbeehPipPermissionModal">
-      <div class="custom-modal-card text-center" style="max-width: 320px;">
-        <div style="font-size: 38px; margin-bottom: 8px;">🪟</div>
-        <h3 class="modal-card-title" style="margin-bottom: 6px;">صلاحية النافذة العائمة</h3>
-        <p class="celebration-text" style="font-size: 13px; line-height: 1.6; margin-bottom: 18px;">
-          لتشغيل المسبحة أثناء تصفح التطبيقات الأخرى، يرجى السماح لمتصفح Chrome بصلاحية <strong>(صورة داخل صورة / الظهور فوق التطبيقات)</strong> من إعدادات الجوال.
+<!-- نافذة توجيه تفعيل صلاحية المسبحة العائمة -->
+    <div class="custom-modal-backdrop" id="tasbeehPipPermissionModal" style="z-index: 480;">
+      <div class="custom-modal-card text-center" style="max-width: 325px; padding: 22px 18px;">
+        <div style="font-size: 38px; margin-bottom: 6px;">🪟</div>
+        <h3 class="modal-card-title" style="margin-bottom: 8px; color: var(--primary-deep); font-size: 16.5px;">تفعيل المسبحة العائمة</h3>
+        <p class="celebration-text" style="font-size: 12.8px; line-height: 1.7; margin-bottom: 20px; color: var(--text-secondary);">
+          لتشغيل المسبحة خارج التطبيق واستخدامها فوق شاشة هاتفك الرئيسية، يلزم منح تطبيق «الحياة الطيبة» صلاحية <strong>(الظهور فوق التطبيقات الأخرى)</strong>.<br>
+          اضغط أدناه للانتقال للمفتاح وتفعيله.
         </p>
-        <div class="modal-actions-row" style="justify-content: center;">
-          <button type="button" class="modal-btn-primary" id="closePipPermissionBtn" style="padding: 9px 32px;">حسناً، فهمت</button>
+        <div class="modal-actions-row" style="justify-content: center; gap: 10px; margin-top: 0;">
+          <button type="button" class="modal-btn-link text-muted" id="closePipPermissionBtn" style="flex: 1; border: 1px solid #CBD5E1; border-radius: 12px; padding: 10px;">لاحقاً</button>
+          <button type="button" class="modal-btn-primary" id="grantPipPermissionBtn" style="flex: 2; padding: 10px; background: #15803D;">⚙️ تفعيل الصلاحية</button>
         </div>
       </div>
     </div>
