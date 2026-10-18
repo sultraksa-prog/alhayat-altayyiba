@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#09203F"
-        android:pathData="M0,0h108v108h-108z" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- التدرج الكحلي الملكي العميق للأرضية مطابق تماماً لأيقونة PWA -->
+    <path android:pathData="M0,0h512v512h-512z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="256"
+                android:centerY="215"
+                android:gradientRadius="348"
+                android:type="radial">
+                <item android:color="#143D6D" android:offset="0.0" />
+                <item android:color="#09203F" android:offset="0.45" />
+                <item android:color="#030C18" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>
