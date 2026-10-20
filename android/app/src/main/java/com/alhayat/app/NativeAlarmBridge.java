@@ -243,7 +243,26 @@ public class NativeAlarmBridge {
         } catch (Exception ignored) {}
     }
 
-    // 15. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
+    // 15. فحص هل المسبحة العائمة تعمل حالياً على الشاشة
+    @JavascriptInterface
+    public boolean isFloatingTasbeehRunning() {
+        return FloatingTasbeehService.isServiceRunning();
+    }
+
+    // 16. حفظ إعدادات تخصيص المسبحة العائمة في نظام الأندرويد
+    @JavascriptInterface
+    public void saveFloatingTasbeehSettings(int scalePercent, boolean showCloseBtn, boolean longPressToOpen, boolean preventEdgeOverlap, boolean autoOpenOnLaunch) {
+        SharedPreferences sp = context.getSharedPreferences("AlHayatTasbeehPrefs", Context.MODE_PRIVATE);
+        sp.edit()
+                .putInt("scalePercent", scalePercent)
+                .putBoolean("showCloseBtn", showCloseBtn)
+                .putBoolean("longPressToOpen", longPressToOpen)
+                .putBoolean("preventEdgeOverlap", preventEdgeOverlap)
+                .putBoolean("autoOpenOnLaunch", autoOpenOnLaunch)
+                .apply();
+    }
+
+    // 17. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
     @JavascriptInterface
     public void exitApp() {
         if (context instanceof android.app.Activity) {
