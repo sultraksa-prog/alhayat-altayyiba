@@ -55,6 +55,7 @@ public class AdhanActivity extends Activity implements SensorEventListener {
 
         String prayerName = getIntent().getStringExtra("prayerName");
         if (prayerName == null || prayerName.isEmpty()) prayerName = "الصلاة";
+        boolean isGeneralAlarm = getIntent().getBooleanExtra("isGeneralAlarm", false);
 
         // 3. بناء الواجهة المنبثقة برمجياً ككرت عائم علوي فاخر مطابق لمنبه شاومي
         LinearLayout rootLayout = new LinearLayout(this);
@@ -80,7 +81,7 @@ public class AdhanActivity extends Activity implements SensorEventListener {
         textCol.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
 
         TextView titleText = new TextView(this);
-        titleText.setText("حان الآن أذان " + prayerName + " 🕌");
+        titleText.setText(isGeneralAlarm ? ("⏰ حان موعد: " + prayerName) : ("حان الآن أذان " + prayerName + " 🕌"));
         titleText.setTextColor(Color.parseColor("#FDE68A"));
         titleText.setTextSize(16f);
         titleText.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -93,7 +94,41 @@ public class AdhanActivity extends Activity implements SensorEventListener {
         textCol.addView(titleText);
         textCol.addView(subText);
 
-        // زر إيقاف الأذان البارز (مطابق لزر الإيقاف في منبه شاومي)
+        // حاوية أزرار الإجراءات
+        LinearLayout btnRow = new LinearLayout(this);
+        btnRow.setOrientation(LinearLayout.HORIZONTAL);
+        btnRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        // زر الغفوة (5 دقائق) يظهر فقط للمنبهات العامة
+        if (isGeneralAlarm) {
+            Button snoozeBtn = new Button(this);
+            snoozeBtn.setText("💤 غفوة");
+            snoozeBtn.setTextColor(Color.parseColor("#09203F"));
+            snoozeBtn.setTextSize(13f);
+            snoozeBtn.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            GradientDrawable snoozeBg = new GradientDrawable();
+            snoozeBg.setColor(Color.parseColor("#FCD34D")); // ذهبي المنبه
+            snoozeBg.setCornerRadius(30f);
+            snoozeBtn.setBackground(snoozeBg);
+            snoozeBtn.setPadding(20, 10, 20, 10);
+            LinearLayout.LayoutParams snzParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            snzParams.setMargins(0, 0, 12, 0);
+            snoozeBtn.setLayoutParams(snzParams);
+
+            snoozeBtn.setOnClickListener(v -> {
+                // جدولة غفوة تلقائية بعد 5 دقائق
+                NativeAlarmBridge bridge = new NativeAlarmBridge(this);
+                bridge.scheduleGeneralAlarm("snooze_" + System.currentTimeMillis(), System.currentTimeMillis() + (5 * 60 * 1000L), prayerName, "", true);
+                dismissAlarmAndFinish();
+            });
+            btnRow.addView(snoozeBtn);
+        }
+
+        // زر إيقاف المنبه البارز
         Button stopBtn = new Button(this);
         stopBtn.setText("⏹ إيقاف");
         stopBtn.setTextColor(Color.WHITE);
@@ -105,8 +140,9 @@ public class AdhanActivity extends Activity implements SensorEventListener {
         stopBtnBg.setCornerRadius(30f);
         stopBtn.setBackground(stopBtnBg);
         stopBtn.setPadding(24, 12, 24, 12);
-
         stopBtn.setOnClickListener(v -> dismissAlarmAndFinish());
+
+        btnRow.addView(stopBtn);
 
         // الضغط على الكرت يفتح التطبيق الرئيسي
         card.setOnClickListener(v -> {
@@ -117,7 +153,7 @@ public class AdhanActivity extends Activity implements SensorEventListener {
         });
 
         card.addView(textCol);
-        card.addView(stopBtn);
+        card.addView(btnRow);
         rootLayout.addView(card);
 
         setContentView(rootLayout);
