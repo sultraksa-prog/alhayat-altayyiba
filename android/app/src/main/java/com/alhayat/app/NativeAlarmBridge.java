@@ -252,7 +252,7 @@ public class NativeAlarmBridge {
     // 16. حفظ إعدادات تخصيص المسبحة العائمة في نظام الأندرويد
     @JavascriptInterface
     public void saveFloatingTasbeehSettings(int scalePercent, boolean showCloseBtn, boolean longPressToOpen, boolean preventEdgeOverlap, boolean autoOpenOnLaunch) {
-        SharedPreferences sp = context.getSharedPreferences("AlHayatTasbeehPrefs", Context.MODE_PRIVATE);
+        android.content.SharedPreferences sp = context.getSharedPreferences("AlHayatTasbeehPrefs", Context.MODE_PRIVATE);
         sp.edit()
                 .putInt("scalePercent", scalePercent)
                 .putBoolean("showCloseBtn", showCloseBtn)
