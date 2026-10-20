@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alhayat-cache-v2.1.139';
+const CACHE_NAME = 'alhayat-cache-v2.1.140';
 const ASSETS = [
   './',
   './index.html',
@@ -24,7 +24,14 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      // حماية التثبيت وتخزين كل ملف متاح دون توقف الكاش عند انقطاع الشبكة
+      return Promise.allSettled(
+        ASSETS.map((asset) =>
+          cache.add(asset).catch(() => {})
+        )
+      );
+    })
   );
 });
 
