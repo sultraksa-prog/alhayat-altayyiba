@@ -530,6 +530,18 @@
           <span class="settings-item-title">إعدادات أذكار اليوم والليلة</span>
         </div>
 
+        <!-- 4.1 إعدادات المسبحة الإلكترونية والعائمة -->
+        <div class="settings-menu-card highlight-card" id="openTasbeehSettingsFromMenu">
+          <div class="settings-item-icon bg-icon-emerald">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="7"/><circle cx="12" cy="17" r="1.5" fill="currentColor"/><path d="M12 18.5v3.5"/><path d="M10 22h4"/></svg>
+          </div>
+          <div style="flex-grow: 1; text-align: right;">
+            <h4 class="settings-item-title" style="margin: 0; font-size: 15px;">إعدادات المسبحة الإلكترونية</h4>
+            <span style="font-size: 11.5px; color: var(--text-secondary);">ضبط حجم المسبحة العائمة وخيارات الإغلاق والحواف</span>
+          </div>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+
         <!-- 5. إعدادات أخرى -->
         <div class="settings-menu-card" id="openOtherSettingsBtn">
           <div class="settings-item-icon bg-icon-indigo">
@@ -2240,7 +2252,11 @@
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
 
-          <div class="dropdown-menu" id="tasbeehDropdownMenu" style="width: 195px; top: 46px; left: 0;">
+          <div class="dropdown-menu" id="tasbeehDropdownMenu" style="width: 200px; top: 46px; left: 0;">
+            <div class="dropdown-item" id="openTasbeehSettingsModalFromMenu" style="color: var(--primary-blue); font-weight: 700;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>إعدادات المسبحة</span>
+            </div>
             <div class="dropdown-item" id="toggleTasbeehWakeLockBtn">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
               <span id="wakeLockStatusText">إبقاء الشاشة مضاءة</span>
@@ -2504,6 +2520,89 @@
             <span class="t-theme-title">أيقونة سوداء</span>
             <button type="button" class="theme-apply-btn">استخدم</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== نافذة إعدادات المسبحة والمسبحة العائمة ==================== -->
+    <div class="bottom-sheet-backdrop" id="tasbeehSettingsModal" style="z-index: 490;">
+      <div class="bottom-sheet" style="max-height: 86vh; overflow-y: auto;">
+        <div class="sheet-drag-handle"></div>
+
+        <div class="sheet-header" style="margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">⚙️</span>
+            <h3 class="sheet-title" style="margin: 0; font-size: 16px;">إعدادات المسبحة والعائمة</h3>
+          </div>
+          <button type="button" class="modal-btn-link" id="closeTasbeehSettingsModalBtn" style="font-size: 18px;">✕</button>
+        </div>
+
+        <!-- 1. شريط التحكم بحجم المسبحة العائمة (تصغير بنسبة 25% كحجم افتراضي) -->
+        <div class="setting-block" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:12px 14px;">
+          <div class="setting-header-inline">
+            <h4 class="setting-label" style="margin:0; font-size:14px;">حجم المسبحة العائمة</h4>
+            <span class="font-size-val" id="tasbeehScaleDisplay">75%</span>
+          </div>
+          <input type="range" id="tasbeehScaleSlider" min="50" max="130" value="75" step="5" class="custom-slider" style="margin-top:10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 4px;">
+            <span>صغير (50%)</span>
+            <span>افتراضي (75%)</span>
+            <span>كبير (130%)</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider" style="margin:14px 0 10px 0;">
+
+        <!-- 2. خيار زر الإغلاق ✕ (معطل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">إظهار زر الإغلاق (✕) على المسبحة</h4>
+            <p class="setting-desc">إظهار علامة إغلاق صغيرة في زاوية الكرت العائم لإنهاء المسبحة بنقرة زر</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleTasbeehShowCloseBtn">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 3. خيار الضغط المطول 3 ثوانٍ لفتح التطبيق (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title" style="color:#15803D;">الضغط المطوّل (3 ثوانٍ) لفتح التطبيق</h4>
+            <p class="setting-desc">الاستمرار بالضغط على الكرت العائم لـ 3 ثوانٍ يفتح التطبيق ويغلق المسبحة تلقائياً</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleTasbeehLongPressOpen" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 4. خيار التوجيه للمسبحة عند فتح التطبيق (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">التوجيه المباشر للمسبحة عند فتح التطبيق</h4>
+            <p class="setting-desc">إذا فتحت التطبيق أثناء تشغيل المسبحة العائمة، تُغلق وتنتقل فوراً لشاشة المسبحة لمتابعة تقدمك</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleTasbeehAutoOpenOnResume" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 5. خيار منع تداخل المسبحة مع حواف الشاشة (مفعل افتراضياً) -->
+        <div class="setting-toggle-row">
+          <div class="setting-text-col">
+            <h4 class="setting-title">منع خروج المسبحة عن حواف الشاشة</h4>
+            <p class="setting-desc">تثبيت الكرت داخل حدود الشاشة الآمنة ومنعه من الاختفاء خلف أطراف الهاتف</p>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="toggleTasbeehPreventEdgeOverlap" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <button type="button" class="btn-confirm-prayer-offset" id="btnSaveTasbeehSettingsModal" style="width:100%; padding:12px 0;">حفظ الإعدادات</button>
         </div>
       </div>
     </div>
