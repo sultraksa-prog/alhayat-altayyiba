@@ -58,6 +58,35 @@ public class AdhanService extends Service {
             return START_NOT_STICKY;
         }
 
+        // إبقاء إشعار الغفوة موضحاً فيه وقت الرنين القادم
+        if ("SHOW_SNOOZE_NOTIFICATION".equals(intent != null ? intent.getAction() : null)) {
+            if (mediaPlayer != null) {
+                try { if (mediaPlayer.isPlaying()) mediaPlayer.stop(); mediaPlayer.release(); } catch (Exception ignored) {}
+                mediaPlayer = null;
+            }
+            if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+
+            long snzTime = intent.getLongExtra("snoozeTimeMillis", System.currentTimeMillis() + 300000);
+            java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("hh:mm a", new java.util.Locale("ar"));
+            String nextTimeString = df.format(new java.util.Date(snzTime));
+
+            Intent cancelSnoozeIntent = new Intent(this, AdhanService.class);
+            cancelSnoozeIntent.setAction("STOP_ADHAN");
+            PendingIntent pCancel = PendingIntent.getService(this, 999, cancelSnoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            Notification snoozeNotif = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle("💤 المنبه في وضع الغفوة: " + prayerName)
+                    .setContentText("سيرن مجدداً الساعة " + nextTimeString)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setOngoing(true)
+                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "إلغاء الغفوة ✕", pCancel)
+                    .build();
+
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.notify(1001, snoozeNotif);
+            return START_NOT_STICKY;
+        }
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(notifTitle)
                 .setContentText(notifText)
