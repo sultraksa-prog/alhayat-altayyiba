@@ -411,36 +411,56 @@ function renderPrayerAlarmsList(container) {
 }
 
 function renderGeneralAlarmsList(container) {
-  const generalAlarms = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [
-    { id: 'g1', title: 'صلاة الضحى والورد', time: '09:30', enabled: true },
-    { id: 'g2', title: 'أذكار المساء وقراءة القرآن', time: '17:00', enabled: true }
-  ];
+  const generalAlarms = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
 
   if (generalAlarms.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13.5px;">لا توجد منبهات عامة.<br><small style="margin-top:6px; display:block;">اضغط زر (+) بالأسفل لإنشاء منبه جديد.</small></div>`;
+    container.innerHTML = `<div style="text-align:center; padding:35px 20px; color:var(--text-muted); font-size:13.5px;">لا توجد منبهات مضافة حالياً.<br><small style="margin-top:8px; display:block; color:var(--primary-blue); font-weight:700;">اضغط زر (+) بالأسفل لإضافة منبه جوال حقيقي بصوتك المفضل.</small></div>`;
     return;
   }
 
+  const dayNamesMap = { 0: 'أحد', 1: 'اثنين', 2: 'ثلاثاء', 3: 'أربعاء', 4: 'خميس', 5: 'جمعة', 6: 'سبت' };
+
   generalAlarms.forEach((item, idx) => {
+    let repeatText = 'مرة واحدة';
+    if (Array.isArray(item.days)) {
+      if (item.days.length === 7) repeatText = 'يومياً';
+      else if (item.days.length === 5 && [0,1,2,3,4].every(d => item.days.includes(d))) repeatText = 'أيام العمل';
+      else if (item.days.length > 0) repeatText = item.days.map(d => dayNamesMap[d]).join('، ');
+    }
+
+    const fmtTime = (typeof formatTo12Hour === 'function') ? formatTo12Hour(item.time) : item.time;
+    const soundTitle = (item.sound && item.sound.name) ? item.sound.name.split(' ')[0] : 'نغمة';
+
     const card = document.createElement('div');
     card.className = 'alarm-card-unit';
     card.innerHTML = `
       <div class="alarm-unit-info" onclick="openEditGeneralAlarmModal(${idx})" style="cursor: pointer;">
-        <h4 class="alarm-unit-title">${item.title}</h4>
+        <h4 class="alarm-unit-title">${item.title || 'منبه'}</h4>
         <div class="alarm-unit-meta">
-          <span class="badge-alarm-type type-general">منبه عام</span>
-          <span style="font-weight:800; direction:ltr;">${item.time}</span>
+          <span class="badge-alarm-type type-general" style="font-weight:900; font-size:12px; color:var(--primary-blue); direction:ltr;">${fmtTime}</span>
+          <span>📅 ${repeatText}</span>
+          <span>🎵 ${soundTitle}</span>
         </div>
       </div>
       <label class="ios-switch">
-        <input type="checkbox" class="hub-gen-switch" data-idx="${idx}" ${item.enabled ? 'checked' : ''}>
+        <input type="checkbox" class="hub-gen-switch" data-idx="${idx}" ${item.enabled !== false ? 'checked' : ''}>
         <span class="switch-slider"></span>
       </label>
     `;
 
     card.querySelector('.hub-gen-switch').onchange = (e) => {
-      generalAlarms[idx].enabled = e.target.checked;
+      const isChecked = e.target.checked;
+      generalAlarms[idx].enabled = isChecked;
       localStorage.setItem('hayat_general_alarms_list', JSON.stringify(generalAlarms));
+
+      // الجدولة أو الإلغاء الفوري في عتاد الأندرويد
+      if (isChecked) {
+        scheduleAlarmInNativeAndroid(generalAlarms[idx]);
+        showAudioFeedbackToast('تم تفعيل وجدولة المنبه في هاتفك ✓', '⏰');
+      } else {
+        cancelAlarmInNativeAndroid(generalAlarms[idx].id);
+        showAudioFeedbackToast('تم تعطيل المنبه بنجاح 🔕', '✓');
+      }
     };
 
     container.appendChild(card);
@@ -1333,55 +1353,8 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
     };
   });
 
-  // المنبهات العامة
-  const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
-  const genModal = document.getElementById('generalAlarmModal');
-  const closeGenModalBtn = document.getElementById('closeGeneralAlarmModalBtn');
-  const btnSaveGen = document.getElementById('btnSaveGeneralAlarm');
-  const btnDeleteGen = document.getElementById('btnDeleteGeneralAlarm');
-  let editingGeneralAlarmIdx = null;
+    const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
 
-  if (openGenFabBtn && genModal) {
-    openGenFabBtn.onclick = () => {
-      editingGeneralAlarmIdx = null;
-      document.getElementById('generalAlarmModalTitle').textContent = 'إضافة منبه عام';
-      document.getElementById('inputGeneralAlarmTitle').value = '';
-      document.getElementById('inputGeneralAlarmTime').value = '06:00';
-      if (btnDeleteGen) btnDeleteGen.style.display = 'none';
-      genModal.classList.add('show');
-    };
-  }
-  if (closeGenModalBtn && genModal) closeGenModalBtn.onclick = () => genModal.classList.remove('show');
-
-  window.openEditGeneralAlarmModal = (idx) => {
-    const list = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
-    const item = list[idx];
-    if (!item) return;
-    editingGeneralAlarmIdx = idx;
-    document.getElementById('generalAlarmModalTitle').textContent = 'تعديل المنبه العام';
-    document.getElementById('inputGeneralAlarmTitle').value = item.title;
-    document.getElementById('inputGeneralAlarmTime').value = item.time;
-    if (btnDeleteGen) btnDeleteGen.style.display = 'inline-block';
-    if (genModal) genModal.classList.add('show');
-  };
-
-  if (btnSaveGen && genModal) {
-    btnSaveGen.onclick = () => {
-      const title = document.getElementById('inputGeneralAlarmTitle').value.trim() || 'منبه عام';
-      const time = document.getElementById('inputGeneralAlarmTime').value || '06:00';
-      const list = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
-
-      if (editingGeneralAlarmIdx !== null) {
-        list[editingGeneralAlarmIdx] = { ...list[editingGeneralAlarmIdx], title, time };
-      } else {
-        list.push({ id: 'g_' + Date.now(), title, time, enabled: true });
-      }
-
-      localStorage.setItem('hayat_general_alarms_list', JSON.stringify(list));
-      genModal.classList.remove('show');
-      syncAllAlarmsToHub();
-    };
-  }
 
   if (btnDeleteGen && genModal) {
     btnDeleteGen.onclick = () => {
