@@ -1704,13 +1704,22 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
 
       localStorage.setItem('hayat_general_alarms_list', JSON.stringify(list));
 
+      // الجدولة الحقيقية في عتاد الأندرويد
       scheduleAlarmInNativeAndroid(alarmItem);
 
       const genModal = document.getElementById('generalAlarmModal');
       if (genModal) genModal.classList.remove('show');
 
       syncAllAlarmsToHub();
-      showAudioFeedbackToast('تم ضبط وجدولة المنبه بنجاح في هاتفك ⏰', '✓');
+
+      // حساب وعرض الوقت المتبقي حتى الرنين بدقة
+      const nextTrigger = calculateNextAlarmTriggerMillis(alarmItem.time, alarmItem.days);
+      const diffMins = Math.max(1, Math.round((nextTrigger - Date.now()) / 60000));
+      const timeRemainingText = (diffMins < 60) 
+        ? `سيرن بعد ${diffMins} دقيقة` 
+        : `سيرن بعد ${Math.floor(diffMins / 60)} ساعة و ${diffMins % 60} دقيقة`;
+
+      showAudioFeedbackToast(`تم ضبط المنبه ⏰ (${timeRemainingText})`, '✓');
     };
   }
 
