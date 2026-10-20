@@ -53,9 +53,9 @@ public class AdhanActivity extends Activity implements SensorEventListener {
             }
         }
 
-        String prayerName = getIntent().getStringExtra("prayerName");
-        if (prayerName == null || prayerName.isEmpty()) prayerName = "الصلاة";
-        boolean isGeneralAlarm = getIntent().getBooleanExtra("isGeneralAlarm", false);
+        String incomingPrayerName = getIntent().getStringExtra("prayerName");
+        final String prayerName = (incomingPrayerName != null && !incomingPrayerName.isEmpty()) ? incomingPrayerName : "الصلاة";
+        final boolean isGeneralAlarm = getIntent().getBooleanExtra("isGeneralAlarm", false);
 
         // 3. بناء الواجهة المنبثقة برمجياً ككرت عائم علوي فاخر مطابق لمنبه شاومي
         LinearLayout rootLayout = new LinearLayout(this);
