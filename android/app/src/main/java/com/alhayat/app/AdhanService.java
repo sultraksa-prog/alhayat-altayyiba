@@ -25,6 +25,11 @@ public class AdhanService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String prayerName = intent != null ? intent.getStringExtra("prayerName") : "الصلاة";
         String customPath = intent != null ? intent.getStringExtra("customAudioPath") : null;
+        boolean isGeneralAlarm = intent != null && intent.getBooleanExtra("isGeneralAlarm", false);
+        boolean vibrate = intent == null || intent.getBooleanExtra("vibrate", true);
+
+        String notifTitle = isGeneralAlarm ? ("⏰ حان موعد: " + prayerName) : ("حان الآن أذان " + prayerName + " 🕌");
+        String notifText = isGeneralAlarm ? "اضغط لإيقاف المنبه أو تأجيله" : "الله أكبر، الله أكبر..";
 
         // 1. إيقاظ شاشة الهاتف وهي مقفلة
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -40,6 +45,7 @@ public class AdhanService extends Service {
         Intent alarmWindowIntent = new Intent(this, AdhanActivity.class);
         alarmWindowIntent.putExtra("prayerName", prayerName);
         alarmWindowIntent.putExtra("customAudioPath", customPath);
+        alarmWindowIntent.putExtra("isGeneralAlarm", isGeneralAlarm);
         alarmWindowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingAlarmWindow = PendingIntent.getActivity(this, 0, alarmWindowIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
@@ -53,8 +59,8 @@ public class AdhanService extends Service {
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("حان الآن أذان " + prayerName + " 🕌")
-                .setContentText("الله أكبر، الله أكبر..")
+                .setContentTitle(notifTitle)
+                .setContentText(notifText)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
