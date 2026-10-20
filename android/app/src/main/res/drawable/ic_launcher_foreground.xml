@@ -6,29 +6,29 @@
     android:viewportWidth="512"
     android:viewportHeight="512">
 
-    <!-- هالة النور المشعة خلف الصرح (مطابقة لـ spiritualHalo في PWA) -->
-    <path android:pathData="M 256,190 m -175,0 a 175,175 0 1,1 350,0 a 175,175 0 1,1 -350,0">
+    <!-- هالة نور نقية تتلاشى لشفافية ذهبية 100% دون خلق أي غشاوة رمادية فوق الكحلي -->
+    <path android:pathData="M 256,185 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:centerX="256"
-                android:centerY="190"
-                android:gradientRadius="175"
+                android:centerY="185"
+                android:gradientRadius="160"
                 android:type="radial">
-                <item android:color="#59FCD34D" android:offset="0.0" />
-                <item android:color="#20D4AF37" android:offset="0.55" />
-                <item android:color="#0009203F" android:offset="1.0" />
+                <item android:color="#4DFCD34D" android:offset="0.0" />
+                <item android:color="#1AD4AF37" android:offset="0.50" />
+                <item android:color="#00FCD34D" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- تكبير مقياس الصرح إلى 0.85 ليتطابق مع حجم أيقونة PWA تماماً -->
+    <!-- كتلة الصرح المعماري المذهب المكبرة -->
     <group
         android:scaleX="0.85"
         android:scaleY="0.85"
         android:pivotX="256"
         android:pivotY="256">
 
-        <!-- طبقة الظل المعماري الساقط (Faux 3D Shadow) لإعطاء العمق -->
+        <!-- طبقة الظل الساقط لحفظ عمق الصرح ثلاثي الأبعاد -->
         <group android:translateY="8">
             <path
                 android:fillColor="#80020810"
