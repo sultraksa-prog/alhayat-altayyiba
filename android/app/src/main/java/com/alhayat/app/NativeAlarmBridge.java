@@ -297,7 +297,7 @@ public class NativeAlarmBridge {
         }
     }
 
-    // 20. جدولة منبه عام حقيقي في عتاد الأندرويد بأعلى دقة ممكنة
+    // 20. جدولة منبه عام حقيقي في عتاد الأندرويد (نظام AlarmClock الرسمي المعتمد)
     @JavascriptInterface
     public boolean scheduleGeneralAlarm(String alarmId, long triggerTimeMillis, String title, String customAudioPath, boolean vibrate) {
         try {
@@ -319,11 +319,17 @@ public class NativeAlarmBridge {
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent);
-            } else {
-                alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent);
-            }
+            // تفعيل نظام المنبه الأصلي لنظام أندرويد (يظهر رمز ⏰ في شريط الهاتف ويتجاوز كل قيود توفير الطاقة)
+            Intent showIntent = new Intent(context, MainActivity.class);
+            PendingIntent showPendingIntent = PendingIntent.getActivity(
+                    context,
+                    requestCode,
+                    showIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            android.app.AlarmManager.AlarmClockInfo clockInfo = new android.app.AlarmManager.AlarmClockInfo(triggerTimeMillis, showPendingIntent);
+            alarmManager.setAlarmClock(clockInfo, pendingIntent);
             return true;
         } catch (Exception e) {
             return false;
