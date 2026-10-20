@@ -1540,31 +1540,100 @@
       </div>
     </div>
 
-    <!-- 2. نافذة إنشاء وتعديل المنبه العام -->
+    <!-- 2. نافذة إنشاء وتعديل المنبه العام المتكاملة (منبه الجوال الحقيقي) -->
     <div class="bottom-sheet-backdrop" id="generalAlarmModal" style="z-index: 370;">
-      <div class="bottom-sheet" style="padding-bottom: 24px;">
+      <div class="bottom-sheet" style="max-height: 88vh; overflow-y: auto; padding-bottom: 24px;">
         <div class="sheet-drag-handle"></div>
         <div class="sheet-header">
-          <h3 class="sheet-title" id="generalAlarmModalTitle">إضافة منبه عام</h3>
+          <h3 class="sheet-title" id="generalAlarmModalTitle">إضافة منبه جديد</h3>
           <button type="button" class="modal-btn-link" id="closeGeneralAlarmModalBtn">✕</button>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:12px;">
+          <!-- حقل العنوان -->
           <div class="modal-input-field" style="margin-bottom:0;">
-            <label>عنوان أو ملاحظة المنبه</label>
-            <input type="text" id="inputGeneralAlarmTitle" placeholder="مثال: قيام الليل، قراءة الورد...">
+            <label>اسم أو ملاحظة المنبه</label>
+            <input type="text" id="inputGeneralAlarmTitle" placeholder="مثال: صلاة الوتر، قراءة الورد، الاستيقاظ...">
           </div>
 
+          <!-- وقت التنبيه -->
           <div class="time-adjust-param-row">
-            <span class="param-title">وقت التنبيه:</span>
-            <input type="time" id="inputGeneralAlarmTime" class="friday-minute-input" style="width:130px; font-size:16px;" value="05:00">
+            <span class="param-title">وقت الرنين:</span>
+            <input type="time" id="inputGeneralAlarmTime" class="friday-minute-input" style="width:140px; font-size:17px; font-weight:900;" value="05:00">
+          </div>
+
+          <!-- تكرار أيام الأسبوع -->
+          <div class="setting-block" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:10px 12px; margin:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span class="param-title">أيام التكرار:</span>
+              <div class="alarm-presets-row">
+                <button type="button" class="btn-alarm-preset" id="presetDaysEveryday">يومياً</button>
+                <button type="button" class="btn-alarm-preset" id="presetDaysWorkdays">أيام العمل</button>
+                <button type="button" class="btn-alarm-preset active" id="presetDaysOnce">مرة واحدة</button>
+              </div>
+            </div>
+            <!-- كرات الأيام السبعة -->
+            <div class="alarm-days-chips-grid" id="alarmDaysChipsContainer">
+              <button type="button" class="alarm-day-chip" data-day="6">سبت</button>
+              <button type="button" class="alarm-day-chip" data-day="0">أحد</button>
+              <button type="button" class="alarm-day-chip" data-day="1">اثنين</button>
+              <button type="button" class="alarm-day-chip" data-day="2">ثلاثاء</button>
+              <button type="button" class="alarm-day-chip" data-day="3">أربعاء</button>
+              <button type="button" class="alarm-day-chip" data-day="4">خميس</button>
+              <button type="button" class="alarm-day-chip" data-day="5">جمعة</button>
+            </div>
+          </div>
+
+          <!-- اختيار صوت ونغمة المنبه -->
+          <div class="other-setting-row clickable" id="openGeneralAlarmSoundModalBtn" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:12px 14px;">
+            <div>
+              <h4 class="other-setting-title" style="font-size:14px;">نغمة وصوت المنبه</h4>
+              <span style="font-size:12px; color:var(--primary-blue); font-weight:800;" id="displayGeneralAlarmSoundName">نغمة المنبه الهادئة 🔔</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
+
+          <!-- الاهتزاز مع المنبه -->
+          <div class="setting-toggle-row" style="padding:4px 0;">
+            <div class="setting-text-col">
+              <h4 class="setting-title" style="font-size:13.5px;">الاهتزاز مع الرنين</h4>
+              <p class="setting-desc" style="font-size:11px;">اهتزاز الهاتف بنبضات متواصلة أثناء الرنين</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleGeneralAlarmVibrate" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- خاصية الغفوة (Snooze) -->
+          <div class="setting-toggle-row" style="padding:4px 0;">
+            <div class="setting-text-col">
+              <h4 class="setting-title" style="font-size:13.5px;">تفعيل الغفوة (Snooze)</h4>
+              <p class="setting-desc" style="font-size:11px;">إتاحة تأجيل المنبه عند الرنين لـ 5 دقائق</p>
+            </div>
+            <label class="ios-switch">
+              <input type="checkbox" id="toggleGeneralAlarmSnooze" checked>
+              <span class="switch-slider"></span>
+            </label>
           </div>
 
           <div style="margin-top:14px; display:flex; gap:10px;">
-            <button type="button" class="modal-btn-link text-muted" id="btnDeleteGeneralAlarm" style="display:none; color:#EF4444; font-weight:800;">حذف</button>
-            <button type="button" class="btn-confirm-prayer-offset" id="btnSaveGeneralAlarm" style="flex:1; padding:12px;">حفظ واعتماد</button>
+            <button type="button" class="modal-btn-link text-muted" id="btnDeleteGeneralAlarm" style="display:none; color:#EF4444; font-weight:800; padding:10px 16px;">حذف</button>
+            <button type="button" class="btn-confirm-prayer-offset" id="btnSaveGeneralAlarm" style="flex:1; padding:12px;">حفظ وتفعيل المنبه ⏰</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- نافذة اختيار صوت ونغمة المنبه العام مع المعاينة -->
+    <div class="bottom-sheet-backdrop" id="generalAlarmSoundModal" style="z-index: 385;">
+      <div class="bottom-sheet" style="max-height: 85vh; display:flex; flex-direction:column; padding-bottom: 24px;">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">اختر نغمة المنبه</h3>
+          <button type="button" class="modal-btn-link" id="closeGeneralAlarmSoundModalBtn">✕</button>
+        </div>
+        <div class="muezzin-list-scroll" id="generalAlarmSoundListContainer"></div>
       </div>
     </div>
 
