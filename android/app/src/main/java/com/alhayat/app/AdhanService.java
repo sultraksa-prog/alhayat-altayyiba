@@ -87,25 +87,45 @@ public class AdhanService extends Service {
 
             mediaPlayer = new MediaPlayer();
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM) // مسار صوت المنبه ليرن حتى في الصامت
+                    .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build();
             mediaPlayer.setAudioAttributes(audioAttributes);
 
-            // فحص هل اختار المستخدم صوتاً تم تنزيله في الهاتف أم نستخدم الصوت المدمج
             boolean fileLoaded = false;
+
+            // 1. فحص هل هو ملف محلي مخزن في ذاكرة الجهاز
             if (customPath != null && !customPath.isEmpty()) {
-                File audioFile = new File(customPath);
-                if (audioFile.exists()) {
-                    mediaPlayer.setDataSource(this, Uri.fromFile(audioFile));
-                    fileLoaded = true;
+                if (customPath.startsWith("http://") || customPath.startsWith("https://")) {
+                    try {
+                        mediaPlayer.setDataSource(this, Uri.parse(customPath));
+                        fileLoaded = true;
+                    } catch (Exception ignored) {}
+                } else {
+                    File audioFile = new File(customPath);
+                    if (audioFile.exists()) {
+                        mediaPlayer.setDataSource(this, Uri.fromFile(audioFile));
+                        fileLoaded = true;
+                    }
                 }
             }
 
+            // 2. إذا لم يكن ملفاً مخصصاً، محاولة تشغيل الصوت المدمج
             if (!fileLoaded) {
-                // الصوت المدمج الاحتياطي في res/raw/adhan.mp3
-                Uri defaultUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.adhan);
-                mediaPlayer.setDataSource(this, defaultUri);
+                try {
+                    Uri defaultUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.adhan);
+                    mediaPlayer.setDataSource(this, defaultUri);
+                    fileLoaded = true;
+                } catch (Exception ignored) {}
+            }
+
+            // 3. كحل أمان حتمي لا يخذل أبداً: استخدام نغمة المنبه الافتراضية لنظام أندرويد نفسه
+            if (!fileLoaded) {
+                Uri systemAlarmUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);
+                if (systemAlarmUri == null) {
+                    systemAlarmUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
+                }
+                mediaPlayer.setDataSource(this, systemAlarmUri);
             }
 
             mediaPlayer.prepare();
@@ -113,7 +133,15 @@ public class AdhanService extends Service {
             mediaPlayer.setOnCompletionListener(mp -> stopAdhan());
 
         } catch (Exception e) {
-            stopAdhan();
+            // في حال حدوث أي خطأ في تشغيل ملف الوسائط، يتم اللجوء لمنبه النظام الافتراضي فوراً بدلاً من إغلاق المنبه
+            try {
+                Uri fallbackUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);
+                mediaPlayer = MediaPlayer.create(this, fallbackUri);
+                if (mediaPlayer != null) {
+                    mediaPlayer.start();
+                    mediaPlayer.setOnCompletionListener(mp -> stopAdhan());
+                }
+            } catch (Exception ignored) {}
         }
     }
 
