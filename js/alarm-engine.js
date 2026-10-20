@@ -1355,18 +1355,6 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
 
     const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
 
-
-  if (btnDeleteGen && genModal) {
-    btnDeleteGen.onclick = () => {
-      if (editingGeneralAlarmIdx === null) return;
-      const list = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
-      list.splice(editingGeneralAlarmIdx, 1);
-      localStorage.setItem('hayat_general_alarms_list', JSON.stringify(list));
-      genModal.classList.remove('show');
-      syncAllAlarmsToHub();
-    };
-  }
-
   // تبويبات المنبه
   document.querySelectorAll('.alarm-tab-chip').forEach(tab => {
     tab.onclick = () => {
