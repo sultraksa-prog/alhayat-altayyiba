@@ -1358,14 +1358,15 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
   let tempAlarmDays = []; // مصفوفة الأيام المختارة (0: الأحد ... 6: السبت)
   let selectedAlarmSound = { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', path: '' };
 
-  // قائمة النغمات المتاحة للمنبه
+  // قائمة نغمات وأصوات المنبه المحققة
   const GENERAL_ALARM_TONES = [
-    { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', url: 'https://www.islamcan.com/audio/adhan/azan8.mp3' },
-    { id: 'takbeer', name: 'تكبيرات العيد المباركة 🕌', url: 'https://www.islamcan.com/audio/adhan/azan9.mp3' },
+    { id: 'default', name: 'نغمة منبه الجوال الافتراضية 🔔', url: '', isSystem: true },
+    { id: 'alafasy', name: 'أذان الشيخ مشاري العفاسي 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan7.mp3' },
     { id: 'fajr_makkah', name: 'أذان الحرم المكي الشريف 🕋', url: 'https://www.islamcan.com/audio/adhan/azan1.mp3' },
     { id: 'madinah', name: 'أذان المسجد النبوي الشريف 🕌', url: 'https://www.islamcan.com/audio/adhan/azan2.mp3' },
-    { id: 'alafasy', name: 'أذان الشيخ مشاري العفاسي 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan7.mp3' },
-    { id: 'abdulbasit', name: 'أذان الشيخ عبد الباسط 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan6.mp3' }
+    { id: 'abdulbasit', name: 'أذان الشيخ عبد الباسط عبد الصمد 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan6.mp3' },
+    { id: 'mansoor', name: 'أذان الشيخ منصور الزهراني 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan8.mp3' },
+    { id: 'takbeer', name: 'تكبيرات العيد المباركة 🕌', url: 'https://www.islamcan.com/audio/adhan/azan9.mp3' }
   ];
 
   // حساب موعد الرنين القادم بدقة بالمللي ثانية
@@ -2059,8 +2060,9 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
 
         window.lastFiredGeneralAlarms[alarmEventKey] = true;
 
-        // إطلاق شاشة المنبه الحية فوراً
-        if (typeof triggerAdhanFullScreen === 'function') {
+        // إطلاق شاشة المنبه في الويب فقط (في الأندرويد يتولى عتاد النظام الرنين لمنع تكرار الصوت)
+        const isNativeAndroid = !!(window.AndroidBridge);
+        if (!isNativeAndroid && typeof triggerAdhanFullScreen === 'function') {
           triggerAdhanFullScreen(alarm.title || 'المنبه', formatTo12Hour(alarm.time), null, false, 'general');
         }
       });
