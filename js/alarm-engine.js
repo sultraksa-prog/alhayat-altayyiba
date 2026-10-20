@@ -2015,28 +2015,57 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
     });
   }
 
-  // 2. محرك المراقبة الحي (يعمل فقط عندما يكون التطبيق مفتوحاً أمام المستخدم)
+  // 2. محرك المراقبة الحي (يعمل لحظياً عندما يكون التطبيق مفتوحاً أمام المستخدم)
+  window.lastFiredGeneralAlarms = window.lastFiredGeneralAlarms || {};
+
   setInterval(() => {
-    if (typeof window.currentTimings === 'undefined' || !window.currentTimings) return;
     if (document.visibilityState !== 'visible') return;
 
     const now = new Date();
     const curHour = String(now.getHours()).padStart(2, '0');
     const curMin = String(now.getMinutes()).padStart(2, '0');
     const curTimeFormatted = `${curHour}:${curMin}`;
+    const todayDayOfWeek = now.getDay();
+    const todayStr = now.toDateString();
 
-    const prayerKeysList = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-    const pNamesDict = { Fajr: 'الفجر', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
+    // أ) مراقبة مواقيت الصلوات الخمس
+    if (typeof window.currentTimings !== 'undefined' && window.currentTimings) {
+      const prayerKeysList = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+      const pNamesDict = { Fajr: 'الفجر', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
 
-    prayerKeysList.forEach(pk => {
-      const pRawTime = window.currentTimings[pk] ? window.currentTimings[pk].split(' ')[0] : '';
-      if (pRawTime === curTimeFormatted) {
-        if (typeof window.handlePrayerTimeEnter === 'function') {
-          window.handlePrayerTimeEnter(pk, pNamesDict[pk], pRawTime);
+      prayerKeysList.forEach(pk => {
+        const pRawTime = window.currentTimings[pk] ? window.currentTimings[pk].split(' ')[0] : '';
+        if (pRawTime === curTimeFormatted) {
+          if (typeof window.handlePrayerTimeEnter === 'function') {
+            window.handlePrayerTimeEnter(pk, pNamesDict[pk], pRawTime);
+          }
         }
-      }
-    });
-  }, 10000);
+      });
+    }
+
+    // ب) مراقبة المنبهات العامة وتشغيلها فوراً والتطبيق مفتوح
+    try {
+      const genAlarmsList = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
+      genAlarmsList.forEach(alarm => {
+        if (!alarm.enabled || alarm.time !== curTimeFormatted) return;
+
+        // التحقق من توافق اليوم (إذا كان مخصصاً)
+        if (Array.isArray(alarm.days) && alarm.days.length > 0 && !alarm.days.includes(todayDayOfWeek)) {
+          return;
+        }
+
+        const alarmEventKey = `${alarm.id}_${todayStr}_${curTimeFormatted}`;
+        if (window.lastFiredGeneralAlarms[alarmEventKey]) return; // منع تكرار الرنين لنفس الدقيقة
+
+        window.lastFiredGeneralAlarms[alarmEventKey] = true;
+
+        // إطلاق شاشة المنبه الحية فوراً
+        if (typeof triggerAdhanFullScreen === 'function') {
+          triggerAdhanFullScreen(alarm.title || 'المنبه', formatTo12Hour(alarm.time), null, false, 'general');
+        }
+      });
+    } catch (e) {}
+  }, 3000); // فحص سريع كل 3 ثوانٍ لدقة فورية
 
   // المزامنة الأولية والجدولة عند الإقلاع
   syncAllAlarmsToHub();
