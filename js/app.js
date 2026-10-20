@@ -2647,6 +2647,101 @@ document.addEventListener('DOMContentLoaded', () => {
     openDhikrSettingsBtn.addEventListener('click', openDhikrSettingsModalFromTop);
   }
 
+  // ==================== محرك إدارة إعدادات المسبحة الإلكترونية والعائمة ====================
+  const DEFAULT_FLOATING_TASBEEH_SETTINGS = {
+    scalePercent: 75, // حجم أصغر 25% من الحجم السابق كقيمة افتراضية
+    showCloseBtn: false, // زر الإغلاق ✕ مخفي افتراضياً
+    longPressToOpen: true, // الضغط 3 ثوانٍ لفتح التطبيق مفعّل
+    autoOpenOnResume: true, // التوجيه للمسبحة عند فتح التطبيق مفعّل
+    preventEdgeOverlap: true // حماية حواف الشاشة مفعّلة
+  };
+
+  let floatingTasbeehSettings = JSON.parse(localStorage.getItem('hayat_floating_tasbeeh_settings')) || DEFAULT_FLOATING_TASBEEH_SETTINGS;
+
+  function syncFloatingTasbeehSettingsToNative() {
+    localStorage.setItem('hayat_floating_tasbeeh_settings', JSON.stringify(floatingTasbeehSettings));
+    if (window.AndroidBridge && typeof window.AndroidBridge.saveFloatingTasbeehSettings === 'function') {
+      window.AndroidBridge.saveFloatingTasbeehSettings(
+        floatingTasbeehSettings.scalePercent,
+        floatingTasbeehSettings.showCloseBtn,
+        floatingTasbeehSettings.longPressToOpen,
+        floatingTasbeehSettings.preventEdgeOverlap,
+        floatingTasbeehSettings.autoOpenOnResume
+      );
+    }
+  }
+
+  // مزامنة مبدئية مع عقل نظام الأندرويد فور تشغيل التطبيق
+  syncFloatingTasbeehSettingsToNative();
+
+  const tasbeehSettingsModal = document.getElementById('tasbeehSettingsModal');
+  const openTasbeehSettingsFromMenu = document.getElementById('openTasbeehSettingsFromMenu');
+  const openTasbeehSettingsFromDrop = document.getElementById('openTasbeehSettingsModalFromMenu');
+  const closeTasbeehSettingsBtn = document.getElementById('closeTasbeehSettingsModalBtn');
+  const btnSaveTasbeehSettingsModal = document.getElementById('btnSaveTasbeehSettingsModal');
+
+  const tasbeehScaleSlider = document.getElementById('tasbeehScaleSlider');
+  const tasbeehScaleDisplay = document.getElementById('tasbeehScaleDisplay');
+  const toggleTasbeehShowClose = document.getElementById('toggleTasbeehShowCloseBtn');
+  const toggleTasbeehLongPress = document.getElementById('toggleTasbeehLongPressOpen');
+  const toggleTasbeehAutoOpen = document.getElementById('toggleTasbeehAutoOpenOnResume');
+  const toggleTasbeehEdgeOverlap = document.getElementById('toggleTasbeehPreventEdgeOverlap');
+
+  function openTasbeehSettingsModal() {
+    if (!tasbeehSettingsModal) return;
+    if (tasbeehScaleSlider) tasbeehScaleSlider.value = floatingTasbeehSettings.scalePercent || 75;
+    if (tasbeehScaleDisplay) tasbeehScaleDisplay.textContent = `${floatingTasbeehSettings.scalePercent || 75}%`;
+    if (toggleTasbeehShowClose) toggleTasbeehShowClose.checked = !!floatingTasbeehSettings.showCloseBtn;
+    if (toggleTasbeehLongPress) toggleTasbeehLongPress.checked = floatingTasbeehSettings.longPressToOpen !== false;
+    if (toggleTasbeehAutoOpen) toggleTasbeehAutoOpen.checked = floatingTasbeehSettings.autoOpenOnResume !== false;
+    if (toggleTasbeehEdgeOverlap) toggleTasbeehEdgeOverlap.checked = floatingTasbeehSettings.preventEdgeOverlap !== false;
+
+    tasbeehSettingsModal.classList.add('show');
+  }
+
+  if (openTasbeehSettingsFromMenu) openTasbeehSettingsFromMenu.onclick = openTasbeehSettingsModal;
+  if (openTasbeehSettingsFromDrop) {
+    openTasbeehSettingsFromDrop.onclick = () => {
+      const drop = document.getElementById('tasbeehDropdownMenu');
+      if (drop) drop.classList.remove('show');
+      openTasbeehSettingsModal();
+    };
+  }
+  if (closeTasbeehSettingsBtn && tasbeehSettingsModal) {
+    closeTasbeehSettingsBtn.onclick = () => tasbeehSettingsModal.classList.remove('show');
+  }
+
+  if (tasbeehScaleSlider && tasbeehScaleDisplay) {
+    tasbeehScaleSlider.oninput = (e) => {
+      tasbeehScaleDisplay.textContent = `${e.target.value}%`;
+    };
+  }
+
+  if (btnSaveTasbeehSettingsModal && tasbeehSettingsModal) {
+    btnSaveTasbeehSettingsModal.onclick = () => {
+      floatingTasbeehSettings.scalePercent = parseInt(tasbeehScaleSlider ? tasbeehScaleSlider.value : 75, 10);
+      floatingTasbeehSettings.showCloseBtn = toggleTasbeehShowClose ? toggleTasbeehShowClose.checked : false;
+      floatingTasbeehSettings.longPressToOpen = toggleTasbeehLongPress ? toggleTasbeehLongPress.checked : true;
+      floatingTasbeehSettings.autoOpenOnResume = toggleTasbeehAutoOpen ? toggleTasbeehAutoOpen.checked : true;
+      floatingTasbeehSettings.preventEdgeOverlap = toggleTasbeehEdgeOverlap ? toggleTasbeehEdgeOverlap.checked : true;
+
+      syncFloatingTasbeehSettingsToNative();
+      tasbeehSettingsModal.classList.remove('show');
+      if (typeof showGuidanceToast === 'function') showGuidanceToast('تم حفظ إعدادات المسبحة بنجاح ✨');
+    };
+  }
+
+  // استقبال أمر التوجيه التلقائي لشاشة المسبحة عند فتح التطبيق
+  window.onFloatingTasbeehAppResume = function() {
+    if (screenTasbeeh && typeof showScreen === 'function') {
+      showScreen(screenTasbeeh);
+      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
+      if (typeof showGuidanceToast === 'function') {
+        showGuidanceToast('مرحباً بك مجدداً.. تم نقل إنجاز المسبحة هنا 📿');
+      }
+    }
+  };
+
   // إغلاق النافذة وفك التجميد عند النقر على الغطاء المعتم
   azkarSettingsModal.addEventListener('click', (e) => {
     if (e.target === azkarSettingsModal) {
@@ -4774,7 +4869,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.136',
+    version: '2.1.137',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
