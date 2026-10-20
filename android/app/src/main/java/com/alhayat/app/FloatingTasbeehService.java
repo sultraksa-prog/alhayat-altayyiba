@@ -31,6 +31,8 @@ public class FloatingTasbeehService extends Service {
     private String dhikrText = "سُبْحَانَ اللَّهِ";
     private int currentCount = 0;
     private int targetCount = 33;
+    private int addedTaps = 0;
+    private int addedRounds = 0;
 
     private TextView tvDhikr;
     private TextView tvCount;
@@ -280,8 +282,10 @@ public class FloatingTasbeehService extends Service {
 
     private void onWidgetTapped() {
         currentCount++;
+        addedTaps++;
         if (targetCount > 0 && currentCount >= targetCount) {
             currentCount = 0;
+            addedRounds++;
             vibratePulse(true);
         } else {
             vibratePulse(false);
@@ -322,8 +326,13 @@ public class FloatingTasbeehService extends Service {
     }
 
     private void saveCountLocally() {
-        SharedPreferences sp = getSharedPreferences("AlHayatTasbeeh", MODE_PRIVATE);
-        sp.edit().putInt("floating_count", currentCount).apply();
+        android.content.SharedPreferences sp = getSharedPreferences("AlHayatTasbeehPrefs", MODE_PRIVATE);
+        sp.edit()
+                .putInt("floating_current_count", currentCount)
+                .putInt("floating_added_taps", addedTaps)
+                .putInt("floating_added_rounds", addedRounds)
+                .putBoolean("floating_has_unsynced_data", true)
+                .apply();
     }
 
     @Override
