@@ -1353,7 +1353,387 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
     };
   });
 
-    const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
+    // ==================== محرك منبه الجوال الحقيقي والجدولة الذكية ====================
+  let editingGeneralAlarmIdx = null;
+  let tempAlarmDays = []; // مصفوفة الأيام المختارة (0: الأحد ... 6: السبت)
+  let selectedAlarmSound = { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', path: '' };
+
+  // قائمة النغمات المتاحة للمنبه
+  const GENERAL_ALARM_TONES = [
+    { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', url: 'https://www.islamcan.com/audio/adhan/azan8.mp3' },
+    { id: 'takbeer', name: 'تكبيرات العيد المباركة 🕌', url: 'https://www.islamcan.com/audio/adhan/azan9.mp3' },
+    { id: 'fajr_makkah', name: 'أذان الحرم المكي الشريف 🕋', url: 'https://www.islamcan.com/audio/adhan/azan1.mp3' },
+    { id: 'madinah', name: 'أذان المسجد النبوي الشريف 🕌', url: 'https://www.islamcan.com/audio/adhan/azan2.mp3' },
+    { id: 'alafasy', name: 'أذان الشيخ مشاري العفاسي 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan7.mp3' },
+    { id: 'abdulbasit', name: 'أذان الشيخ عبد الباسط 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan6.mp3' }
+  ];
+
+  // حساب موعد الرنين القادم بدقة بالمللي ثانية
+  function calculateNextAlarmTriggerMillis(timeStr, daysArray) {
+    const parts = (timeStr || '05:00').split(':').map(Number);
+    const targetH = parts[0];
+    const targetM = parts[1];
+    const now = new Date();
+
+    if (!daysArray || daysArray.length === 0) {
+      const candidate = new Date(now);
+      candidate.setHours(targetH, targetM, 0, 0);
+      if (candidate.getTime() > now.getTime()) {
+        return candidate.getTime();
+      }
+      candidate.setDate(candidate.getDate() + 1);
+      return candidate.getTime();
+    }
+
+    for (let offset = 0; offset < 7; offset++) {
+      const candidate = new Date(now);
+      candidate.setDate(candidate.getDate() + offset);
+      candidate.setHours(targetH, targetM, 0, 0);
+
+      const dayOfWeek = candidate.getDay();
+      if (daysArray.includes(dayOfWeek)) {
+        if (candidate.getTime() > now.getTime()) {
+          return candidate.getTime();
+        }
+      }
+    }
+
+    const fallback = new Date(now);
+    fallback.setDate(fallback.getDate() + 7);
+    fallback.setHours(targetH, targetM, 0, 0);
+    return fallback.getTime();
+  }
+
+  // جدولة المنبه الفعلي في نظام الأندرويد
+  function scheduleAlarmInNativeAndroid(alarmItem) {
+    if (!alarmItem || alarmItem.enabled === false) return;
+    const triggerMillis = calculateNextAlarmTriggerMillis(alarmItem.time, alarmItem.days);
+
+    if (window.AndroidBridge && typeof window.AndroidBridge.scheduleGeneralAlarm === 'function') {
+      window.AndroidBridge.scheduleGeneralAlarm(
+        alarmItem.id,
+        triggerMillis,
+        alarmItem.title || 'منبه الحياة الطيبة',
+        alarmItem.soundPath || '',
+        alarmItem.vibrate !== false
+      );
+    }
+  }
+
+  // إلغاء المنبه من نظام الأندرويد
+  function cancelAlarmInNativeAndroid(alarmId) {
+    if (window.AndroidBridge && typeof window.AndroidBridge.cancelGeneralAlarm === 'function') {
+      window.AndroidBridge.cancelGeneralAlarm(alarmId);
+    }
+  }
+
+  // تحديث شكل أزرار الأيام
+  function updateAlarmDaysUI() {
+    document.querySelectorAll('.alarm-day-chip').forEach(chip => {
+      const dayNum = parseInt(chip.getAttribute('data-day'), 10);
+      chip.classList.toggle('active', tempAlarmDays.includes(dayNum));
+    });
+
+    const isEveryday = tempAlarmDays.length === 7;
+    const isWorkdays = tempAlarmDays.length === 5 && [0,1,2,3,4].every(d => tempAlarmDays.includes(d));
+    const isOnce = tempAlarmDays.length === 0;
+
+    const pEvery = document.getElementById('presetDaysEveryday');
+    const pWork = document.getElementById('presetDaysWorkdays');
+    const pOnce = document.getElementById('presetDaysOnce');
+    if (pEvery) pEvery.classList.toggle('active', isEveryday);
+    if (pWork) pWork.classList.toggle('active', isWorkdays);
+    if (pOnce) pOnce.classList.toggle('active', isOnce);
+  }
+
+  // بناء قائمة اختيار نغمات وأصوات المنبه
+  async function renderAlarmSoundsList() {
+    const soundListContainer = document.getElementById('generalAlarmSoundListContainer');
+    const soundModal = document.getElementById('generalAlarmSoundModal');
+    const displaySoundName = document.getElementById('displayGeneralAlarmSoundName');
+    if (!soundListContainer) return;
+    soundListContainer.innerHTML = '';
+
+    const userCustoms = await getAllCustomAudios();
+    if (userCustoms && userCustoms.length > 0) {
+      const header = document.createElement('div');
+      header.style.cssText = 'font-size:12px; font-weight:800; color:#15803D; padding:4px 6px;';
+      header.textContent = '📁 أصوات مخصصة من هاتفك:';
+      soundListContainer.appendChild(header);
+
+      userCustoms.forEach(c => {
+        const isSel = (selectedAlarmSound.id === c.id);
+        const row = document.createElement('div');
+        row.className = `muezzin-card-item ${isSel ? 'active' : ''}`;
+        row.innerHTML = `
+          <div class="muezzin-info-group">
+            <button type="button" class="btn-preview-audio-play" data-custom-id="${c.id}">▶</button>
+            <div>
+              <h4 style="font-size:14px; font-weight:800; margin:0;">${c.name}</h4>
+              <span style="font-size:11px; color:#15803D;">ملف صوتي محلي</span>
+            </div>
+          </div>
+          <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
+        `;
+
+        row.onclick = (e) => {
+          if (e.target.closest('.btn-preview-audio-play')) return;
+          stopPreviewAudio();
+          selectedAlarmSound = { id: c.id, name: c.name, path: c.uri || '' };
+          if (displaySoundName) displaySoundName.textContent = c.name;
+          if (soundModal) soundModal.classList.remove('show');
+        };
+
+        const pBtn = row.querySelector('.btn-preview-audio-play');
+        pBtn.onclick = async (e) => {
+          e.stopPropagation();
+          stopPreviewAudio();
+          const src = await getCustomAudioPlayableSrc(c.id);
+          if (src) {
+            previewAudioPlayer.src = src;
+            previewAudioPlayer.play().catch(() => {});
+            pBtn.textContent = '⏸';
+            pBtn.classList.add('playing');
+          }
+        };
+
+        soundListContainer.appendChild(row);
+      });
+    }
+
+    const toneHeader = document.createElement('div');
+    toneHeader.style.cssText = 'font-size:12px; font-weight:800; color:var(--text-secondary); padding:8px 6px 4px 6px;';
+    toneHeader.textContent = '🔔 نغمات وأصوات المنبه:';
+    soundListContainer.appendChild(toneHeader);
+
+    GENERAL_ALARM_TONES.forEach(tone => {
+      const isSel = (selectedAlarmSound.id === tone.id);
+      const row = document.createElement('div');
+      row.className = `muezzin-card-item ${isSel ? 'active' : ''}`;
+      row.innerHTML = `
+        <div class="muezzin-info-group">
+          <button type="button" class="btn-preview-audio-play" data-url="${tone.url}">▶</button>
+          <div>
+            <h4 style="font-size:14px; font-weight:800; margin:0;">${tone.name}</h4>
+          </div>
+        </div>
+        <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
+      `;
+
+      row.onclick = (e) => {
+        if (e.target.closest('.btn-preview-audio-play')) return;
+        stopPreviewAudio();
+        selectedAlarmSound = { id: tone.id, name: tone.name, path: tone.id === 'default' ? '' : tone.url };
+        if (displaySoundName) displaySoundName.textContent = tone.name;
+        if (soundModal) soundModal.classList.remove('show');
+      };
+
+      const pBtn = row.querySelector('.btn-preview-audio-play');
+      pBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (!previewAudioPlayer.paused && currentPlayingPreviewUrl === tone.url) {
+          stopPreviewAudio();
+        } else {
+          stopPreviewAudio();
+          currentPlayingPreviewUrl = tone.url;
+          previewAudioPlayer.src = tone.url;
+          previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
+          pBtn.textContent = '⏸';
+          pBtn.classList.add('playing');
+        }
+      };
+
+      soundListContainer.appendChild(row);
+    });
+  }
+
+  document.querySelectorAll('.alarm-day-chip').forEach(chip => {
+    chip.onclick = () => {
+      const dayNum = parseInt(chip.getAttribute('data-day'), 10);
+      if (tempAlarmDays.includes(dayNum)) {
+        tempAlarmDays = tempAlarmDays.filter(d => d !== dayNum);
+      } else {
+        tempAlarmDays.push(dayNum);
+      }
+      updateAlarmDaysUI();
+    };
+  });
+
+  const pEvery = document.getElementById('presetDaysEveryday');
+  if (pEvery) pEvery.onclick = () => { tempAlarmDays = [0,1,2,3,4,5,6]; updateAlarmDaysUI(); };
+
+  const pWork = document.getElementById('presetDaysWorkdays');
+  if (pWork) pWork.onclick = () => { tempAlarmDays = [0,1,2,3,4]; updateAlarmDaysUI(); };
+
+  const pOnce = document.getElementById('presetDaysOnce');
+  if (pOnce) pOnce.onclick = () => { tempAlarmDays = []; updateAlarmDaysUI(); };
+
+  const openSoundModalBtn = document.getElementById('openGeneralAlarmSoundModalBtn');
+  const soundModal = document.getElementById('generalAlarmSoundModal');
+  const closeSoundModalBtn = document.getElementById('closeGeneralAlarmSoundModalBtn');
+
+  if (openSoundModalBtn && soundModal) {
+    openSoundModalBtn.onclick = () => {
+      renderAlarmSoundsList();
+      soundModal.classList.add('show');
+    };
+  }
+  if (closeSoundModalBtn && soundModal) {
+    closeSoundModalBtn.onclick = () => {
+      stopPreviewAudio();
+      soundModal.classList.remove('show');
+    };
+  }
+
+  // 1. الدالة المحصنة لفتح نافذة إضافة منبه جديد
+  window.openAddGeneralAlarmModal = function() {
+    const genModal = document.getElementById('generalAlarmModal');
+    if (!genModal) return;
+
+    editingGeneralAlarmIdx = null;
+
+    const titleEl = document.getElementById('generalAlarmModalTitle');
+    if (titleEl) titleEl.textContent = 'إضافة منبه جديد';
+
+    const inputTitle = document.getElementById('inputGeneralAlarmTitle');
+    if (inputTitle) inputTitle.value = '';
+
+    const inputTime = document.getElementById('inputGeneralAlarmTime');
+    if (inputTime) inputTime.value = '05:00';
+
+    tempAlarmDays = [];
+    updateAlarmDaysUI();
+
+    selectedAlarmSound = { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', path: '' };
+    const displaySoundName = document.getElementById('displayGeneralAlarmSoundName');
+    if (displaySoundName) displaySoundName.textContent = selectedAlarmSound.name;
+
+    const delBtn = document.getElementById('btnDeleteGeneralAlarm');
+    if (delBtn) delBtn.style.display = 'none';
+
+    genModal.classList.add('show');
+  };
+
+  // 2. الدالة المحصنة لتعديل المنبه العام القائم
+  window.openEditGeneralAlarmModal = function(idx) {
+    const genModal = document.getElementById('generalAlarmModal');
+    if (!genModal) return;
+
+    const list = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
+    const item = list[idx];
+    if (!item) return;
+
+    editingGeneralAlarmIdx = idx;
+
+    const titleEl = document.getElementById('generalAlarmModalTitle');
+    if (titleEl) titleEl.textContent = 'تعديل المنبه';
+
+    const inputTitle = document.getElementById('inputGeneralAlarmTitle');
+    if (inputTitle) inputTitle.value = item.title || '';
+
+    const inputTime = document.getElementById('inputGeneralAlarmTime');
+    if (inputTime) inputTime.value = item.time || '05:00';
+
+    tempAlarmDays = Array.isArray(item.days) ? [...item.days] : [];
+    updateAlarmDaysUI();
+
+    selectedAlarmSound = item.sound || { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', path: item.soundPath || '' };
+    const displaySoundName = document.getElementById('displayGeneralAlarmSoundName');
+    if (displaySoundName) displaySoundName.textContent = selectedAlarmSound.name;
+
+    const vibToggle = document.getElementById('toggleGeneralAlarmVibrate');
+    if (vibToggle) vibToggle.checked = item.vibrate !== false;
+
+    const snoozeToggle = document.getElementById('toggleGeneralAlarmSnooze');
+    if (snoozeToggle) snoozeToggle.checked = item.snooze !== false;
+
+    const delBtn = document.getElementById('btnDeleteGeneralAlarm');
+    if (delBtn) delBtn.style.display = 'inline-block';
+
+    genModal.classList.add('show');
+  };
+
+  // ربط زر الـ FAB الدائري (+) لفتح نافذة الإضافة
+  const openGenFabBtn = document.getElementById('openAddGeneralAlarmFabBtn');
+  if (openGenFabBtn) {
+    openGenFabBtn.onclick = () => window.openAddGeneralAlarmModal();
+  }
+
+  const closeGenModalBtn = document.getElementById('closeGeneralAlarmModalBtn');
+  if (closeGenModalBtn) {
+    closeGenModalBtn.onclick = () => {
+      const genModal = document.getElementById('generalAlarmModal');
+      if (genModal) genModal.classList.remove('show');
+    };
+  }
+
+  // حفظ المنبه وجدولته
+  const btnSaveGen = document.getElementById('btnSaveGeneralAlarm');
+  if (btnSaveGen) {
+    btnSaveGen.onclick = () => {
+      const inputTitle = document.getElementById('inputGeneralAlarmTitle');
+      const inputTime = document.getElementById('inputGeneralAlarmTime');
+      const title = (inputTitle && inputTitle.value.trim()) ? inputTitle.value.trim() : 'منبه الحياة الطيبة';
+      const time = (inputTime && inputTime.value) ? inputTime.value : '05:00';
+
+      const vib = document.getElementById('toggleGeneralAlarmVibrate') ? document.getElementById('toggleGeneralAlarmVibrate').checked : true;
+      const snooze = document.getElementById('toggleGeneralAlarmSnooze') ? document.getElementById('toggleGeneralAlarmSnooze').checked : true;
+
+      const list = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
+      const alarmId = (editingGeneralAlarmIdx !== null && list[editingGeneralAlarmIdx] && list[editingGeneralAlarmIdx].id)
+        ? list[editingGeneralAlarmIdx].id
+        : 'alarm_' + Date.now();
+
+      const alarmItem = {
+        id: alarmId,
+        title,
+        time,
+        days: [...tempAlarmDays],
+        sound: { ...selectedAlarmSound },
+        soundPath: selectedAlarmSound.path || '',
+        vibrate: vib,
+        snooze: snooze,
+        enabled: true
+      };
+
+      if (editingGeneralAlarmIdx !== null && list[editingGeneralAlarmIdx]) {
+        list[editingGeneralAlarmIdx] = alarmItem;
+      } else {
+        list.push(alarmItem);
+      }
+
+      localStorage.setItem('hayat_general_alarms_list', JSON.stringify(list));
+
+      scheduleAlarmInNativeAndroid(alarmItem);
+
+      const genModal = document.getElementById('generalAlarmModal');
+      if (genModal) genModal.classList.remove('show');
+
+      syncAllAlarmsToHub();
+      showAudioFeedbackToast('تم ضبط وجدولة المنبه بنجاح في هاتفك ⏰', '✓');
+    };
+  }
+
+  // حذف المنبه
+  const btnDeleteGen = document.getElementById('btnDeleteGeneralAlarm');
+  if (btnDeleteGen) {
+    btnDeleteGen.onclick = () => {
+      if (editingGeneralAlarmIdx === null) return;
+      const list = JSON.parse(localStorage.getItem('hayat_general_alarms_list')) || [];
+      const item = list[editingGeneralAlarmIdx];
+      if (item && item.id) {
+        cancelAlarmInNativeAndroid(item.id);
+      }
+      list.splice(editingGeneralAlarmIdx, 1);
+      localStorage.setItem('hayat_general_alarms_list', JSON.stringify(list));
+
+      const genModal = document.getElementById('generalAlarmModal');
+      if (genModal) genModal.classList.remove('show');
+
+      syncAllAlarmsToHub();
+      showAudioFeedbackToast('تم حذف المنبه وإلغاء جدولته 🗑️', '✓');
+    };
+  }
 
   // تبويبات المنبه
   document.querySelectorAll('.alarm-tab-chip').forEach(tab => {
