@@ -262,7 +262,42 @@ public class NativeAlarmBridge {
                 .apply();
     }
 
-    // 17. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
+    // 17. استخراج بيانات المزامنة من المسبحة العائمة
+    @JavascriptInterface
+    public String getFloatingTasbeehSyncData() {
+        android.content.SharedPreferences sp = context.getSharedPreferences("AlHayatTasbeehPrefs", Context.MODE_PRIVATE);
+        boolean hasData = sp.getBoolean("floating_has_unsynced_data", false);
+        if (!hasData) return "";
+        int count = sp.getInt("floating_current_count", 0);
+        int addedTaps = sp.getInt("floating_added_taps", 0);
+        int addedRounds = sp.getInt("floating_added_rounds", 0);
+        return "{\"count\":" + count + ",\"addedTaps\":" + addedTaps + ",\"addedRounds\":" + addedRounds + "}";
+    }
+
+    // 18. تصفير علم المزامنة بعد استلامها بنجاح داخل التطبيق
+    @JavascriptInterface
+    public void clearFloatingTasbeehSyncData() {
+        android.content.SharedPreferences sp = context.getSharedPreferences("AlHayatTasbeehPrefs", Context.MODE_PRIVATE);
+        sp.edit()
+                .putInt("floating_added_taps", 0)
+                .putInt("floating_added_rounds", 0)
+                .putBoolean("floating_has_unsynced_data", false)
+                .apply();
+    }
+
+    // 19. تحديث كرت المسبحة العائمة لحظياً عند التسبيح من داخل التطبيق
+    @JavascriptInterface
+    public void updateFloatingTasbeeh(String dhikrText, int currentCount, int targetCount) {
+        if (FloatingTasbeehService.isServiceRunning()) {
+            Intent intent = new Intent(context, FloatingTasbeehService.class);
+            intent.putExtra("dhikrText", dhikrText);
+            intent.putExtra("currentCount", currentCount);
+            intent.putExtra("targetCount", targetCount);
+            context.startService(intent);
+        }
+    }
+
+    // 20. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
     @JavascriptInterface
     public void exitApp() {
         if (context instanceof android.app.Activity) {
