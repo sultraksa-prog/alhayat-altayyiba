@@ -297,7 +297,62 @@ public class NativeAlarmBridge {
         }
     }
 
-    // 20. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
+    // 20. جدولة منبه عام حقيقي في عتاد الأندرويد بأعلى دقة ممكنة
+    @JavascriptInterface
+    public boolean scheduleGeneralAlarm(String alarmId, long triggerTimeMillis, String title, String customAudioPath, boolean vibrate) {
+        try {
+            android.app.AlarmManager alarmManager = (android.app.AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager == null) return false;
+
+            Intent intent = new Intent(context, AlarmReceiver.class);
+            intent.putExtra("isGeneralAlarm", true);
+            intent.putExtra("alarmId", alarmId);
+            intent.putExtra("prayerName", title);
+            intent.putExtra("customAudioPath", customAudioPath);
+            intent.putExtra("vibrate", vibrate);
+
+            int requestCode = Math.abs(alarmId.hashCode());
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent);
+            } else {
+                alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent);
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // 21. إلغاء منبه عام محدد من نظام الأندرويد
+    @JavascriptInterface
+    public boolean cancelGeneralAlarm(String alarmId) {
+        try {
+            android.app.AlarmManager alarmManager = (android.app.AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager == null) return false;
+
+            Intent intent = new Intent(context, AlarmReceiver.class);
+            int requestCode = Math.abs(alarmId.hashCode());
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            alarmManager.cancel(pendingIntent);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // 22. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
     @JavascriptInterface
     public void exitApp() {
         if (context instanceof android.app.Activity) {
