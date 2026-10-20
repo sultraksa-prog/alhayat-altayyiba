@@ -6,17 +6,18 @@
     android:viewportWidth="512"
     android:viewportHeight="512">
 
-    <!-- التدرج الكحلي الملكي العميق والداكن المطابق حرفياً لملف icon.svg -->
+    <!-- كحلي ملكي مشبع وعميق مع حواف حبرية داكنة تحاكي PWA تماماً -->
     <path android:pathData="M0,0h512v512h-512z">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:centerX="256"
-                android:centerY="200"
-                android:gradientRadius="310"
+                android:centerY="195"
+                android:gradientRadius="290"
                 android:type="radial">
-                <item android:color="#143D6D" android:offset="0.0" />
-                <item android:color="#09203F" android:offset="0.45" />
-                <item android:color="#030C18" android:offset="1.0" />
+                <item android:color="#164377" android:offset="0.0" />
+                <item android:color="#0D2D53" android:offset="0.30" />
+                <item android:color="#071D38" android:offset="0.65" />
+                <item android:color="#020812" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>
