@@ -44,7 +44,7 @@ public class AdhanActivity extends Activity implements SensorEventListener {
             );
         }
 
-        // 2. تفعيل حساس قلب الهاتف (Flip to Mute)
+        // 2. تفعيل حساس قلب الهاتف لكتم الصوت (Flip to Mute)
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -54,107 +54,129 @@ public class AdhanActivity extends Activity implements SensorEventListener {
         }
 
         String incomingPrayerName = getIntent().getStringExtra("prayerName");
-        final String prayerName = (incomingPrayerName != null && !incomingPrayerName.isEmpty()) ? incomingPrayerName : "الصلاة";
+        final String prayerName = (incomingPrayerName != null && !incomingPrayerName.isEmpty()) ? incomingPrayerName : "المنبه";
+        final String customAudioPath = getIntent().getStringExtra("customAudioPath");
         final boolean isGeneralAlarm = getIntent().getBooleanExtra("isGeneralAlarm", false);
 
-        // 3. بناء الواجهة المنبثقة برمجياً ككرت عائم علوي فاخر مطابق لمنبه شاومي
+        // 3. بناء شاشة منبه ملكية كاملة ملء الشاشة (إنهاء الشاشة البيضاء نهائياً)
         LinearLayout rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
-        rootLayout.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        rootLayout.setPadding(30, 60, 30, 30);
-        rootLayout.setBackgroundColor(Color.TRANSPARENT);
-        // كرت المنبه العائم
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.HORIZONTAL);
-        card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setPadding(30, 24, 30, 24);
+        rootLayout.setGravity(Gravity.CENTER);
+        rootLayout.setPadding(60, 80, 60, 60);
 
-        GradientDrawable cardBg = new GradientDrawable();
-        cardBg.setColor(Color.parseColor("#09203F")); // الكحلي الملكي
-        cardBg.setCornerRadius(50f);
-        cardBg.setStroke(3, Color.parseColor("#D4AF37")); // إطار ذهبي
-        card.setBackground(cardBg);
+        // خلفية كحلية ملكية متدرجة تملأ كامل شاشة الهاتف
+        GradientDrawable fullBg = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{Color.parseColor("#09203F"), Color.parseColor("#113F67")}
+        );
+        rootLayout.setBackground(fullBg);
 
-        // نصوص المنبه
-        LinearLayout textCol = new LinearLayout(this);
-        textCol.setOrientation(LinearLayout.VERTICAL);
-        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
+        // الساعة الرقمية الكبيرة الحية في المركز
+        java.text.SimpleDateFormat timeFmt = new java.text.SimpleDateFormat("hh:mm", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat amPmFmt = new java.text.SimpleDateFormat("a", new java.util.Locale("ar"));
+        String currentTimeStr = timeFmt.format(new java.util.Date());
+        String currentAmPmStr = amPmFmt.format(new java.util.Date());
 
+        TextView timeText = new TextView(this);
+        timeText.setText(currentTimeStr + " " + currentAmPmStr);
+        timeText.setTextColor(Color.parseColor("#FDE68A")); // ذهبي وهاج
+        timeText.setTextSize(48f);
+        timeText.setTypeface(null, android.graphics.Typeface.BOLD);
+        timeText.setGravity(Gravity.CENTER);
+
+        // اسم المنبه أو الصلاة بخط واضح وكبير
         TextView titleText = new TextView(this);
-        titleText.setText(isGeneralAlarm ? ("⏰ حان موعد: " + prayerName) : ("حان الآن أذان " + prayerName + " 🕌"));
-        titleText.setTextColor(Color.parseColor("#FDE68A"));
-        titleText.setTextSize(16f);
+        titleText.setText(isGeneralAlarm ? ("⏰ " + prayerName) : ("🕌 حان الآن أذان " + prayerName));
+        titleText.setTextColor(Color.WHITE);
+        titleText.setTextSize(22f);
         titleText.setTypeface(null, android.graphics.Typeface.BOLD);
+        titleText.setGravity(Gravity.CENTER);
+        titleText.setPadding(0, 16, 0, 40);
 
+        // نص تذكيري بالهاتف
         TextView subText = new TextView(this);
-        subText.setText("اضغط هنا لفتح التطبيق");
-        subText.setTextColor(Color.parseColor("#E2E8F0"));
+        subText.setText("اقلب الهاتف على وجهه أو اضغط زر الصوت للإسكات");
+        subText.setTextColor(Color.parseColor("#94A3B8"));
         subText.setTextSize(12f);
+        subText.setGravity(Gravity.CENTER);
+        subText.setPadding(0, 0, 0, 50);
 
-        textCol.addView(titleText);
-        textCol.addView(subText);
-
-        // حاوية أزرار الإجراءات
+        // حاوية أزرار الإجراءات السفلية العريضة
         LinearLayout btnRow = new LinearLayout(this);
-        btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        btnRow.setGravity(Gravity.CENTER_VERTICAL);
+        btnRow.setOrientation(LinearLayout.VERTICAL);
+        btnRow.setGravity(Gravity.CENTER);
 
-        // زر الغفوة (5 دقائق) يظهر فقط للمنبهات العامة
+        // زر الغفوة (5 دقائق) يظهر للمنبهات العامة ويحتفظ بنفس الصوت المختار
         if (isGeneralAlarm) {
             Button snoozeBtn = new Button(this);
-            snoozeBtn.setText("💤 غفوة");
+            snoozeBtn.setText("💤 غفوة (تأجيل 5 دقائق)");
             snoozeBtn.setTextColor(Color.parseColor("#09203F"));
-            snoozeBtn.setTextSize(13f);
+            snoozeBtn.setTextSize(16f);
             snoozeBtn.setTypeface(null, android.graphics.Typeface.BOLD);
 
             GradientDrawable snoozeBg = new GradientDrawable();
             snoozeBg.setColor(Color.parseColor("#FCD34D")); // ذهبي المنبه
             snoozeBg.setCornerRadius(30f);
             snoozeBtn.setBackground(snoozeBg);
-            snoozeBtn.setPadding(20, 10, 20, 10);
+            snoozeBtn.setPadding(40, 22, 40, 22);
+
             LinearLayout.LayoutParams snzParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            snzParams.setMargins(0, 0, 12, 0);
+            snzParams.setMargins(0, 0, 0, 18);
             snoozeBtn.setLayoutParams(snzParams);
 
             snoozeBtn.setOnClickListener(v -> {
-                // جدولة غفوة تلقائية بعد 5 دقائق
+                // جدولة غفوة بعد 5 دقائق مع الاحتفاظ بنفس مسار الصوت الأصلي بالضبط
+                long snoozeTime = System.currentTimeMillis() + (5 * 60 * 1000L);
                 NativeAlarmBridge bridge = new NativeAlarmBridge(this);
-                bridge.scheduleGeneralAlarm("snooze_" + System.currentTimeMillis(), System.currentTimeMillis() + (5 * 60 * 1000L), prayerName, "", true);
-                dismissAlarmAndFinish();
+                bridge.scheduleGeneralAlarm(
+                        "snooze_" + System.currentTimeMillis(),
+                        snoozeTime,
+                        prayerName,
+                        customAudioPath != null ? customAudioPath : "", // الاحتفاظ بنفس صوت التنبيه
+                        true
+                );
+
+                // إرسال أمر للخدمة لإظهار إشعار الغفوة الثابت في شريط الهاتف
+                Intent snoozeNotifIntent = new Intent(this, AdhanService.class);
+                snoozeNotifIntent.setAction("SHOW_SNOOZE_NOTIFICATION");
+                snoozeNotifIntent.putExtra("prayerName", prayerName);
+                snoozeNotifIntent.putExtra("snoozeTimeMillis", snoozeTime);
+                startService(snoozeNotifIntent);
+
+                if (sensorManager != null) sensorManager.unregisterListener(this);
+                finish();
             });
             btnRow.addView(snoozeBtn);
         }
 
-        // زر إيقاف المنبه البارز
+        // زر إيقاف المنبه الأحمر الكبير
         Button stopBtn = new Button(this);
-        stopBtn.setText("⏹ إيقاف");
+        stopBtn.setText("⏹ إيقاف المنبه");
         stopBtn.setTextColor(Color.WHITE);
-        stopBtn.setTextSize(14f);
+        stopBtn.setTextSize(16f);
         stopBtn.setTypeface(null, android.graphics.Typeface.BOLD);
 
         GradientDrawable stopBtnBg = new GradientDrawable();
         stopBtnBg.setColor(Color.parseColor("#DC2626")); // أحمر المنبه
         stopBtnBg.setCornerRadius(30f);
         stopBtn.setBackground(stopBtnBg);
-        stopBtn.setPadding(24, 12, 24, 12);
-        stopBtn.setOnClickListener(v -> dismissAlarmAndFinish());
+        stopBtn.setPadding(40, 22, 40, 22);
 
+        LinearLayout.LayoutParams stopParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        stopBtn.setLayoutParams(stopParams);
+        stopBtn.setOnClickListener(v -> dismissAlarmAndFinish());
         btnRow.addView(stopBtn);
 
-        // الضغط على الكرت يفتح التطبيق الرئيسي
-        card.setOnClickListener(v -> {
-            dismissAlarmAndFinish();
-            Intent openApp = new Intent(this, MainActivity.class);
-            openApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(openApp);
-        });
-
-        card.addView(textCol);
-        card.addView(btnRow);
-        rootLayout.addView(card);
+        rootLayout.addView(timeText);
+        rootLayout.addView(titleText);
+        rootLayout.addView(subText);
+        rootLayout.addView(btnRow);
 
         setContentView(rootLayout);
     }
