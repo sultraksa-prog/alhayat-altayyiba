@@ -28,11 +28,10 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void checkAndHandleFloatingTasbeehResume(Intent intent) {
-        SharedPreferences sp = getSharedPreferences("AlHayatTasbeehPrefs", MODE_PRIVATE);
+        android.content.SharedPreferences sp = getSharedPreferences("AlHayatTasbeehPrefs", MODE_PRIVATE);
         boolean autoOpen = sp.getBoolean("autoOpenOnLaunch", true);
         boolean fromLongPress = intent != null && "tasbeeh".equals(intent.getStringExtra("navigateToScreen"));
 
-        // إذا كانت المسبحة العائمة تعمل وكان الخيار مفعلاً، يتم إغلاقها وتوجيه المستخدم لشاشة المسبحة
         if (FloatingTasbeehService.isServiceRunning() || fromLongPress) {
             if (autoOpen || fromLongPress) {
                 Intent stopService = new Intent(this, FloatingTasbeehService.class);
@@ -41,11 +40,21 @@ public class MainActivity extends BridgeActivity {
                 if (bridge != null && bridge.getWebView() != null) {
                     bridge.getWebView().postDelayed(() -> {
                         bridge.getWebView().evaluateJavascript(
-                                "if(typeof window.onFloatingTasbeehAppResume === 'function') window.onFloatingTasbeehAppResume();",
+                                "if(typeof window.syncFloatingTasbeehToApp === 'function') window.syncFloatingTasbeehToApp(true);",
                                 null
                         );
-                    }, 350);
+                    }, 250);
                 }
+            }
+        } else {
+            // مزامنة الأرقام حتى لو كانت الخدمة قد أُغلقت مسبقاً
+            if (bridge != null && bridge.getWebView() != null) {
+                bridge.getWebView().postDelayed(() -> {
+                    bridge.getWebView().evaluateJavascript(
+                            "if(typeof window.syncFloatingTasbeehToApp === 'function') window.syncFloatingTasbeehToApp(false);",
+                            null
+                    );
+                }, 250);
             }
         }
     }
