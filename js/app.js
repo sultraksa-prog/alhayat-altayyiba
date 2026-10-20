@@ -2731,16 +2731,68 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // استقبال أمر التوجيه التلقائي لشاشة المسبحة عند فتح التطبيق
-  window.onFloatingTasbeehAppResume = function() {
-    if (screenTasbeeh && typeof showScreen === 'function') {
-      showScreen(screenTasbeeh);
-      if (typeof initTasbeehEngine === 'function') initTasbeehEngine();
-      if (typeof showGuidanceToast === 'function') {
-        showGuidanceToast('مرحباً بك مجدداً.. تم نقل إنجاز المسبحة هنا 📿');
+  // محرك المزامنة التلقائي الشامل بين المسبحة العائمة والتطبيق
+  function syncFloatingTasbeehToApp(shouldNavigate = false) {
+    if (!window.AndroidBridge || typeof window.AndroidBridge.getFloatingTasbeehSyncData !== 'function') {
+      if (shouldNavigate && screenTasbeeh && typeof showScreen === 'function') {
+        showScreen(screenTasbeeh);
       }
+      return;
     }
-  };
+
+    const raw = window.AndroidBridge.getFloatingTasbeehSyncData();
+    if (!raw) {
+      if (shouldNavigate && screenTasbeeh && typeof showScreen === 'function') {
+        showScreen(screenTasbeeh);
+      }
+      return;
+    }
+
+    try {
+      const data = JSON.parse(raw);
+      const activeItem = getActiveTasbeehItem();
+      const id = activeItem.id;
+
+      if (!tasbeehStats.countsMap) tasbeehStats.countsMap = {};
+      if (!tasbeehStats.roundsMap) tasbeehStats.roundsMap = {};
+
+      // 1. تطبيق العداد الحالي
+      if (typeof data.count === 'number') {
+        tasbeehStats.countsMap[id] = data.count;
+      }
+      // 2. إضافة التسبيحات المنجزة بالخارج إلى الإجمالي الكلي
+      if (typeof data.addedTaps === 'number' && data.addedTaps > 0) {
+        tasbeehStats.total = (tasbeehStats.total || 0) + data.addedTaps;
+      }
+      // 3. إضافة الجولات المنجزة بالخارج
+      if (typeof data.addedRounds === 'number' && data.addedRounds > 0) {
+        tasbeehStats.roundsMap[id] = (tasbeehStats.roundsMap[id] || 0) + data.addedRounds;
+      }
+
+      saveTasbeehStats();
+      updateTasbeehUI();
+
+      // تصفير علم المزامنة حتى لا تُحتسب الأرقام مرتين
+      if (typeof window.AndroidBridge.clearFloatingTasbeehSyncData === 'function') {
+        window.AndroidBridge.clearFloatingTasbeehSyncData();
+      }
+
+      if (shouldNavigate && screenTasbeeh && typeof showScreen === 'function') {
+        showScreen(screenTasbeeh);
+        if (typeof showGuidanceToast === 'function') {
+          showGuidanceToast('تمت مزامنة تسبيحاتك من المسبحة العائمة بنجاح ✨');
+        }
+      }
+    } catch(e) {}
+  }
+  window.syncFloatingTasbeehToApp = syncFloatingTasbeehToApp;
+  window.onFloatingTasbeehAppResume = () => syncFloatingTasbeehToApp(true);
+
+  // فحص ومزامنة فورية عند تنشيط نافذة التطبيق أو استئناف الشاشة
+  window.addEventListener('focus', () => syncFloatingTasbeehToApp(false));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) syncFloatingTasbeehToApp(false);
+  });
 
   // إغلاق النافذة وفك التجميد عند النقر على الغطاء المعتم
   azkarSettingsModal.addEventListener('click', (e) => {
@@ -4869,7 +4921,7 @@ document.getElementById('confirmExitBtn').addEventListener('click', () => {
   // ==================== إعدادات وهوية التطبيق المركزية والمشاركة ====================
   const APP_CONFIG = {
     name: 'الحياة الطيبة',
-    version: '2.1.137',
+    version: '2.1.138',
     url: 'https://sultraksa-prog.github.io/alhayat-altayyiba/',
     shortDesc: 'رفيقك اليومي لمواقيت الصلاة والأذكار والعبادات',
     // رابط تحميل الـ APK الحقيقي من Releases بمستودعك
@@ -6705,6 +6757,14 @@ function incrementTasbeeh(event) {
   saveTasbeehStats();
   updateTasbeehUI();
   updateFloatingPiPContent();
+
+  // تحديث كرت المسبحة العائمة لحظياً إذا كانت تعمل بالخارج
+  if (window.AndroidBridge && typeof window.AndroidBridge.isFloatingTasbeehRunning === 'function') {
+    if (window.AndroidBridge.isFloatingTasbeehRunning() && typeof window.AndroidBridge.updateFloatingTasbeeh === 'function') {
+      const cur = tasbeehStats.countsMap[id] || 0;
+      window.AndroidBridge.updateFloatingTasbeeh(activeItem.text, cur, tasbeehTarget);
+    }
+  }
 }
 
 function animateBeadChainStep() {
@@ -7189,11 +7249,15 @@ document.addEventListener('DOMContentLoaded', () => {
     resetBtn.onclick = () => resetModal.classList.add('show');
     document.getElementById('cancelResetModalBtn').onclick = () => resetModal.classList.remove('show');
     document.getElementById('resetCurrentDhikrBtn').onclick = () => {
-      const id = getActiveTasbeehItem().id;
+      const active = getActiveTasbeehItem();
+      const id = active.id;
       tasbeehStats.countsMap[id] = 0;
       tasbeehStats.roundsMap[id] = 0;
       saveTasbeehStats();
       updateTasbeehUI();
+      if (window.AndroidBridge && typeof window.AndroidBridge.updateFloatingTasbeeh === 'function') {
+        window.AndroidBridge.updateFloatingTasbeeh(active.text, 0, tasbeehTarget);
+      }
       resetModal.classList.remove('show');
     };
     document.getElementById('resetAllAzkarBtn').onclick = () => {
