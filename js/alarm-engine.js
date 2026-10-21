@@ -1547,7 +1547,7 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
         <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
       `;
 
-      row.onclick = async (e) => {
+      row.onclick = (e) => {
         if (e.target.closest('.btn-preview-audio-play')) return;
         stopPreviewAudio();
         if (window.AndroidBridge && typeof window.AndroidBridge.stopPreviewSystemAlarm === 'function') {
@@ -1577,7 +1577,7 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
       pBtn.onclick = (e) => {
         e.stopPropagation();
 
-        // أ) إذا كان الخيار هو نغمة الهاتف الافتراضية: تشغيل نغمة المنبه الرسمية من عتاد الأندرويد
+        // أ) إذا كان الخيار هو نغمة الهاتف الافتراضية
         if (tone.isSystem) {
           stopPreviewAudio();
           if (window.AndroidBridge && typeof window.AndroidBridge.previewSystemAlarm === 'function') {
