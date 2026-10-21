@@ -1626,7 +1626,7 @@
       </div>
     </div>
 
-    <!-- نافذة اختيار نغمة المنبه العام -->
+    <!-- نافذة اختيار نغمة المنبه العام مع دعم رفع ملفات الهاتف -->
     <div class="bottom-sheet-backdrop" id="generalAlarmSoundModal" style="z-index: 385;">
       <div class="bottom-sheet" style="max-height: 85vh; display:flex; flex-direction:column; padding-bottom: 24px;">
         <div class="sheet-drag-handle"></div>
@@ -1634,7 +1634,14 @@
           <h3 class="sheet-title">اختر نغمة المنبه</h3>
           <button type="button" class="modal-btn-link" id="closeGeneralAlarmSoundModalBtn">✕</button>
         </div>
+        
         <div class="muezzin-list-scroll" id="generalAlarmSoundListContainer"></div>
+
+        <!-- زر رفع نغمة من ذاكرة الهاتف وحفظها للاستخدام الدائم -->
+        <label class="btn-upload-custom-adhan" style="margin-top: 10px; cursor: pointer;">
+          <span>📁 رفع نغمة من جهازي (MP3 / M4A / WAV)</span>
+          <input type="file" id="inputUploadGeneralAlarmCustomSound" accept="audio/*" style="display:none;">
+        </label>
       </div>
     </div>
 
