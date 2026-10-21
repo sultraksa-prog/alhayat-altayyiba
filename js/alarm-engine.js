@@ -1651,52 +1651,6 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
     };
   }
 
-    const toneHeader = document.createElement('div');
-    toneHeader.style.cssText = 'font-size:12px; font-weight:800; color:var(--text-secondary); padding:8px 6px 4px 6px;';
-    toneHeader.textContent = '🔔 نغمات وأصوات المنبه:';
-    soundListContainer.appendChild(toneHeader);
-
-    GENERAL_ALARM_TONES.forEach(tone => {
-      const isSel = (selectedAlarmSound.id === tone.id);
-      const row = document.createElement('div');
-      row.className = `muezzin-card-item ${isSel ? 'active' : ''}`;
-      row.innerHTML = `
-        <div class="muezzin-info-group">
-          <button type="button" class="btn-preview-audio-play" data-url="${tone.url}">▶</button>
-          <div>
-            <h4 style="font-size:14px; font-weight:800; margin:0;">${tone.name}</h4>
-          </div>
-        </div>
-        <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
-      `;
-
-      row.onclick = (e) => {
-        if (e.target.closest('.btn-preview-audio-play')) return;
-        stopPreviewAudio();
-        selectedAlarmSound = { id: tone.id, name: tone.name, path: tone.id === 'default' ? '' : tone.url };
-        if (displaySoundName) displaySoundName.textContent = tone.name;
-        if (soundModal) soundModal.classList.remove('show');
-      };
-
-      const pBtn = row.querySelector('.btn-preview-audio-play');
-      pBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (!previewAudioPlayer.paused && currentPlayingPreviewUrl === tone.url) {
-          stopPreviewAudio();
-        } else {
-          stopPreviewAudio();
-          currentPlayingPreviewUrl = tone.url;
-          previewAudioPlayer.src = tone.url;
-          previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
-          pBtn.textContent = '⏸';
-          pBtn.classList.add('playing');
-        }
-      };
-
-      soundListContainer.appendChild(row);
-    });
-  }
-
   document.querySelectorAll('.alarm-day-chip').forEach(chip => {
     chip.onclick = () => {
       const dayNum = parseInt(chip.getAttribute('data-day'), 10);
