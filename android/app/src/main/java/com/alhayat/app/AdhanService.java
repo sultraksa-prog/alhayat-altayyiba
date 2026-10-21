@@ -123,20 +123,23 @@ public class AdhanService extends Service {
 
             boolean fileLoaded = false;
 
-            // 1. فحص هل هو ملف محلي مخزن في ذاكرة الجهاز
+            // 1. فحص هل هو ملف محلي مخزن في ذاكرة الجهاز أو مسار مرفوع من الهاتف
             if (customPath != null && !customPath.isEmpty()) {
-                if (customPath.startsWith("http://") || customPath.startsWith("https://")) {
-                    try {
+                try {
+                    if (customPath.startsWith("content://") || customPath.startsWith("file://")) {
                         mediaPlayer.setDataSource(this, Uri.parse(customPath));
                         fileLoaded = true;
-                    } catch (Exception ignored) {}
-                } else {
-                    File audioFile = new File(customPath);
-                    if (audioFile.exists()) {
-                        mediaPlayer.setDataSource(this, Uri.fromFile(audioFile));
+                    } else if (customPath.startsWith("http://") || customPath.startsWith("https://")) {
+                        mediaPlayer.setDataSource(this, Uri.parse(customPath));
                         fileLoaded = true;
+                    } else {
+                        File audioFile = new File(customPath);
+                        if (audioFile.exists()) {
+                            mediaPlayer.setDataSource(this, Uri.fromFile(audioFile));
+                            fileLoaded = true;
+                        }
                     }
-                }
+                } catch (Exception ignored) {}
             }
 
             // 2. إذا لم يكن ملفاً مخصصاً، محاولة تشغيل الصوت المدمج
