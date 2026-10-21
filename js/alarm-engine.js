@@ -2221,7 +2221,8 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
   // المزامنة الأولية والجدولة عند الإقلاع
   syncAllAlarmsToHub();
   runSystemPermissionsDiagnostic();
-  if (isAndroidApp) {
+  
+  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
     scheduleNativeAndroidAlarms();
   }
 
