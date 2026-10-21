@@ -358,7 +358,41 @@ public class NativeAlarmBridge {
         }
     }
 
-    // 22. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
+   // 22. تشغيل عينة حقيقية من نغمة منبه الهاتف الرسمية للمعاينة
+    private android.media.Ringtone previewRingtone;
+
+    @JavascriptInterface
+    public void previewSystemAlarm() {
+        try {
+            stopPreviewSystemAlarm();
+            android.net.Uri alert = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);
+            if (alert == null) {
+                alert = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
+            }
+            if (alert != null) {
+                previewRingtone = android.media.RingtoneManager.getRingtone(context, alert);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    android.media.AudioAttributes audioAttributes = new android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                    previewRingtone.setAudioAttributes(audioAttributes);
+                }
+                previewRingtone.play();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    @JavascriptInterface
+    public void stopPreviewSystemAlarm() {
+        try {
+            if (previewRingtone != null && previewRingtone.isPlaying()) {
+                previewRingtone.stop();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    // 23. إغلاق وإنهاء تطبيق الأندرويد نهائياً من الذاكرة
     @JavascriptInterface
     public void exitApp() {
         if (context instanceof android.app.Activity) {
