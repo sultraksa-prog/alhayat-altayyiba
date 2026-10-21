@@ -1651,53 +1651,6 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
     };
   }
 
-    const userCustoms = await getAllCustomAudios();
-    if (userCustoms && userCustoms.length > 0) {
-      const header = document.createElement('div');
-      header.style.cssText = 'font-size:12px; font-weight:800; color:#15803D; padding:4px 6px;';
-      header.textContent = '📁 أصوات مخصصة من هاتفك:';
-      soundListContainer.appendChild(header);
-
-      userCustoms.forEach(c => {
-        const isSel = (selectedAlarmSound.id === c.id);
-        const row = document.createElement('div');
-        row.className = `muezzin-card-item ${isSel ? 'active' : ''}`;
-        row.innerHTML = `
-          <div class="muezzin-info-group">
-            <button type="button" class="btn-preview-audio-play" data-custom-id="${c.id}">▶</button>
-            <div>
-              <h4 style="font-size:14px; font-weight:800; margin:0;">${c.name}</h4>
-              <span style="font-size:11px; color:#15803D;">ملف صوتي محلي</span>
-            </div>
-          </div>
-          <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
-        `;
-
-        row.onclick = (e) => {
-          if (e.target.closest('.btn-preview-audio-play')) return;
-          stopPreviewAudio();
-          selectedAlarmSound = { id: c.id, name: c.name, path: c.uri || '' };
-          if (displaySoundName) displaySoundName.textContent = c.name;
-          if (soundModal) soundModal.classList.remove('show');
-        };
-
-        const pBtn = row.querySelector('.btn-preview-audio-play');
-        pBtn.onclick = async (e) => {
-          e.stopPropagation();
-          stopPreviewAudio();
-          const src = await getCustomAudioPlayableSrc(c.id);
-          if (src) {
-            previewAudioPlayer.src = src;
-            previewAudioPlayer.play().catch(() => {});
-            pBtn.textContent = '⏸';
-            pBtn.classList.add('playing');
-          }
-        };
-
-        soundListContainer.appendChild(row);
-      });
-    }
-
     const toneHeader = document.createElement('div');
     toneHeader.style.cssText = 'font-size:12px; font-weight:800; color:var(--text-secondary); padding:8px 6px 4px 6px;';
     toneHeader.textContent = '🔔 نغمات وأصوات المنبه:';
@@ -2272,4 +2225,4 @@ window.scheduleNativeAndroidAlarms = scheduleNativeAndroidAlarms;
     scheduleNativeAndroidAlarms();
   }
 
-  });
+});
