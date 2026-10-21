@@ -1358,15 +1358,15 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
   let tempAlarmDays = []; // مصفوفة الأيام المختارة (0: الأحد ... 6: السبت)
   let selectedAlarmSound = { id: 'default', name: 'نغمة المنبه الافتراضية 🔔', path: '' };
 
-  // قائمة نغمات وأصوات المنبه المحققة
+  // قائمة نغمات وأصوات المنبه المحققة مع تصحيح رابط تكبيرات العيد
   const GENERAL_ALARM_TONES = [
     { id: 'default', name: 'نغمة منبه الجوال الافتراضية 🔔', url: '', isSystem: true },
+    { id: 'takbeer', name: 'تكبيرات العيد المباركة 🕌', url: 'https://ia801503.us.archive.org/15/items/TakbeeratAlEid/Takbeerat_Al_Eid.mp3' },
     { id: 'alafasy', name: 'أذان الشيخ مشاري العفاسي 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan7.mp3' },
     { id: 'fajr_makkah', name: 'أذان الحرم المكي الشريف 🕋', url: 'https://www.islamcan.com/audio/adhan/azan1.mp3' },
     { id: 'madinah', name: 'أذان المسجد النبوي الشريف 🕌', url: 'https://www.islamcan.com/audio/adhan/azan2.mp3' },
     { id: 'abdulbasit', name: 'أذان الشيخ عبد الباسط عبد الصمد 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan6.mp3' },
-    { id: 'mansoor', name: 'أذان الشيخ منصور الزهراني 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan8.mp3' },
-    { id: 'takbeer', name: 'تكبيرات العيد المباركة 🕌', url: 'https://www.islamcan.com/audio/adhan/azan9.mp3' }
+    { id: 'mansoor', name: 'أذان الشيخ منصور الزهراني 🎙️', url: 'https://www.islamcan.com/audio/adhan/azan8.mp3' }
   ];
 
   // حساب موعد الرنين القادم بدقة بالمللي ثانية
@@ -1447,13 +1447,209 @@ const refreshPermBtn = document.getElementById('btnRefreshPermissionsDiagnostic'
     if (pOnce) pOnce.classList.toggle('active', isOnce);
   }
 
-  // بناء قائمة اختيار نغمات وأصوات المنبه
+  // بناء قائمة اختيار نغمات وأصوات المنبه المتكاملة
+  let isSystemPreviewPlaying = false;
+
   async function renderAlarmSoundsList() {
     const soundListContainer = document.getElementById('generalAlarmSoundListContainer');
     const soundModal = document.getElementById('generalAlarmSoundModal');
     const displaySoundName = document.getElementById('displayGeneralAlarmSoundName');
     if (!soundListContainer) return;
     soundListContainer.innerHTML = '';
+
+    // 1. النغمات والأصوات المرفوعة من هاتف المستخدم
+    const userCustoms = await getAllCustomAudios();
+    if (userCustoms && userCustoms.length > 0) {
+      const header = document.createElement('div');
+      header.style.cssText = 'font-size:12px; font-weight:800; color:#15803D; padding:4px 6px;';
+      header.textContent = '📁 نغمات مخصصة من هاتفك:';
+      soundListContainer.appendChild(header);
+
+      userCustoms.forEach(c => {
+        const isSel = (selectedAlarmSound.id === c.id);
+        const row = document.createElement('div');
+        row.className = `muezzin-card-item ${isSel ? 'active' : ''}`;
+        row.innerHTML = `
+          <div class="muezzin-info-group">
+            <button type="button" class="btn-preview-audio-play" data-custom-id="${c.id}">▶</button>
+            <div style="flex:1; min-width:0;">
+              <h4 style="font-size:14px; font-weight:800; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${c.name}</h4>
+              <span style="font-size:11px; color:#15803D;">ملف صوتي محلي بجهازك</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-delete-custom-alarm-tone" title="حذف النغمة" style="background:none; border:none; color:#EF4444; font-size:15px; cursor:pointer; padding:4px;">🗑️</button>
+            <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
+          </div>
+        `;
+
+        row.onclick = (e) => {
+          if (e.target.closest('.btn-preview-audio-play') || e.target.closest('.btn-delete-custom-alarm-tone')) return;
+          stopPreviewAudio();
+          if (window.AndroidBridge && typeof window.AndroidBridge.stopPreviewSystemAlarm === 'function') {
+            window.AndroidBridge.stopPreviewSystemAlarm();
+          }
+          selectedAlarmSound = { id: c.id, name: c.name, path: c.uri || '' };
+          if (displaySoundName) displaySoundName.textContent = c.name;
+          if (soundModal) soundModal.classList.remove('show');
+        };
+
+        const pBtn = row.querySelector('.btn-preview-audio-play');
+        pBtn.onclick = async (e) => {
+          e.stopPropagation();
+          stopPreviewAudio();
+          const src = await getCustomAudioPlayableSrc(c.id);
+          if (src) {
+            previewAudioPlayer.src = src;
+            previewAudioPlayer.play().catch(() => {});
+            pBtn.textContent = '⏸';
+            pBtn.classList.add('playing');
+          }
+        };
+
+        const dBtn = row.querySelector('.btn-delete-custom-alarm-tone');
+        dBtn.onclick = async (e) => {
+          e.stopPropagation();
+          const isConfirmed = await requestDeleteAudioConfirmation(c.name || 'هذه النغمة');
+          if (isConfirmed) {
+            stopPreviewAudio();
+            await deleteCustomAudio(c.id);
+            if (selectedAlarmSound.id === c.id) {
+              selectedAlarmSound = { id: 'default', name: 'نغمة منبه الجوال الافتراضية 🔔', path: '' };
+              if (displaySoundName) displaySoundName.textContent = selectedAlarmSound.name;
+            }
+            renderAlarmSoundsList();
+            showAudioFeedbackToast(`تم حذف ملف "${c.name}"`, '🗑️');
+          }
+        };
+
+        soundListContainer.appendChild(row);
+      });
+    }
+
+    // 2. قائمة نغمات المنبه والأذان
+    const toneHeader = document.createElement('div');
+    toneHeader.style.cssText = 'font-size:12px; font-weight:800; color:var(--text-secondary); padding:8px 6px 4px 6px;';
+    toneHeader.textContent = '🔔 نغمات وأصوات المنبه:';
+    soundListContainer.appendChild(toneHeader);
+
+    GENERAL_ALARM_TONES.forEach(tone => {
+      const isSel = (selectedAlarmSound.id === tone.id);
+      const row = document.createElement('div');
+      row.className = `muezzin-card-item ${isSel ? 'active' : ''}`;
+      row.innerHTML = `
+        <div class="muezzin-info-group">
+          <button type="button" class="btn-preview-audio-play">▶</button>
+          <div>
+            <h4 style="font-size:14px; font-weight:800; margin:0;">${tone.name}</h4>
+          </div>
+        </div>
+        <span class="custom-radio-circle">${isSel ? '✓' : ''}</span>
+      `;
+
+      row.onclick = async (e) => {
+        if (e.target.closest('.btn-preview-audio-play')) return;
+        stopPreviewAudio();
+        if (window.AndroidBridge && typeof window.AndroidBridge.stopPreviewSystemAlarm === 'function') {
+          window.AndroidBridge.stopPreviewSystemAlarm();
+        }
+
+        let localPath = '';
+        // تنزيل وتخزين المقطع محلياً في الأندرويد فور اختياره ليعمل أوفلاين 100%
+        if (!tone.isSystem && tone.url) {
+          if (window.AndroidBridge && typeof window.AndroidBridge.downloadAdhanAudio === 'function') {
+            const fileName = `general_tone_${tone.id}.mp3`;
+            localPath = window.AndroidBridge.downloadAdhanAudio(tone.url, fileName);
+          }
+        }
+
+        selectedAlarmSound = {
+          id: tone.id,
+          name: tone.name,
+          path: localPath || (tone.isSystem ? '' : tone.url)
+        };
+
+        if (displaySoundName) displaySoundName.textContent = tone.name;
+        if (soundModal) soundModal.classList.remove('show');
+      };
+
+      const pBtn = row.querySelector('.btn-preview-audio-play');
+      pBtn.onclick = (e) => {
+        e.stopPropagation();
+
+        // أ) إذا كان الخيار هو نغمة الهاتف الافتراضية: تشغيل نغمة المنبه الرسمية من عتاد الأندرويد
+        if (tone.isSystem) {
+          stopPreviewAudio();
+          if (window.AndroidBridge && typeof window.AndroidBridge.previewSystemAlarm === 'function') {
+            if (isSystemPreviewPlaying) {
+              window.AndroidBridge.stopPreviewSystemAlarm();
+              isSystemPreviewPlaying = false;
+              pBtn.textContent = '▶';
+              pBtn.classList.remove('playing');
+            } else {
+              window.AndroidBridge.previewSystemAlarm();
+              isSystemPreviewPlaying = true;
+              pBtn.textContent = '⏸';
+              pBtn.classList.add('playing');
+              setTimeout(() => {
+                isSystemPreviewPlaying = false;
+                pBtn.textContent = '▶';
+                pBtn.classList.remove('playing');
+              }, 4000);
+            }
+          }
+          return;
+        }
+
+        // ب) النغمات والأذان الأخرى
+        if (window.AndroidBridge && typeof window.AndroidBridge.stopPreviewSystemAlarm === 'function') {
+          window.AndroidBridge.stopPreviewSystemAlarm();
+          isSystemPreviewPlaying = false;
+        }
+
+        if (!previewAudioPlayer.paused && currentPlayingPreviewUrl === tone.url) {
+          stopPreviewAudio();
+        } else {
+          stopPreviewAudio();
+          currentPlayingPreviewUrl = tone.url;
+          previewAudioPlayer.src = tone.url;
+          previewAudioPlayer.play().catch(() => playSynthesizedAdhanChime());
+          pBtn.textContent = '⏸';
+          pBtn.classList.add('playing');
+        }
+      };
+
+      soundListContainer.appendChild(row);
+    });
+  }
+
+  // ربط زر رفع نغمة مخصصة من الهاتف وحفظها في بنك نغمات المنبه
+  const uploadCustomToneInput = document.getElementById('inputUploadGeneralAlarmCustomSound');
+  if (uploadCustomToneInput) {
+    uploadCustomToneInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileId = await saveCustomAudioUnified(file);
+      const nativeList = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+        ? (JSON.parse(localStorage.getItem('hayat_native_custom_audios')) || [])
+        : [];
+      const savedItem = nativeList.find(x => x.id === fileId);
+
+      selectedAlarmSound = {
+        id: fileId,
+        name: file.name,
+        path: savedItem ? (savedItem.uri || '') : ''
+      };
+
+      const displaySoundName = document.getElementById('displayGeneralAlarmSoundName');
+      if (displaySoundName) displaySoundName.textContent = file.name;
+
+      await renderAlarmSoundsList();
+      uploadCustomToneInput.value = '';
+      showAudioFeedbackToast(`تمت إضافة "${file.name}" إلى نغمات المنبه ✨`, '📁');
+    };
+  }
 
     const userCustoms = await getAllCustomAudios();
     if (userCustoms && userCustoms.length > 0) {
